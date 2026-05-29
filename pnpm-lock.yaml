@@ -26,6 +26,9 @@ importers:
       '@atproto/oauth-client-node':
         specifier: ^0.4.1
         version: 0.4.1
+      '@onrepeat/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@onrepeat/db':
         specifier: workspace:*
         version: link:../../packages/db
