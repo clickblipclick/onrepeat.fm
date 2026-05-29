@@ -23,8 +23,8 @@ export interface TracksTable {
   artist: string | null
   artwork_url: string | null
   // jsonb: object on read, JSON string on write
-  provider_refs: ColumnType<ProviderRefs, string, string>
-  resolution_status: ColumnType<ResolutionStatus, string, string>
+  provider_refs: ColumnType<ProviderRefs, string | undefined, string>
+  resolution_status: ColumnType<ResolutionStatus, string | undefined, string>
   resolved_at: Timestamp | null
 }
 

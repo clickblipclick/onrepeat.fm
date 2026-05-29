@@ -38,7 +38,7 @@ describe('001_init migration', () => {
   it('defaults a track to pending resolution with empty refs', async () => {
     await db
       .insertInto('tracks')
-      .values({ id: 'isrc:USRC12300001', provider_refs: '{}', resolution_status: 'pending' })
+      .values({ id: 'isrc:USRC12300001' })
       .execute()
 
     const row = await db
