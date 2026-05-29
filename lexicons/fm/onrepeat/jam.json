@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "fm.onrepeat.jam",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A person's current jam — one song.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["sourceUrl", "sourceProvider", "title", "artist", "createdAt"],
+        "properties": {
+          "sourceUrl": { "type": "string", "format": "uri" },
+          "sourceProvider": { "type": "string", "maxLength": 64 },
+          "title": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
+          "artist": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
+          "artworkUrl": { "type": "string", "format": "uri" },
+          "isrc": { "type": "string", "maxLength": 32 },
+          "caption": { "type": "string", "maxGraphemes": 140, "maxLength": 1400 },
+          "via": { "type": "ref", "ref": "#viaRef" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "viaRef": {
+      "type": "object",
+      "description": "Attribution for a re-jam.",
+      "required": ["uri", "did"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "did": { "type": "string", "format": "did" }
+      }
+    }
+  }
+}
