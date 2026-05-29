@@ -10,5 +10,5 @@
     "@atproto/api": "^0.20.7",
     "@onrepeat/lexicons": "workspace:*"
   },
-  "devDependencies": { "typescript": "^5.5.0" }
+  "devDependencies": { "typescript": "^5.5.0", "@atproto/dev-env": "^0.4.0" }
 }
