@@ -1,6 +1,11 @@
 import { Kysely, sql } from 'kysely'
 
 export async function up(db: Kysely<any>): Promise<void> {
+  // No foreign keys by design: this is an atproto AppView fed by an out-of-order
+  // firehose. A jam may be ingested before its author's profile or before its
+  // track is resolved (track_id is nullable until resolution), so referential
+  // integrity is enforced at the application layer, not via FK constraints.
+
   await db.schema
     .createTable('actors')
     .addColumn('did', 'text', (c) => c.primaryKey())
@@ -18,7 +23,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('artist', 'text')
     .addColumn('artwork_url', 'text')
     .addColumn('provider_refs', 'jsonb', (c) => c.notNull().defaultTo(sql`'{}'::jsonb`))
-    .addColumn('resolution_status', 'text', (c) => c.notNull().defaultTo('pending'))
+    .addColumn('resolution_status', 'text', (c) =>
+      c.notNull().defaultTo('pending').check(sql`resolution_status in ('pending', 'resolved', 'self_contained', 'failed')`),
+    )
     .addColumn('resolved_at', 'timestamptz')
     .execute()
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { sql } from 'kysely'
 import { createDb } from './client'
 import { createMigrator } from './migrate'
 
@@ -10,6 +11,8 @@ const db = createDb(url)
 
 describe('001_init migration', () => {
   beforeAll(async () => {
+    await sql`drop schema public cascade`.execute(db)
+    await sql`create schema public`.execute(db)
     const { error } = await createMigrator(db).migrateToLatest()
     if (error) throw error
   })
@@ -51,5 +54,11 @@ describe('001_init migration', () => {
     expect(row?.provider_refs).toEqual({})
 
     await db.deleteFrom('tracks').where('id', '=', 'isrc:USRC12300001').execute()
+  })
+
+  it('rejects an invalid resolution_status (CHECK constraint)', async () => {
+    await expect(
+      sql`insert into tracks (id, resolution_status) values ('isrc:BAD', 'bogus')`.execute(db),
+    ).rejects.toThrow()
   })
 })
