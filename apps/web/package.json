@@ -1,0 +1,28 @@
+{
+  "name": "@onrepeat/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000 -H 127.0.0.1",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.20.7",
+    "@atproto/oauth-client-node": "^0.4.1",
+    "@onrepeat/db": "workspace:*",
+    "@onrepeat/oauth": "workspace:*",
+    "@onrepeat/repo": "workspace:*",
+    "iron-session": "^8.0.0",
+    "next": "^15.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.0"
+  }
+}
