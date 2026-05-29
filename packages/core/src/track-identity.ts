@@ -25,5 +25,8 @@ export function trackIdentity(input: TrackIdentityInput): string {
   if (input.odesliId && input.odesliId.trim()) return `odesli:${input.odesliId.trim()}`
   const title = normalizeText(input.title ?? '')
   const artist = normalizeText(input.artist ?? '')
+  if (!title && !artist) {
+    throw new Error('trackIdentity: requires at least one of isrc, odesliId, title, or artist')
+  }
   return `ta:${artist}|${title}`
 }

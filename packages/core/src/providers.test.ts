@@ -42,8 +42,9 @@ describe('providerFromUrl', () => {
   })
 
   it('still matches legitimate subdomains', () => {
-    expect(providerFromUrl('https://open.spotify.com/track/abc')).toBe('spotify')
-    expect(providerFromUrl('https://artist.bandcamp.com/track/x')).toBe('bandcamp')
+    expect(providerFromUrl('https://listen.tidal.com/track/1')).toBe('tidal')
+    expect(providerFromUrl('https://m.soundcloud.com/a/b')).toBe('soundcloud')
+    expect(providerFromUrl('https://geo.music.apple.com/us/album/x/1')).toBe('applemusic')
   })
 
   it('rejects non-http(s) URL schemes', () => {

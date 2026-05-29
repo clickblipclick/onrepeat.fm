@@ -28,4 +28,14 @@ describe('trackIdentity', () => {
     expect(trackIdentity({ isrc: '   ', odesliId: '', title: 'A', artist: 'B' }))
       .toBe('ta:b|a')
   })
+
+  it('accepts a title-only or artist-only fallback', () => {
+    expect(trackIdentity({ title: 'Solo Title' })).toBe('ta:|solo title')
+    expect(trackIdentity({ artist: 'Solo Artist' })).toBe('ta:solo artist|')
+  })
+
+  it('throws when no identifying field is present', () => {
+    expect(() => trackIdentity({})).toThrow(/at least one/)
+    expect(() => trackIdentity({ isrc: '  ', title: '  ', artist: '' })).toThrow(/at least one/)
+  })
 })
