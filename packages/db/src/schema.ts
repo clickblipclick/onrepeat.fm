@@ -52,9 +52,23 @@ export interface LikesTable {
   indexed_at: Generated<Timestamp>
 }
 
+export interface OauthStateTable {
+  key: string
+  state: string // serialized NodeSavedState (JSON)
+  created_at: Generated<Timestamp>
+}
+
+export interface OauthSessionTable {
+  did: string
+  session: string // serialized NodeSavedSession (JSON)
+  updated_at: Generated<Timestamp>
+}
+
 export interface Database {
   actors: ActorsTable
   tracks: TracksTable
   jams: JamsTable
   likes: LikesTable
+  oauth_state: OauthStateTable
+  oauth_session: OauthSessionTable
 }

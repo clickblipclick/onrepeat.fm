@@ -6,5 +6,6 @@ export default defineConfig({
     exclude: ['**/node_modules/**'],
     passWithNoTests: true,
     hookTimeout: 30000,
+    fileParallelism: false,
   },
 })
