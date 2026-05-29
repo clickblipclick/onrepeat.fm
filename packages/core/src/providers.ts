@@ -10,19 +10,24 @@ export function providerTier(provider: string): ProviderTier {
 
 /** Best-effort detection of the source provider from a track URL. */
 export function providerFromUrl(url: string): string | null {
-  let host: string
+  let parsed: URL
   try {
-    host = new URL(url).hostname.toLowerCase()
+    parsed = new URL(url)
   } catch {
     return null
   }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+  const host = parsed.hostname.toLowerCase()
+  // exact host or a dot-anchored subdomain (so "evilspotify.com" does not match "spotify.com")
+  const matches = (domain: string) => host === domain || host.endsWith('.' + domain)
+
   if (host === 'music.youtube.com') return 'youtubemusic'
-  if (host === 'youtu.be' || host.endsWith('youtube.com')) return 'youtube'
-  if (host.endsWith('spotify.com')) return 'spotify'
-  if (host === 'music.apple.com' || host.endsWith('.music.apple.com')) return 'applemusic'
-  if (host.endsWith('bandcamp.com')) return 'bandcamp'
-  if (host.endsWith('soundcloud.com')) return 'soundcloud'
-  if (host.endsWith('tidal.com')) return 'tidal'
-  if (host.endsWith('deezer.com')) return 'deezer'
+  if (host === 'youtu.be' || matches('youtube.com')) return 'youtube'
+  if (matches('spotify.com')) return 'spotify'
+  if (matches('music.apple.com')) return 'applemusic'
+  if (matches('bandcamp.com')) return 'bandcamp'
+  if (matches('soundcloud.com')) return 'soundcloud'
+  if (matches('tidal.com')) return 'tidal'
+  if (matches('deezer.com')) return 'deezer'
   return null
 }

@@ -33,4 +33,22 @@ describe('providerFromUrl', () => {
     expect(providerFromUrl('https://example.com/x')).toBeNull()
     expect(providerFromUrl('not a url')).toBeNull()
   })
+
+  it('does not classify spoofed look-alike hosts', () => {
+    expect(providerFromUrl('https://evilspotify.com/x')).toBeNull()
+    expect(providerFromUrl('https://notspotify.com/x')).toBeNull()
+    expect(providerFromUrl('https://spotify.com.attacker.com/x')).toBeNull()
+    expect(providerFromUrl('https://bandcamp.com.evil.net/x')).toBeNull()
+  })
+
+  it('still matches legitimate subdomains', () => {
+    expect(providerFromUrl('https://open.spotify.com/track/abc')).toBe('spotify')
+    expect(providerFromUrl('https://artist.bandcamp.com/track/x')).toBe('bandcamp')
+  })
+
+  it('rejects non-http(s) URL schemes', () => {
+    expect(providerFromUrl('javascript:alert(1)')).toBeNull()
+    expect(providerFromUrl('data:text/html,hi')).toBeNull()
+    expect(providerFromUrl('file:///etc/passwd')).toBeNull()
+  })
 })
