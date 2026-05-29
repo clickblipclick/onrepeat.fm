@@ -109,7 +109,18 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  packages/repo: {}
+  packages/repo:
+    dependencies:
+      '@atproto/api':
+        specifier: ^0.20.7
+        version: 0.20.7
+      '@onrepeat/lexicons':
+        specifier: workspace:*
+        version: link:../lexicons
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
 
 packages:
 

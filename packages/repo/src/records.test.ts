@@ -1,0 +1,52 @@
+import { describe, it, expect } from 'vitest'
+import { validateRecord, JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import { buildJamRecord, buildLikeRecord } from './records'
+
+const baseJam = {
+  sourceUrl: 'https://open.spotify.com/track/abc',
+  sourceProvider: 'spotify',
+  title: 'Mr. Brightside',
+  artist: 'The Killers',
+}
+
+describe('buildJamRecord', () => {
+  it('builds a valid jam with $type and a createdAt default', () => {
+    const r = buildJamRecord(baseJam)
+    expect(r.$type).toBe(JAM_NSID)
+    expect(typeof r.createdAt).toBe('string')
+    expect(validateRecord(JAM_NSID, r).success).toBe(true)
+  })
+
+  it('includes optional caption and via when provided', () => {
+    const r = buildJamRecord({
+      ...baseJam,
+      caption: 'all week',
+      via: { uri: 'at://did:plc:x/fm.onrepeat.jam/1', did: 'did:plc:x' },
+    })
+    expect(r.caption).toBe('all week')
+    expect(r.via).toEqual({ uri: 'at://did:plc:x/fm.onrepeat.jam/1', did: 'did:plc:x' })
+    expect(validateRecord(JAM_NSID, r).success).toBe(true)
+  })
+
+  it('omits optional fields that were not provided', () => {
+    const r = buildJamRecord(baseJam)
+    expect('caption' in r).toBe(false)
+    expect('via' in r).toBe(false)
+    expect('artworkUrl' in r).toBe(false)
+  })
+
+  it('throws when the built record would be invalid (caption too long)', () => {
+    expect(() => buildJamRecord({ ...baseJam, caption: 'x'.repeat(141) })).toThrow(/invalid jam/i)
+  })
+})
+
+describe('buildLikeRecord', () => {
+  it('builds a valid like pointing at a jam strongRef', () => {
+    const r = buildLikeRecord({
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+    })
+    expect(r.$type).toBe(LIKE_NSID)
+    expect(validateRecord(LIKE_NSID, r).success).toBe(true)
+  })
+})
