@@ -1,0 +1,20 @@
+{
+  "name": "@onrepeat/resolver",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env.local lib/main.ts",
+    "start": "tsx --env-file-if-exists=.env.local lib/main.ts",
+    "backfill": "tsx --env-file-if-exists=.env.local lib/main.ts --backfill",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@onrepeat/core": "workspace:*",
+    "@onrepeat/db": "workspace:*",
+    "@onrepeat/jobs": "workspace:*",
+    "@onrepeat/lexicons": "workspace:*",
+    "pg-boss": "^12.18.0"
+  },
+  "devDependencies": { "tsx": "^4.19.0", "typescript": "^5.5.0" }
+}
