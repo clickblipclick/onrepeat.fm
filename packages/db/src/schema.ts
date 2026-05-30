@@ -52,6 +52,13 @@ export interface LikesTable {
   indexed_at: Generated<Timestamp>
 }
 
+export interface SubscriptionStateTable {
+  service: string
+  // bigint: comes back as a string from pg, accepts number | string on write
+  cursor: ColumnType<string, number | string, number | string>
+  updated_at: Generated<Timestamp>
+}
+
 export interface OauthStateTable {
   key: string
   state: string // serialized NodeSavedState (JSON)
@@ -69,6 +76,7 @@ export interface Database {
   tracks: TracksTable
   jams: JamsTable
   likes: LikesTable
+  subscription_state: SubscriptionStateTable
   oauth_state: OauthStateTable
   oauth_session: OauthSessionTable
 }
