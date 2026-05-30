@@ -4,6 +4,7 @@ import type { DB } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
 import { toIngestEvent } from './events'
 import { handleIngestEvent } from './indexer'
+import { withRetry } from './retry'
 import { loadCursor, saveCursor, makeThrottledCursorWriter } from './cursor'
 import { defaultHooks, type IngesterHooks } from './hooks'
 
@@ -52,7 +53,16 @@ export async function createIngester(opts: CreateIngesterOpts): Promise<Ingester
     excludeSync: true,
     handleEvent: async (evt: Event) => {
       const ingestEvt = toIngestEvent(evt)
-      if (ingestEvt) await handleIngestEvent(db, ingestEvt, hooks)
+      if (!ingestEvt) return
+      // @atproto/sync swallows handler errors and advances the cursor regardless, so a
+      // transient DB failure would silently skip this event. Our writes are idempotent,
+      // so retry a few times first. If all attempts fail (sustained outage) the event is
+      // skipped and logged via onError — recover by re-running from an earlier cursor.
+      await withRetry(() => handleIngestEvent(db, ingestEvt, hooks), {
+        attempts: 5,
+        baseDelayMs: 100,
+        label: `${ingestEvt.action} ${ingestEvt.uri}`,
+      })
     },
     onError: (err: Error) => console.error('[ingester] firehose error', err),
   })
