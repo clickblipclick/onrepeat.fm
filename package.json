@@ -9,7 +9,8 @@
     "test:int": "vitest run --config vitest.int.config.ts",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @onrepeat/db run migrate"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
