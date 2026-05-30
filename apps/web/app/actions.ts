@@ -4,9 +4,16 @@ import { getSessionAgent } from '../lib/session'
 import { postJam } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
 
+export interface PostJamState {
+  ok: boolean
+  error?: string
+  uri?: string
+}
+
 export async function postJamAction(
+  _prevState: PostJamState | null,
   formData: FormData,
-): Promise<{ ok: boolean; error?: string; uri?: string }> {
+): Promise<PostJamState> {
   const agent = await getSessionAgent()
   if (!agent) return { ok: false, error: 'not logged in' }
 

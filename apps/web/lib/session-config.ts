@@ -2,6 +2,11 @@ import type { SessionOptions } from 'iron-session'
 
 export const SESSION_COOKIE_NAME = 'onrepeat_session'
 
+// Canonical app origin for internal redirects. Pinned to PUBLIC_URL (127.0.0.1 in
+// dev) because Next's req.url reports `localhost` in dev regardless of the real
+// host — redirecting there would land on a different cookie origin (logged out).
+export const APP_URL = process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'
+
 /** Only the DID is stored in the (encrypted) cookie. Tokens stay in the server-side store. */
 export interface SessionData {
   did?: string

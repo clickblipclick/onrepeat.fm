@@ -1,5 +1,5 @@
 import { getSession } from '../lib/session'
-import { postJamAction } from './actions'
+import { PostJamForm } from './post-jam-form'
 
 export default async function Home() {
   const session = await getSession()
@@ -18,13 +18,7 @@ export default async function Home() {
     <main>
       <h1>onrepeat.fm</h1>
       <p>Signed in as {session.did}</p>
-      <form action={async (fd) => { await postJamAction(fd) }}>
-        <input name="sourceUrl" placeholder="https://open.spotify.com/track/..." />
-        <input name="title" placeholder="Song title" />
-        <input name="artist" placeholder="Artist" />
-        <input name="caption" placeholder="why this song (optional)" />
-        <button type="submit">Set as my jam</button>
-      </form>
+      <PostJamForm />
       <form action="/logout" method="post">
         <button type="submit">Sign out</button>
       </form>
