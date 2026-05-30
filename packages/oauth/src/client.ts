@@ -5,7 +5,10 @@ import {
 } from '@atproto/oauth-client-node'
 import type { JoseKey } from '@atproto/jwk-jose'
 
-export const DEFAULT_SCOPE = 'atproto transition:generic'
+// Least-privilege granular scope: identity + write access to ONLY our two
+// record collections (omitting an action qualifier grants create/update/delete
+// on just those collections). No blob/read/preferences access is requested.
+export const DEFAULT_SCOPE = 'atproto repo:fm.onrepeat.jam repo:fm.onrepeat.like'
 
 export interface CreateOAuthClientOptions {
   mode: 'dev' | 'prod'

@@ -39,6 +39,19 @@ describe('createOAuthClient', () => {
     )
   })
 
+  it('requests least-privilege granular scopes (only our collections, not transition:generic)', () => {
+    const client = createOAuthClient({
+      mode: 'dev',
+      publicUrl: 'http://127.0.0.1:3000',
+      stateStore,
+      sessionStore,
+    })
+    const scope = client.clientMetadata.scope ?? ''
+    expect(scope).toContain('repo:fm.onrepeat.jam')
+    expect(scope).toContain('repo:fm.onrepeat.like')
+    expect(scope).not.toContain('transition:generic')
+  })
+
   it('prod mode builds a hosted client_id and requires a keyset', async () => {
     const keyset = [await JoseKey.generate(['ES256'], 'key1')]
     const client = createOAuthClient({
