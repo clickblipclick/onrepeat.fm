@@ -1,0 +1,16 @@
+{
+  "name": "@onrepeat/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@onrepeat/core": "workspace:*",
+    "@onrepeat/db": "workspace:*",
+    "@onrepeat/lexicons": "workspace:*",
+    "pg-boss": "^12.18.0"
+  },
+  "devDependencies": { "typescript": "^5.5.0" }
+}
