@@ -3,7 +3,15 @@ import type { DB } from '@onrepeat/db'
 import { JAM_NSID, type JamRecord } from '@onrepeat/lexicons'
 import { enqueueResolveForJam } from '@onrepeat/jobs'
 
-/** Reconstruct a JamRecord from a `jams` row's denormalized columns (enough for the producer). */
+/**
+ * Reconstruct a JamRecord from a `jams` row's denormalized columns (enough for the producer).
+ * NOTE: the `jams` table doesn't persist ISRC, so backfilled jams always get the
+ * `ta:<artist>|<title>` track identity even if the original record carried an ISRC. A track
+ * jammed live (isrc: identity) and the same track backfilled (ta: identity) would land on
+ * separate `tracks` rows. This is out of practical reach today (backfill only touches
+ * `track_id IS NULL` jams, and the live producer links `track_id` synchronously at enqueue),
+ * and is the same family as the documented "no Odesli-id merge" MVP limitation.
+ */
 function recordFromRow(row: {
   source_url: string
   source_provider: string | null

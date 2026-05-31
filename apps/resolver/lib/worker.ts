@@ -10,6 +10,9 @@ type ResolveJobMeta = JobWithMetadata<ResolveJob>
  *  the final attempt, in which case it records `failed` so the track never stays pending. */
 export function makeResolveHandler(db: DB, odesli: OdesliClient) {
   return async function handler(jobs: ResolveJobMeta[]): Promise<void> {
+    // Assumes batchSize 1 (pg-boss default; startResolver doesn't override it): a throw on a
+    // retry-remaining error aborts the rest of the batch. Fine at batchSize 1; if batch size
+    // is ever raised, restructure so one job's retry doesn't skip the others.
     for (const job of jobs) {
       try {
         await resolveTrack(db, odesli, job.data)
