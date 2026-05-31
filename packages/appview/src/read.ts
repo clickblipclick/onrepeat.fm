@@ -182,6 +182,31 @@ export async function getActorJams(db: DB, params: PageParams & { did: string })
   return { jams, cursor: buildCursor(cursorItems, hasMore) }
 }
 
+export interface JamDetail {
+  jam: JamView
+  likerDids: string[]
+  reJams: JamView[]
+}
+
+/** A single jam + its likers (DIDs) + the re-jams that adopted it, newest-first. Null if not found. */
+export async function getJam(db: DB, params: { uri: string; viewerDid?: string }): Promise<JamDetail | null> {
+  const [jam] = await loadJamsByUris(db, [params.uri], params.viewerDid)
+  if (!jam) return null
+  // Separate from loadLikeInfo (which returns only count + likedByYou aggregates): we need the
+  // full liker DID list for the detail view to hydrate into profiles. MVP: unbounded — for a
+  // viral jam this could be thousands; a future route handler should cap/paginate before sending.
+  const likers = await db.selectFrom('likes').select('author_did').where('subject_uri', '=', params.uri).execute()
+  const reJamRows = await db
+    .selectFrom('jams')
+    .select('uri')
+    .where('via_uri', '=', params.uri)
+    .orderBy('created_at', 'desc')
+    .orderBy('uri', 'desc')
+    .execute()
+  const reJams = await loadJamsByUris(db, reJamRows.map((r) => r.uri), params.viewerDid)
+  return { jam, likerDids: likers.map((l) => l.author_did), reJams }
+}
+
 /**
  * Follow-feed: the current jam (latest <7 days) of each followed DID, newest-first.
  * Fetches one current jam per author via DISTINCT ON, then orders/paginates in memory
