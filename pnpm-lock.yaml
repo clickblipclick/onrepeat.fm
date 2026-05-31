@@ -117,6 +117,22 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/appview:
+    dependencies:
+      '@atproto/api':
+        specifier: ^0.20.7
+        version: 0.20.7
+      '@onrepeat/db':
+        specifier: workspace:*
+        version: link:../db
+      kysely:
+        specifier: ^0.27.0
+        version: 0.27.6
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/core:
     devDependencies:
       typescript:

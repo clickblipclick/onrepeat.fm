@@ -1,0 +1,15 @@
+{
+  "name": "@onrepeat/appview",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@atproto/api": "^0.20.7",
+    "@onrepeat/db": "workspace:*",
+    "kysely": "^0.27.0"
+  },
+  "devDependencies": { "typescript": "^5.5.0" }
+}
