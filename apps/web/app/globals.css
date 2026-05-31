@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+
+/* Map Tailwind color/font utilities to CSS variables so a `data-theme` swap
+   re-themes the whole app. `inline` keeps utilities referencing the var. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  /* --font-jetbrains-mono is injected by next/font: layout.tsx must call JetBrains_Mono({ variable: '--font-jetbrains-mono' }) and apply it to <html>, else the fallback stack fires silently. */
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Default theme: Clay */
+:root,
+[data-theme='clay'] {
+  --bg: #f7f2ec;
+  --surface: #fcf8f2;
+  --ink: #1a140f;
+  --muted: #6f6253;
+  --border: #e7ddce;
+  --accent: #c5532b;
+  --on-accent: #ffffff;
+}
+[data-theme='court-green'] {
+  --bg: #f6f4ec;
+  --surface: #fbfaf4;
+  --ink: #15110d;
+  --muted: #6e665a;
+  --border: #e3dece;
+  --accent: #2f7d4f;
+  --on-accent: #ffffff;
+}
+[data-theme='ink-cobalt'] {
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --ink: #14161a;
+  --muted: #5e646e;
+  --border: #dfe1e4;
+  --accent: #2b5bd7;
+  --on-accent: #ffffff;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  /* faint dot pattern on the page (non-text surface) */
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px);
+  background-size: 15px 15px;
+}
+
+/* subtle line-grid for non-text surfaces (card author band, placeholder art) */
+.surface-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
+  background-size: 11px 11px;
+}
+.accent-grid {
+  background-color: var(--accent);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--on-accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--on-accent) 10%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
