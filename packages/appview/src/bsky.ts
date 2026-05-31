@@ -20,6 +20,9 @@ export interface BskyAgentLike {
         getProfiles(params: { actors: string[] }): Promise<{
           data: { profiles: { did: string; handle: string; displayName?: string; avatar?: string }[] }
         }>
+        getProfile(params: { actor: string }): Promise<{
+          data: { did: string; handle: string; displayName?: string; avatar?: string }
+        }>
       }
     }
   }
@@ -29,6 +32,8 @@ export interface BskyClient {
   getFollows(viewerDid: string): Promise<string[]>
   /** Returns a map of did -> profile (or null when bsky has no profile for that did). */
   getProfiles(dids: string[]): Promise<Map<string, ActorProfile | null>>
+  /** Resolve a single actor (handle or DID) to a profile, or null if not found. */
+  getProfile(actor: string): Promise<ActorProfile | null>
 }
 
 export interface BskyClientOptions {
@@ -48,6 +53,9 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
 
   const followsCache = new Map<string, { at: number; dids: string[] }>()
   const profileCache = new Map<string, { at: number; profile: ActorProfile | null }>()
+  // Separate from profileCache: getProfile keys by the raw actor string (handle or DID);
+  // getProfiles keys by resolved DID. Cross-population is intentionally deferred (MVP).
+  const actorCache = new Map<string, { at: number; profile: ActorProfile | null }>()
 
   return {
     async getFollows(viewerDid) {
@@ -90,6 +98,28 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
         }
       }
       return result
+    },
+
+    async getProfile(actor) {
+      const hit = actorCache.get(actor)
+      if (hit && now() - hit.at < profileTtl) return hit.profile
+      try {
+        const res = await agent.app.bsky.actor.getProfile({ actor })
+        const p = res.data
+        const profile: ActorProfile = { did: p.did, handle: p.handle, displayName: p.displayName, avatar: p.avatar }
+        actorCache.set(actor, { at: now(), profile })
+        return profile
+      } catch (err) {
+        // Negative-cache only genuine client errors (unknown/invalid actor → 4xx);
+        // let transient 5xx/network errors propagate uncached so the next load retries
+        // (don't pin a 404 for the whole TTL after an upstream blip).
+        const status = (err as { status?: number } | undefined)?.status
+        if (typeof status === 'number' && status >= 400 && status < 500) {
+          actorCache.set(actor, { at: now(), profile: null })
+          return null
+        }
+        throw err
+      }
     },
   }
 }
