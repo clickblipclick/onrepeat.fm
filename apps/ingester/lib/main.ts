@@ -1,4 +1,6 @@
 import { createDb } from '@onrepeat/db'
+import type { JamRecord } from '@onrepeat/lexicons'
+import { createBoss, createResolveQueue, enqueueResolveForJam } from '@onrepeat/jobs'
 import { createIngester } from './firehose'
 
 function requireEnv(name: string): string {
@@ -12,17 +14,27 @@ async function main(): Promise<void> {
   const relay = process.env.RELAY_URL ?? 'wss://bsky.network'
 
   const db = createDb(databaseUrl)
-  const ingester = await createIngester({ db, relay })
+  const boss = createBoss(databaseUrl)
+  await boss.start()
+  await createResolveQueue(boss)
+
+  const ingester = await createIngester({
+    db,
+    relay,
+    hooks: {
+      onJamIndexed: (evt) =>
+        enqueueResolveForJam(boss, db, { uri: evt.uri, record: evt.record as JamRecord }),
+    },
+  })
 
   let shuttingDown = false
   const shutdown = async (signal: string) => {
     if (shuttingDown) return
     shuttingDown = true
     console.log(`[ingester] received ${signal}, shutting down`)
-    // Guarantee the process exits even if cleanup throws — a hung shutdown is worse
-    // than a noisy one for a service under an orchestrator.
     try {
       await ingester.stop()
+      await boss.stop({ graceful: true })
       await db.destroy()
     } catch (err) {
       console.error('[ingester] error during shutdown', err)

@@ -29,6 +29,9 @@ importers:
       '@onrepeat/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@onrepeat/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
       '@onrepeat/lexicons':
         specifier: workspace:*
         version: link:../../packages/lexicons
