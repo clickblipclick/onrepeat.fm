@@ -1,5 +1,6 @@
 import type { DB } from '@onrepeat/db'
 import type { ProviderRefs, ResolutionStatus } from '@onrepeat/db'
+import { sql } from 'kysely'
 import { type Cursor, decodeCursor, encodeCursor } from './cursor'
 
 export interface JamView {
@@ -148,4 +149,69 @@ export async function getLatest(db: DB, params: PageParams = {}): Promise<Page> 
     uri: r.uri,
   }))
   return { jams, cursor: buildCursor(cursorItems, hasMore) }
+}
+
+/** A profile's jams, newest-first (jams[0] is the current jam if <7 days old). */
+export async function getActorJams(db: DB, params: PageParams & { did: string }): Promise<Page> {
+  const limit = clampLimit(params.limit)
+  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
+  let q = db
+    .selectFrom('jams')
+    .select(['uri', 'created_at'])
+    .where('author_did', '=', params.did)
+    .orderBy('created_at', 'desc')
+    .orderBy('uri', 'desc')
+    .limit(limit + 1)
+  if (cur) {
+    const cursorDate = new Date(cur.createdAt)
+    q = q.where((eb) =>
+      eb.or([
+        eb('created_at', '<', cursorDate),
+        eb.and([eb('created_at', '=', cursorDate), eb('uri', '<', cur.uri)]),
+      ]),
+    )
+  }
+  const idRows = await q.execute()
+  const hasMore = idRows.length > limit
+  const pageRows = idRows.slice(0, limit)
+  const jams = await loadJamsByUris(db, pageRows.map((r) => r.uri), params.viewerDid)
+  const cursorItems = pageRows.map((r) => ({
+    createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
+    uri: r.uri,
+  }))
+  return { jams, cursor: buildCursor(cursorItems, hasMore) }
+}
+
+/**
+ * Follow-feed: the current jam (latest <7 days) of each followed DID, newest-first.
+ * Fetches one current jam per author via DISTINCT ON, then orders/paginates in memory
+ * (bounded by the follow count). `followedDids` is supplied by the caller (from bsky).
+ */
+export async function getFollowFeed(db: DB, params: PageParams & { followedDids: string[] }): Promise<Page> {
+  const limit = clampLimit(params.limit)
+  if (params.followedDids.length === 0) return { jams: [] }
+  // MVP: DISTINCT ON yields one current jam per followed author (≤ ~10k follows typical),
+  // sorted + paginated in memory. If follows scale to 50k+, push ORDER BY + LIMIT into SQL.
+  const currentRows = await db
+    .selectFrom('jams')
+    .distinctOn('author_did')
+    .select(['uri', 'created_at'])
+    .where('author_did', 'in', params.followedDids)
+    .where('created_at', '>', sql<Date>`now() - interval '7 days'`)
+    .orderBy('author_did')
+    .orderBy('created_at', 'desc')
+    .orderBy('uri', 'desc')
+    .execute()
+  // newest-first across authors, then cursor + limit (in memory; set is <= #follows)
+  const sorted = currentRows
+    .map((r) => ({ uri: r.uri, createdAt: new Date(r.created_at as unknown as string | Date).toISOString() }))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.uri < b.uri ? 1 : -1))
+  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
+  const afterCursor = cur
+    ? sorted.filter((r) => r.createdAt < cur.createdAt || (r.createdAt === cur.createdAt && r.uri < cur.uri))
+    : sorted
+  const pageIds = afterCursor.slice(0, limit)
+  const hasMore = afterCursor.length > limit
+  const jams = await loadJamsByUris(db, pageIds.map((r) => r.uri), params.viewerDid)
+  return { jams, cursor: buildCursor(pageIds, hasMore) }
 }
