@@ -35,6 +35,9 @@ export async function postJamAction(
       artist,
       caption: caption || undefined,
     })
+    // A new jam becomes the user's current jam — refresh the feed and profile views.
+    revalidatePath('/')
+    revalidatePath('/profile/[handle]', 'page')
     return { ok: true, uri: res.uri }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
