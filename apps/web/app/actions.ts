@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getSessionAgent } from '../lib/session'
-import { postJam, likeJam, unlikeJam, reJam } from '@onrepeat/repo'
+import { postJam, likeJam, unlikeJam, reJam, type PostJamResult } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
 import { db } from '../lib/db'
 import { indexJam } from '@onrepeat/db'
@@ -14,7 +14,7 @@ import { indexJam } from '@onrepeat/db'
  */
 async function afterJamWrite(
   label: string,
-  args: { uri: string; cid: string; did: string; record: Awaited<ReturnType<typeof postJam>>['record'] },
+  args: { uri: string; cid: string; did: string; record: PostJamResult['record'] },
 ): Promise<void> {
   try {
     await indexJam(db, args)

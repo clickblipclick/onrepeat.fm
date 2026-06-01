@@ -3,7 +3,12 @@ import type { JamRecord, LikeRecord } from '@onrepeat/lexicons'
 import type { JamsTable, LikesTable } from './schema'
 import type { DB } from './client'
 
-/** Build a jams insert row. track_id stays null until the resolver links it. */
+/**
+ * Build a `jams` insert row from a JamRecord. `track_id` starts null (the resolver links
+ * it later). The record's `artworkUrl` and `isrc` are intentionally NOT stored here — they
+ * are resolver-owned and surfaced via the joined `tracks` table, so the jams row never
+ * carries them.
+ */
 export function jamRow(
   uri: string,
   cid: string,
