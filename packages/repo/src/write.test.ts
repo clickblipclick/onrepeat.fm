@@ -33,7 +33,7 @@ const baseJam = {
 }
 
 describe('postJam', () => {
-  it('creates a jam record in the user repo and returns uri+cid', async () => {
+  it('creates a jam record in the user repo and returns uri+cid+record', async () => {
     const { agent, calls } = fakeAgent()
     const res = await postJam(agent, baseJam)
     expect(calls).toHaveLength(1)
@@ -43,6 +43,9 @@ describe('postJam', () => {
     expect(calls[0]!.params.record.$type).toBe(JAM_NSID)
     expect(res.uri).toContain(JAM_NSID)
     expect(res.cid).toBe('cid1')
+    expect(res.record.title).toBe(baseJam.title)
+    expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
+    expect(typeof res.record.createdAt).toBe('string')
   })
 })
 
@@ -65,14 +68,19 @@ describe('likeJam / unlikeJam', () => {
 })
 
 describe('reJam', () => {
-  it('posts a new jam carrying via attribution from the source', async () => {
+  it('posts a new jam carrying via attribution from the source and returns record', async () => {
     const { agent, calls } = fakeAgent()
-    await reJam(agent, {
+    const res = await reJam(agent, {
       sourceJam: { uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' },
       track: baseJam,
     })
     const rec = calls[0]!.params.record
     expect(rec.$type).toBe(JAM_NSID)
     expect(rec.via).toEqual({ uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' })
+    expect(res.uri).toContain(JAM_NSID)
+    expect(res.cid).toBe('cid1')
+    expect(res.record.title).toBe(baseJam.title)
+    expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
+    expect(res.record.via).toEqual({ uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' })
   })
 })

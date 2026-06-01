@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import { JAM_NSID, LIKE_NSID, validateRecord } from '@onrepeat/lexicons'
-import { postJam, likeJam, unlikeJam } from './write'
+import { postJam, likeJam, unlikeJam, reJam } from './write'
 
 let network: TestNetworkNoAppView
 let agent: any
@@ -40,6 +40,9 @@ describe('write ops against a real PDS', () => {
   it('postJam writes a jam the PDS accepts and reads back valid', async () => {
     const res = await postJam(agent, baseJam)
     expect(res.uri).toContain(JAM_NSID)
+    expect(res.record.title).toBe(baseJam.title)
+    expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
+    expect(res.record.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     const rkey = res.uri.split('/').pop()!
     const got = await agent.com.atproto.repo.getRecord({ repo: did, collection: JAM_NSID, rkey })
     expect(validateRecord(JAM_NSID, got.data.value).success).toBe(true)
@@ -59,5 +62,28 @@ describe('write ops against a real PDS', () => {
       .getRecord({ repo: did, collection: LIKE_NSID, rkey: likeRkey })
       .catch(() => null)
     expect(after).toBeNull()
+  })
+
+  it('reJam writes a jam with via attribution the PDS accepts and reads back with via', async () => {
+    const sourceUri = 'at://did:plc:src/fm.onrepeat.jam/9'
+    const sourceDid = 'did:plc:src'
+    const res = await reJam(agent, {
+      sourceJam: { uri: sourceUri, did: sourceDid },
+      track: {
+        sourceUrl: baseJam.sourceUrl,
+        sourceProvider: baseJam.sourceProvider,
+        title: baseJam.title,
+        artist: baseJam.artist,
+      },
+    })
+    expect(res.uri).toContain(JAM_NSID)
+    expect(res.cid).toBeTruthy()
+    expect(res.record.title).toBe(baseJam.title)
+    expect(res.record.via).toEqual({ uri: sourceUri, did: sourceDid })
+
+    const rkey = res.uri.split('/').pop()!
+    const got = await agent.com.atproto.repo.getRecord({ repo: did, collection: JAM_NSID, rkey })
+    expect(validateRecord(JAM_NSID, got.data.value).success).toBe(true)
+    expect((got.data.value as any).via).toEqual({ uri: sourceUri, did: sourceDid })
   })
 })
