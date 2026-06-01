@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
-import { jamRow, likeRow } from './record-map'
+import { jamRow, likeRow } from './index-write'
 
 describe('jamRow', () => {
   it('maps a jam record to a row with track_id null', () => {

@@ -1,4 +1,5 @@
 import type { DB } from '@onrepeat/db'
+import { indexJam, likeRow } from '@onrepeat/db'
 import {
   validateRecord,
   JAM_NSID,
@@ -6,7 +7,6 @@ import {
   type LikeRecord,
 } from '@onrepeat/lexicons'
 import type { IngestEvent } from './events'
-import { jamRow, likeRow } from './record-map'
 import { defaultHooks, type IngesterHooks } from './hooks'
 
 /**
@@ -48,24 +48,7 @@ export async function handleIngestEvent(
       console.warn(`[ingester] skipping jam ${evt.uri} with missing cid`)
       return
     }
-    const row = jamRow(evt.uri, evt.cid, evt.did, evt.record as JamRecord)
-    await db
-      .insertInto('jams')
-      .values(row)
-      .onConflict((oc) =>
-        oc.column('uri').doUpdateSet({
-          cid: row.cid,
-          source_url: row.source_url,
-          source_provider: row.source_provider,
-          raw_title: row.raw_title,
-          raw_artist: row.raw_artist,
-          caption: row.caption,
-          via_uri: row.via_uri,
-          via_did: row.via_did,
-          created_at: row.created_at,
-        }),
-      )
-      .execute()
+    await indexJam(db, { uri: evt.uri, cid: evt.cid, did: evt.did, record: evt.record as JamRecord })
     await hooks.onJamIndexed(evt)
   } else {
     const row = likeRow(evt.uri, evt.did, evt.record as LikeRecord)

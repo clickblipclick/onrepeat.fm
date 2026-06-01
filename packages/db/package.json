@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@onrepeat/lexicons": "workspace:*",
     "kysely": "^0.27.0",
     "pg": "^8.12.0"
   },
