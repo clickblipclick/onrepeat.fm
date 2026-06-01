@@ -32,7 +32,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
 
       <h2 className="mt-6 mb-2 text-xs uppercase text-muted">Current jam</h2>
       {current ? (
-        <JamCard jam={current} />
+        <JamCard jam={current} loggedIn={!!session.did} />
       ) : (
         <div className="rounded-md border border-dashed border-border p-6 text-center text-muted">hasn&apos;t jammed lately</div>
       )}

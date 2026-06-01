@@ -3,6 +3,8 @@ import type { HydratedJamView } from '@onrepeat/appview'
 import { Avatar, authorName } from './avatar'
 import { RelativeTime } from './relative-time'
 import { Player } from './player'
+import { LikeButton } from './like-button'
+import { ReJamButton } from './rejam-button'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''
@@ -16,10 +18,12 @@ export function JamCard({
   jam,
   player,
   actions,
+  loggedIn = false,
 }: {
   jam: HydratedJamView
   player?: React.ReactNode
   actions?: React.ReactNode
+  loggedIn?: boolean
 }) {
   const jamHref = `/jam/${encodeURIComponent(jam.authorDid)}/${rkeyOf(jam.uri)}`
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
@@ -53,8 +57,20 @@ export function JamCard({
         <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
           {actions ?? (
             <>
-              <span className={jam.likedByYou ? 'text-accent' : undefined}>♥ {jam.likeCount}</span>
-              <Link href={jamHref} className="hover:text-accent">re-jam</Link>
+              <LikeButton jamUri={jam.uri} jamCid={jam.cid} initialCount={jam.likeCount} initialLiked={jam.likedByYou} loggedIn={loggedIn} />
+              <ReJamButton
+                loggedIn={loggedIn}
+                jam={{
+                  uri: jam.uri,
+                  did: jam.authorDid,
+                  sourceUrl: jam.sourceUrl,
+                  sourceProvider: jam.sourceProvider,
+                  title: jam.title,
+                  artist: jam.artist,
+                  artworkUrl: jam.artworkUrl,
+                  authorName: authorName(jam.author),
+                }}
+              />
             </>
           )}
         </div>

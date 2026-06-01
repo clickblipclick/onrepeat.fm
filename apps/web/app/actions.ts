@@ -1,8 +1,10 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { getSessionAgent } from '../lib/session'
-import { postJam } from '@onrepeat/repo'
+import { postJam, likeJam, unlikeJam, reJam } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
+import { db } from '../lib/db'
 
 export interface PostJamState {
   ok: boolean
@@ -34,6 +36,85 @@ export async function postJamAction(
       caption: caption || undefined,
     })
     return { ok: true, uri: res.uri }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+function rkeyFromUri(uri: string): string {
+  return uri.split('/').pop() ?? ''
+}
+
+export interface ActionResult {
+  ok: boolean
+  error?: string
+  /** the created like's at-uri (so the client can unlike without a DB round-trip) */
+  likeUri?: string
+}
+
+export async function likeJamAction(subject: { uri: string; cid: string }): Promise<ActionResult> {
+  const agent = await getSessionAgent()
+  if (!agent) return { ok: false, error: 'not logged in' }
+  try {
+    const res = await likeJam(agent, subject)
+    return { ok: true, likeUri: res.uri }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export async function unlikeJamAction(subjectUri: string, likeUri?: string): Promise<ActionResult> {
+  const agent = await getSessionAgent()
+  if (!agent) return { ok: false, error: 'not logged in' }
+  try {
+    // Prefer the like-uri the client kept from this session; otherwise look up
+    // the viewer's like on this subject in the index.
+    let uri = likeUri
+    if (!uri) {
+      const row = await db
+        .selectFrom('likes')
+        .select('uri')
+        .where('subject_uri', '=', subjectUri)
+        .where('author_did', '=', agent.assertDid)
+        .executeTakeFirst()
+      uri = row?.uri
+    }
+    if (!uri) return { ok: false, error: 'like-not-found' }
+    await unlikeJam(agent, rkeyFromUri(uri))
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export interface ReJamArgs {
+  uri: string
+  did: string
+  sourceUrl: string
+  sourceProvider: string | null
+  title: string
+  artist: string
+  artworkUrl: string | null
+}
+
+export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
+  const agent = await getSessionAgent()
+  if (!agent) return { ok: false, error: 'not logged in' }
+  try {
+    await reJam(agent, {
+      sourceJam: { uri: jam.uri, did: jam.did },
+      track: {
+        sourceUrl: jam.sourceUrl,
+        sourceProvider: jam.sourceProvider ?? 'unknown',
+        title: jam.title,
+        artist: jam.artist,
+        artworkUrl: jam.artworkUrl ?? undefined,
+      },
+    })
+    // A re-jam becomes the user's current jam — refresh the feed and profile views.
+    revalidatePath('/')
+    revalidatePath('/profile/[handle]', 'page')
+    return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
   }

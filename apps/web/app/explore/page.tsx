@@ -18,6 +18,7 @@ export default async function ExplorePage() {
         endpoint="/api/latest"
         itemsKey="feed"
         empty={<>No jams yet. <Link href="/post" className="text-accent">Set yours.</Link></>}
+        loggedIn={!!session.did}
       />
     </>
   )

@@ -8,6 +8,8 @@ import { Player } from '../../../_components/player'
 import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
 import { isCurrentJam } from '../../../../lib/format'
+import { LikeButton } from '../../../_components/like-button'
+import { ReJamButton } from '../../../_components/rejam-button'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -52,6 +54,14 @@ export default async function JamPage({ params }: { params: Promise<{ did: strin
         <div className="font-bold">{jam.title}</div>
         <div className="text-sm text-muted">{jam.artist}</div>
         {jam.caption && <p className="mt-2 text-sm">{jam.caption}</p>}
+      </div>
+
+      <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm text-muted">
+        <LikeButton jamUri={jam.uri} jamCid={jam.cid} initialCount={jam.likeCount} initialLiked={jam.likedByYou} loggedIn={!!session.did} />
+        <ReJamButton
+          loggedIn={!!session.did}
+          jam={{ uri: jam.uri, did: jam.authorDid, sourceUrl: jam.sourceUrl, sourceProvider: jam.sourceProvider, title: jam.title, artist: jam.artist, artworkUrl: jam.artworkUrl, authorName: authorName(jam.author) }}
+        />
       </div>
 
       {detail.likerDids.length > 0 && (

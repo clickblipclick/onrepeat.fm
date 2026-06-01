@@ -30,7 +30,7 @@ export default async function Home() {
             <button type="submit" className="rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</button>
           </form>
         </div>
-        <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} />
+        <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} loggedIn={false} />
       </>
     )
   }
@@ -49,7 +49,7 @@ export default async function Home() {
             Nobody you follow has a current jam. <Link href="/explore" className="text-accent">Explore</Link> what&apos;s playing.
           </EmptyState>
         ) : (
-          <FeedList jams={jams} cursor={page.cursor} endpoint="/api/feed" itemsKey="feed" empty={null} />
+          <FeedList jams={jams} cursor={page.cursor} endpoint="/api/feed" itemsKey="feed" empty={null} loggedIn={true} />
         )}
       </>
     )

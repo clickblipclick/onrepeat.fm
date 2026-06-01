@@ -9,10 +9,12 @@ export function LoadMore({
   endpoint,
   itemsKey,
   initialCursor,
+  loggedIn,
 }: {
   endpoint: string
   itemsKey: 'feed' | 'jams'
   initialCursor?: string
+  loggedIn: boolean
 }) {
   const [items, setItems] = useState<HydratedJamView[]>([])
   const [cursor, setCursor] = useState<string | undefined>(initialCursor)
@@ -41,7 +43,7 @@ export function LoadMore({
   return (
     <>
       {items.map((jam) => (
-        <JamCard key={jam.uri} jam={jam} />
+        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} />
       ))}
       {cursor && (
         <button type="button" onClick={more} disabled={loading} className="w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent">
