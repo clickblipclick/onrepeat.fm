@@ -37,6 +37,7 @@ export interface JamsTable {
   source_provider: string | null
   raw_title: string | null
   raw_artist: string | null
+  raw_artwork_url: string | null
   caption: string | null
   via_uri: string | null
   via_did: string | null

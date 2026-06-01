@@ -43,6 +43,11 @@ describe('jamRow', () => {
     expect(row.via_did).toBeNull()
   })
 
+  it('maps artworkUrl to raw_artwork_url (null when absent)', () => {
+    expect(jamRow('at://x/1', 'c', 'did:plc:a', { $type: 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', artworkUrl: 'art.jpg', createdAt: '2026-06-01T00:00:00.000Z' }).raw_artwork_url).toBe('art.jpg')
+    expect(jamRow('at://x/2', 'c', 'did:plc:a', { $type: 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', createdAt: '2026-06-01T00:00:00.000Z' }).raw_artwork_url).toBeNull()
+  })
+
   it('maps re-jam via attribution when present', () => {
     const row = jamRow('at://did:plc:x/fm.onrepeat.jam/2', 'bafy', 'did:plc:x', {
       $type: JAM_NSID,

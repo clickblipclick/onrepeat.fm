@@ -59,6 +59,7 @@ describe('indexJam', () => {
     expect(row?.caption).toBe(baseRecord.caption)
     expect(row?.via_uri).toBeNull()
     expect(row?.via_did).toBeNull()
+    expect(row?.raw_artwork_url).toBeNull()
   })
 
   it('is idempotent and preserves track_id while updating other columns on re-index', async () => {
@@ -84,6 +85,21 @@ describe('indexJam', () => {
 
     expect(row?.caption).toBe('updated caption')
     expect(row?.track_id).toBe('t1')
+  })
+
+  it('persists and refreshes raw_artwork_url', async () => {
+    const uri = 'at://did:plc:a/fm.onrepeat.jam/art'
+    await db.deleteFrom('jams').where('uri', '=', uri).execute()
+    try {
+      await indexJam(db, { uri, cid: 'c1', did: 'did:plc:a', record: { $type: JAM_NSID as 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', artworkUrl: 'first.jpg', createdAt: '2026-06-01T00:00:00.000Z' } })
+      let row = await db.selectFrom('jams').select('raw_artwork_url').where('uri', '=', uri).executeTakeFirstOrThrow()
+      expect(row.raw_artwork_url).toBe('first.jpg')
+      await indexJam(db, { uri, cid: 'c2', did: 'did:plc:a', record: { $type: JAM_NSID as 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', artworkUrl: 'second.jpg', createdAt: '2026-06-01T00:00:00.000Z' } })
+      row = await db.selectFrom('jams').select('raw_artwork_url').where('uri', '=', uri).executeTakeFirstOrThrow()
+      expect(row.raw_artwork_url).toBe('second.jpg')
+    } finally {
+      await db.deleteFrom('jams').where('uri', '=', uri).execute()
+    }
   })
 
   it('keeps the original created_at on re-index (immutable)', async () => {

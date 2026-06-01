@@ -5,11 +5,11 @@ import { getLatest } from './read'
 const url = process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 const db = createDb(url)
 
-async function insertJam(o: { uri: string; did: string; createdAt: string; trackId?: string | null; title?: string; viaUri?: string; viaDid?: string }) {
+async function insertJam(o: { uri: string; did: string; createdAt: string; trackId?: string | null; title?: string; viaUri?: string; viaDid?: string; artworkUrl?: string }) {
   await db.insertInto('jams').values({
     uri: o.uri, cid: 'c', author_did: o.did, track_id: o.trackId ?? null,
     source_url: 'https://open.spotify.com/track/x', source_provider: 'spotify',
-    raw_title: o.title ?? 'Raw Title', raw_artist: 'Raw Artist', caption: null,
+    raw_title: o.title ?? 'Raw Title', raw_artist: 'Raw Artist', raw_artwork_url: o.artworkUrl ?? null, caption: null,
     via_uri: o.viaUri ?? null, via_did: o.viaDid ?? null, created_at: o.createdAt,
   }).execute()
 }
@@ -71,5 +71,19 @@ describe('getLatest', () => {
     expect(second.cursor).toBeUndefined()
     const allUris = [...first.jams, ...second.jams].map((j) => j.uri)
     expect(new Set(allUris).size).toBe(3) // no overlap
+  })
+
+  it('artworkUrl falls back to the jam raw_artwork_url, and a resolved track overrides it', async () => {
+    await db.insertInto('tracks').values({ id: 't1', title: 'C', artist: 'C', artwork_url: 'track-art.jpg', provider_refs: JSON.stringify({}), resolution_status: 'resolved' }).execute()
+    await insertJam({ uri: 'at://did:plc:a/fm.onrepeat.jam/r', did: 'did:plc:a', createdAt: '2026-06-01T00:00:00.000Z', trackId: 't1', artworkUrl: 'raw-art.jpg' })
+    await insertJam({ uri: 'at://did:plc:b/fm.onrepeat.jam/r', did: 'did:plc:b', createdAt: '2026-06-01T01:00:00.000Z', artworkUrl: 'raw-art.jpg' })
+    const page = await getLatest(db, { limit: 10 })
+    expect(page.jams.find((j) => j.uri.includes('did:plc:b'))!.artworkUrl).toBe('raw-art.jpg')
+    expect(page.jams.find((j) => j.uri.includes('did:plc:a'))!.artworkUrl).toBe('track-art.jpg')
+    // resolved track with null artwork_url → falls through to jam's raw_artwork_url
+    await db.insertInto('tracks').values({ id: 't2', title: 'C', artist: 'C', artwork_url: null, provider_refs: JSON.stringify({}), resolution_status: 'resolved' }).execute()
+    await insertJam({ uri: 'at://did:plc:c/fm.onrepeat.jam/r', did: 'did:plc:c', createdAt: '2026-06-01T02:00:00.000Z', trackId: 't2', artworkUrl: 'raw-art.jpg' })
+    const page2 = await getLatest(db, { limit: 10 })
+    expect(page2.jams.find((j) => j.uri.includes('did:plc:c'))!.artworkUrl).toBe('raw-art.jpg') // resolved but track art null → falls to raw
   })
 })

@@ -5,9 +5,8 @@ import type { DB } from './client'
 
 /**
  * Build a `jams` insert row from a JamRecord. `track_id` starts null (the resolver links
- * it later). The record's `artworkUrl` and `isrc` are intentionally NOT stored here — they
- * are resolver-owned and surfaced via the joined `tracks` table, so the jams row never
- * carries them.
+ * it later). `raw_artwork_url` is denormalized at post time as a fallback; the resolver's
+ * `tracks.artwork_url` overrides it once resolved. `isrc` is resolver-owned and not stored here.
  */
 export function jamRow(
   uri: string,
@@ -24,6 +23,7 @@ export function jamRow(
     source_provider: record.sourceProvider,
     raw_title: record.title,
     raw_artist: record.artist,
+    raw_artwork_url: record.artworkUrl ?? null,
     caption: record.caption ?? null,
     via_uri: record.via?.uri ?? null,
     via_did: record.via?.did ?? null,
@@ -64,6 +64,7 @@ export async function indexJam(
         source_provider: row.source_provider,
         raw_title: row.raw_title,
         raw_artist: row.raw_artist,
+        raw_artwork_url: row.raw_artwork_url,
         caption: row.caption,
         via_uri: row.via_uri,
         via_did: row.via_did,
