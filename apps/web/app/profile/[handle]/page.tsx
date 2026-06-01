@@ -45,7 +45,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
               <Link key={jam.uri} href={`/jam/${encodeURIComponent(jam.authorDid)}/${rkeyOf(jam.uri)}`} className="block aspect-square overflow-hidden rounded border border-border" title={`${jam.title} — ${jam.artist}`}>
                 {jam.artworkUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={jam.artworkUrl} alt={`${jam.title} by ${jam.artist}`} className="h-full w-full object-cover" />
+                  <img src={jam.artworkUrl} alt={`${jam.title} by ${jam.artist}`} loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <span className="accent-grid block h-full w-full" />
                 )}

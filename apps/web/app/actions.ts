@@ -37,6 +37,7 @@ export async function postJamAction(
     })
     // A new jam becomes the user's current jam — refresh the feed and profile views.
     revalidatePath('/')
+    revalidatePath('/explore')
     revalidatePath('/profile/[handle]', 'page')
     return { ok: true, uri: res.uri }
   } catch (err) {
@@ -116,6 +117,7 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
     })
     // A re-jam becomes the user's current jam — refresh the feed and profile views.
     revalidatePath('/')
+    revalidatePath('/explore')
     revalidatePath('/profile/[handle]', 'page')
     return { ok: true }
   } catch (err) {
