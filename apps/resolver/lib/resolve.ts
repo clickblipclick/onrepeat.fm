@@ -2,7 +2,7 @@ import type { Updateable } from 'kysely'
 import type { DB, TracksTable } from '@onrepeat/db'
 import { providerTier } from '@onrepeat/core'
 import type { ResolveJob } from '@onrepeat/jobs'
-import type { OdesliClient } from './odesli'
+import type { OdesliClient } from '@onrepeat/music'
 
 /** Resolve one job onto its tracks row. Idempotent (keyed by job.identity). */
 export async function resolveTrack(db: DB, odesli: OdesliClient, job: ResolveJob): Promise<void> {

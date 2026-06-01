@@ -1,7 +1,7 @@
 import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
 import type { DB } from '@onrepeat/db'
 import { RESOLVE_QUEUE, type ResolveJob } from '@onrepeat/jobs'
-import type { OdesliClient } from './odesli'
+import type { OdesliClient } from '@onrepeat/music'
 import { resolveTrack } from './resolve'
 
 type ResolveJobMeta = JobWithMetadata<ResolveJob>

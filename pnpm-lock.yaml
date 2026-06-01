@@ -63,6 +63,9 @@ importers:
       '@onrepeat/lexicons':
         specifier: workspace:*
         version: link:../../packages/lexicons
+      '@onrepeat/music':
+        specifier: workspace:*
+        version: link:../../packages/music
       kysely:
         specifier: ^0.27.0
         version: 0.27.6
@@ -197,6 +200,19 @@ importers:
       '@atproto/lexicon':
         specifier: ^0.4.0
         version: 0.4.14
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/music:
+    dependencies:
+      '@onrepeat/core':
+        specifier: workspace:*
+        version: link:../core
+      '@onrepeat/db':
+        specifier: workspace:*
+        version: link:../db
     devDependencies:
       typescript:
         specifier: ^5.5.0

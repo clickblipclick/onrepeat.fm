@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
 import type { ResolveJob } from '@onrepeat/jobs'
 import { resolveTrack } from './resolve'
-import type { OdesliClient } from './odesli'
+import type { OdesliClient } from '@onrepeat/music'
 
 const url = process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 const db = createDb(url)

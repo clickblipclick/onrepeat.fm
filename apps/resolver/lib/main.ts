@@ -1,6 +1,6 @@
 import { createDb } from '@onrepeat/db'
 import { createBoss, createResolveQueue } from '@onrepeat/jobs'
-import { createOdesliClient } from './odesli'
+import { createOdesliClient } from '@onrepeat/music'
 import { createRateLimiter } from './throttle'
 import { startResolver } from './worker'
 import { backfill } from './backfill'
