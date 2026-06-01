@@ -5,6 +5,26 @@ import { getSessionAgent } from '../lib/session'
 import { postJam, likeJam, unlikeJam, reJam } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
 import { db } from '../lib/db'
+import { indexJam } from '@onrepeat/db'
+
+/**
+ * After a jam write succeeds: index it into our Postgres immediately (read-your-writes,
+ * best-effort — the ingester backfills idempotently off the firehose if this fails) and
+ * refresh the views that show the user's current jam. `label` identifies the caller in logs.
+ */
+async function afterJamWrite(
+  label: string,
+  args: { uri: string; cid: string; did: string; record: Awaited<ReturnType<typeof postJam>>['record'] },
+): Promise<void> {
+  try {
+    await indexJam(db, args)
+  } catch (e) {
+    console.error(`[web] ${label}: write-through index failed (firehose will backfill)`, e)
+  }
+  revalidatePath('/')
+  revalidatePath('/explore')
+  revalidatePath('/profile/[handle]', 'page')
+}
 
 export interface PostJamState {
   ok: boolean
@@ -28,18 +48,15 @@ export async function postJamAction(
   }
 
   try {
-    const res = await postJam(agent, {
+    const { uri, cid, record } = await postJam(agent, {
       sourceUrl,
       sourceProvider: providerFromUrl(sourceUrl) ?? 'unknown',
       title,
       artist,
       caption: caption || undefined,
     })
-    // A new jam becomes the user's current jam — refresh the feed and profile views.
-    revalidatePath('/')
-    revalidatePath('/explore')
-    revalidatePath('/profile/[handle]', 'page')
-    return { ok: true, uri: res.uri }
+    await afterJamWrite('postJam', { uri, cid, did: agent.assertDid, record })
+    return { ok: true, uri }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
   }
@@ -105,7 +122,7 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
   const agent = await getSessionAgent()
   if (!agent) return { ok: false, error: 'not logged in' }
   try {
-    await reJam(agent, {
+    const { uri, cid, record } = await reJam(agent, {
       sourceJam: { uri: jam.uri, did: jam.did },
       track: {
         sourceUrl: jam.sourceUrl,
@@ -115,10 +132,7 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
         artworkUrl: jam.artworkUrl ?? undefined,
       },
     })
-    // A re-jam becomes the user's current jam — refresh the feed and profile views.
-    revalidatePath('/')
-    revalidatePath('/explore')
-    revalidatePath('/profile/[handle]', 'page')
+    await afterJamWrite('reJam', { uri, cid, did: agent.assertDid, record })
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
