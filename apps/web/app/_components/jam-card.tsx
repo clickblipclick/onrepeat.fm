@@ -2,13 +2,16 @@ import Link from 'next/link'
 import type { HydratedJamView } from '@onrepeat/appview'
 import { Avatar, authorName } from './avatar'
 import { RelativeTime } from './relative-time'
+import { Player } from './player'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''
 }
 
-/** The core feed/profile unit. `player` and `actions` are injected by callers
- *  (client islands) so this component itself stays server-rendered. */
+/** The core feed/profile card. A shared component (renders in both the server tree
+ *  via FeedList and the client tree via LoadMore); it mounts a lazy <Player> for the
+ *  media area and a static action row by default. Callers may override either via the
+ *  optional `player` / `actions` props (e.g. the interactive like/re-jam buttons added later). */
 export function JamCard({
   jam,
   player,
@@ -32,14 +35,13 @@ export function JamCard({
       </div>
 
       {player ?? (
-        <Link href={jamHref} className="block">
-          {jam.artworkUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={jam.artworkUrl} alt={`${jam.title} by ${jam.artist}`} className="aspect-square w-full object-cover" />
-          ) : (
-            <div className="accent-grid flex aspect-square w-full items-center justify-center text-on-accent">▶</div>
-          )}
-        </Link>
+        <Player
+          sourceProvider={jam.sourceProvider}
+          providerRefs={jam.providerRefs}
+          sourceUrl={jam.sourceUrl}
+          artworkUrl={jam.artworkUrl}
+          lazy
+        />
       )}
 
       <div className="px-3 py-3">
