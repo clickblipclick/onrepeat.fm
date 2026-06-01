@@ -97,6 +97,9 @@ importers:
       '@onrepeat/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@onrepeat/music':
+        specifier: workspace:*
+        version: link:../../packages/music
       '@onrepeat/oauth':
         specifier: workspace:*
         version: link:../../packages/oauth

@@ -13,6 +13,7 @@
     "@atproto/api": "^0.20.7",
     "@atproto/oauth-client-node": "^0.4.1",
     "@onrepeat/appview": "workspace:*",
+    "@onrepeat/music": "workspace:*",
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/oauth": "workspace:*",

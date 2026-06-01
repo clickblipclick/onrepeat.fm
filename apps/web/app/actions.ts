@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getSessionAgent } from '../lib/session'
 import { postJam, likeJam, unlikeJam, reJam, type PostJamResult } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
+import { deriveTrack, type TrackCandidate } from '@onrepeat/music'
 import { db } from '../lib/db'
 import { indexJam } from '@onrepeat/db'
 
@@ -43,6 +44,7 @@ export async function postJamAction(
   const title = String(formData.get('title') ?? '').trim()
   const artist = String(formData.get('artist') ?? '').trim()
   const caption = String(formData.get('caption') ?? '').trim()
+  const artworkUrl = String(formData.get('artworkUrl') ?? '').trim()
   if (!sourceUrl || !title || !artist) {
     return { ok: false, error: 'sourceUrl, title, artist required' }
   }
@@ -54,11 +56,23 @@ export async function postJamAction(
       title,
       artist,
       caption: caption || undefined,
+      artworkUrl: artworkUrl || undefined,
     })
     await afterJamWrite('postJam', { uri, cid, did: agent.assertDid, record })
     return { ok: true, uri }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export async function deriveTrackAction(url: string): Promise<TrackCandidate | null> {
+  const agent = await getSessionAgent()
+  if (!agent) return null
+  try {
+    return await deriveTrack(url)
+  } catch (err) {
+    console.error('[web] deriveTrackAction failed', err)
+    return null
   }
 }
 
