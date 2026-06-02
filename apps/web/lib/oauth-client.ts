@@ -1,4 +1,9 @@
-import { createOAuthClient, KyselyStateStore, KyselySessionStore } from '@onrepeat/oauth'
+import {
+  createOAuthClient,
+  KyselyStateStore,
+  KyselySessionStore,
+  createPgAdvisoryLock,
+} from '@onrepeat/oauth'
 import { createDb } from '@onrepeat/db'
 
 const databaseUrl = process.env.DATABASE_URL
@@ -26,6 +31,9 @@ function build() {
     publicUrl: process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000',
     stateStore: new KyselyStateStore(db),
     sessionStore: new KyselySessionStore(db),
+    // Cross-instance lock so concurrent token refreshes for the same session
+    // can't rotate each other's refresh token and get the session revoked.
+    requestLock: createPgAdvisoryLock(db),
   })
 }
 
