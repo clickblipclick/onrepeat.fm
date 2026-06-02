@@ -6,9 +6,10 @@ const url =
   process.env.DATABASE_URL ??
   'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 
-// Advisory locks use no tables, so no migration/schema reset is needed — just a
-// live connection pool (createDb defaults to pg's max:10, so concurrent calls
-// genuinely contend on the lock rather than on a single connection).
+// Advisory locks use no tables, so no migration/schema reset is needed. createDb
+// uses pg's default pool (max 10), so each concurrent lock() call runs on its own
+// connection (= its own Postgres session) and genuinely contends on the advisory
+// lock instead of queueing for a connection.
 const db = createDb(url)
 
 function deferred<T = void>() {
@@ -56,6 +57,46 @@ describe('createPgAdvisoryLock', () => {
     proceed1.resolve()
     await Promise.all([p1, p2])
     expect(order).toEqual(['a-start', 'a-end', 'b'])
+  })
+
+  it('serializes across separate connection pools (simulates two web instances)', async () => {
+    // Two independent pools = two independent sets of Postgres sessions, exactly
+    // like two app-server instances sharing one database. This is the guarantee
+    // the in-process fallback lock can't give and the whole reason this exists.
+    const dbA = createDb(url)
+    const dbB = createDb(url)
+    try {
+      const lockA = createPgAdvisoryLock(dbA)
+      const lockB = createPgAdvisoryLock(dbB)
+      const order: string[] = []
+      const acquiredA = deferred()
+      const proceedA = deferred()
+
+      const pA = lockA('cross-instance', async () => {
+        acquiredA.resolve()
+        order.push('A-start')
+        await proceedA.promise
+        order.push('A-end')
+      })
+      await acquiredA.promise
+
+      let bDone = false
+      const pB = lockB('cross-instance', async () => {
+        bDone = true
+        order.push('B')
+      })
+
+      // Instance B must wait for instance A to release, even on a different pool.
+      await delay(100)
+      expect(bDone).toBe(false)
+      expect(order).toEqual(['A-start'])
+
+      proceedA.resolve()
+      await Promise.all([pA, pB])
+      expect(order).toEqual(['A-start', 'A-end', 'B'])
+    } finally {
+      await Promise.all([dbA.destroy(), dbB.destroy()])
+    }
   })
 
   it('allows concurrent calls with different names', async () => {
