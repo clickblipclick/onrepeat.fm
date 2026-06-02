@@ -4,6 +4,7 @@ import {
   type NodeSavedSessionStore,
 } from '@atproto/oauth-client-node'
 import type { JoseKey } from '@atproto/jwk-jose'
+import type { RuntimeLock } from './lock'
 
 // Least-privilege granular scope: identity + write access to ONLY our two
 // record collections (omitting an action qualifier grants create/update/delete
@@ -19,6 +20,12 @@ export interface CreateOAuthClientOptions {
   /** Required in prod: the private signing keyset (JoseKey[]). */
   keyset?: JoseKey[]
   scope?: string
+  /**
+   * Serializes token refreshes for a given session across instances. Without it
+   * the library falls back to an in-process lock and warns that credentials
+   * might get revoked under horizontal scaling — see {@link createPgAdvisoryLock}.
+   */
+  requestLock?: RuntimeLock
 }
 
 export function createOAuthClient(opts: CreateOAuthClientOptions): NodeOAuthClient {
@@ -44,6 +51,7 @@ export function createOAuthClient(opts: CreateOAuthClientOptions): NodeOAuthClie
       },
       stateStore: opts.stateStore,
       sessionStore: opts.sessionStore,
+      requestLock: opts.requestLock,
     })
   }
 
@@ -69,5 +77,6 @@ export function createOAuthClient(opts: CreateOAuthClientOptions): NodeOAuthClie
     keyset: opts.keyset,
     stateStore: opts.stateStore,
     sessionStore: opts.sessionStore,
+    requestLock: opts.requestLock,
   })
 }

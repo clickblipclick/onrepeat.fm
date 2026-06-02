@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { JoseKey } from '@atproto/jwk-jose'
 import { createOAuthClient } from './client'
 
@@ -74,5 +74,42 @@ describe('createOAuthClient', () => {
         sessionStore,
       }),
     ).toThrow(/keyset/i)
+  })
+
+  describe('requestLock forwarding', () => {
+    let warn: ReturnType<typeof vi.spyOn>
+    beforeEach(() => {
+      warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+    afterEach(() => {
+      warn.mockRestore()
+    })
+
+    const lockWarning = () =>
+      warn.mock.calls.some((args) =>
+        args.some((a) => typeof a === 'string' && a.includes('No lock mechanism')),
+      )
+
+    it('warns when no requestLock is provided (library in-process fallback)', () => {
+      createOAuthClient({
+        mode: 'dev',
+        publicUrl: 'http://127.0.0.1:3000',
+        stateStore,
+        sessionStore,
+      })
+      expect(lockWarning()).toBe(true)
+    })
+
+    it('forwards a provided requestLock so the missing-lock warning is silenced', () => {
+      const requestLock = async <T>(_name: string, fn: () => T | PromiseLike<T>) => fn()
+      createOAuthClient({
+        mode: 'dev',
+        publicUrl: 'http://127.0.0.1:3000',
+        stateStore,
+        sessionStore,
+        requestLock,
+      })
+      expect(lockWarning()).toBe(false)
+    })
   })
 })
