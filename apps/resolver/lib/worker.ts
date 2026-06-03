@@ -1,24 +1,22 @@
 import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
 import type { DB } from '@onrepeat/db'
 import { RESOLVE_QUEUE, type ResolveJob } from '@onrepeat/jobs'
-import type { OdesliClient } from '@onrepeat/music'
-import { resolveTrack } from './resolve'
+import type { ResolveDeps } from '@onrepeat/music'
+import { resolveJob } from './resolve'
 
 type ResolveJobMeta = JobWithMetadata<ResolveJob>
 
 /** pg-boss work handler. Resolves each job; on transient failure, retries unless it's
  *  the final attempt, in which case it records `failed` so the track never stays pending. */
-export function makeResolveHandler(db: DB, odesli: OdesliClient) {
+export function makeResolveHandler(db: DB, deps: ResolveDeps) {
   return async function handler(jobs: ResolveJobMeta[]): Promise<void> {
     // Assumes batchSize 1 (pg-boss default; startResolver doesn't override it): a throw on a
     // retry-remaining error aborts the rest of the batch. Fine at batchSize 1; if batch size
     // is ever raised, restructure so one job's retry doesn't skip the others.
     for (const job of jobs) {
       try {
-        await resolveTrack(db, odesli, job.data)
+        await resolveJob(db, deps, job.data)
       } catch (err) {
-        // Both transient and permanent errors land here; pg-boss retries until the
-        // final attempt, when we record `failed` so the track never stays pending.
         if (job.retryCount < job.retryLimit) throw err // not the last attempt → let pg-boss retry
         console.error(`[resolver] giving up on ${job.data.identity} after ${job.retryCount} retries`, err)
         try {
@@ -28,8 +26,6 @@ export function makeResolveHandler(db: DB, odesli: OdesliClient) {
             .where('id', '=', job.data.identity)
             .execute()
         } catch (writeErr) {
-          // Couldn't even record the failure (e.g. a DB blip). Rethrow so pg-boss marks
-          // the job failed (observable) rather than completed; the track stays pending.
           console.error(`[resolver] failed to record failed-status for ${job.data.identity}`, writeErr)
           throw writeErr
         }
@@ -39,12 +35,10 @@ export function makeResolveHandler(db: DB, odesli: OdesliClient) {
 }
 
 /** Register the worker on a started boss. Single worker, one job at a time. */
-export async function startResolver(boss: PgBoss, db: DB, odesli: OdesliClient): Promise<void> {
+export async function startResolver(boss: PgBoss, db: DB, deps: ResolveDeps): Promise<void> {
   await boss.work<ResolveJob>(
     RESOLVE_QUEUE,
     { includeMetadata: true, localConcurrency: 1, pollingIntervalSeconds: 2 },
-    // Cast: pg-boss's work() overloads don't narrow cleanly with includeMetadata: true,
-    // and our handler returns Promise<void> vs the overload's Promise<any>. Don't remove.
-    makeResolveHandler(db, odesli) as WorkWithMetadataHandler<ResolveJob>,
+    makeResolveHandler(db, deps) as WorkWithMetadataHandler<ResolveJob>,
   )
 }

@@ -1,7 +1,6 @@
 import { createDb } from '@onrepeat/db'
 import { createBoss, createResolveQueue } from '@onrepeat/jobs'
-import { createOdesliClient } from '@onrepeat/music'
-import { createRateLimiter } from './throttle'
+import { createSpotifyClient, createYoutubeClient, type ResolveDeps } from '@onrepeat/music'
 import { startResolver } from './worker'
 import { backfill } from './backfill'
 
@@ -26,8 +25,22 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // Built only for the worker path (not needed for --backfill).
-  const odesli = createOdesliClient({ throttle: createRateLimiter({ minIntervalMs: 10_000 }) })
+  // Built only for the worker path (not needed for --backfill). Each provider is
+  // optional: if its creds are absent we skip that provider's cross-links.
+  const deps: ResolveDeps = {}
+  if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
+    deps.spotify = createSpotifyClient({
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    })
+  } else {
+    console.warn('[resolver] SPOTIFY_CLIENT_ID/SECRET not set — Spotify cross-links disabled')
+  }
+  if (process.env.YOUTUBE_API_KEY) {
+    deps.youtube = createYoutubeClient({ apiKey: process.env.YOUTUBE_API_KEY })
+  } else {
+    console.warn('[resolver] YOUTUBE_API_KEY not set — YouTube cross-links disabled')
+  }
 
   let shuttingDown = false
   const shutdown = async (signal: string) => {
@@ -46,7 +59,7 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => void shutdown('SIGINT'))
   process.on('SIGTERM', () => void shutdown('SIGTERM'))
 
-  await startResolver(boss, db, odesli)
+  await startResolver(boss, db, deps)
   console.log('[resolver] worker started')
 }
 
