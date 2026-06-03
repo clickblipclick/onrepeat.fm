@@ -4,6 +4,7 @@ import { getActorJams } from '@onrepeat/appview'
 import { db } from '../../../lib/db'
 import { hydrate, bsky } from '../../../lib/appview'
 import { getSession } from '../../../lib/session'
+import { readPreferredProvider } from '../../../lib/playback-preference.server'
 import { JamCard, rkeyOf } from '../../_components/jam-card'
 import { Avatar } from '../../_components/avatar'
 import { isCurrentJam } from '../../../lib/format'
@@ -15,6 +16,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
   if (!profile) notFound()
 
   const session = await getSession()
+  const preferredProvider = (await readPreferredProvider()) ?? undefined
   const page = await getActorJams(db, { did: profile.did, viewerDid: session.did, limit: 100 })
   const jams = await hydrate(page.jams)
   const current = jams[0] && isCurrentJam(jams[0].createdAt) ? jams[0] : null
@@ -32,7 +34,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
 
       <h2 className="mt-6 mb-2 text-xs uppercase text-muted">Current jam</h2>
       {current ? (
-        <JamCard jam={current} loggedIn={!!session.did} />
+        <JamCard jam={current} loggedIn={!!session.did} preferredProvider={preferredProvider} />
       ) : (
         <div className="rounded-md border border-dashed border-border p-6 text-center text-muted">hasn&apos;t jammed lately</div>
       )}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { HydratedJamView } from '@onrepeat/appview'
 import { JamCard } from './jam-card'
+import { readPreferredProviderClient } from '../../lib/playback-preference'
 
 /** Appends pages fetched from an /api endpoint that returns { [itemsKey], cursor }. */
 export function LoadMore({
@@ -20,6 +21,10 @@ export function LoadMore({
   const [cursor, setCursor] = useState<string | undefined>(initialCursor)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  // Read on every render (cheap) so cards appended by "load more" reflect the
+  // current preference — including a switcher change made on an earlier card.
+  // Only consumed by cards created after "load more" runs, well past hydration.
+  const preferredProvider = readPreferredProviderClient() ?? undefined
 
   if (!cursor && items.length === 0) return null
 
@@ -43,7 +48,7 @@ export function LoadMore({
   return (
     <>
       {items.map((jam) => (
-        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} />
+        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} preferredProvider={preferredProvider} />
       ))}
       {cursor && (
         <button type="button" onClick={more} disabled={loading} className="w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent">

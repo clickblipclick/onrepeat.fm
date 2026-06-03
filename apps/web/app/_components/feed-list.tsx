@@ -11,6 +11,7 @@ export function FeedList({
   itemsKey,
   empty,
   loggedIn,
+  preferredProvider,
 }: {
   jams: HydratedJamView[]
   cursor?: string
@@ -18,12 +19,13 @@ export function FeedList({
   itemsKey: 'feed' | 'jams'
   empty: React.ReactNode
   loggedIn: boolean
+  preferredProvider?: string
 }) {
   if (jams.length === 0) return <EmptyState>{empty}</EmptyState>
   return (
     <div className="flex flex-col gap-4">
       {jams.map((jam) => (
-        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} />
+        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} preferredProvider={preferredProvider} />
       ))}
       <LoadMore endpoint={endpoint} itemsKey={itemsKey} initialCursor={cursor} loggedIn={loggedIn} />
     </div>

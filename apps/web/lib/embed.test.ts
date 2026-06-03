@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildEmbed, embeddableProviders } from './embed'
+import { buildEmbed, embeddableProviders, resolvePreferredKey } from './embed'
 import type { ProviderRefs } from '@onrepeat/db'
 
 const refs: ProviderRefs = {
@@ -65,5 +65,69 @@ describe('buildEmbed', () => {
   it('guards a non-http source url in the link-out', () => {
     const e = buildEmbed('unknown', {}, 'javascript:alert(1)')
     expect(e).toEqual({ kind: 'link', provider: 'unknown', href: '#' })
+  })
+})
+
+describe('buildEmbed with a preferred provider', () => {
+  const multi: ProviderRefs = {
+    spotify: refs.spotify!,
+    youtube: refs.youtube!,
+    soundcloud: { url: 'https://soundcloud.com/artist/track' },
+  }
+
+  it('elevates the preferred provider above the source provider', () => {
+    const e = buildEmbed('spotify', multi, refs.spotify!.url, 'youtube')
+    expect(e.kind).toBe('iframe')
+    expect(e.provider).toBe('youtube')
+  })
+
+  it('ignores a preferred provider not present in this jam, keeping the source', () => {
+    const e = buildEmbed('spotify', { spotify: refs.spotify! }, refs.spotify!.url, 'soundcloud')
+    expect(e.provider).toBe('spotify')
+  })
+
+  it('honors a youtube preference via a youtubemusic-only ref (alias)', () => {
+    const ytm: ProviderRefs = { spotify: refs.spotify!, youtubemusic: refs.youtube! }
+    const e = buildEmbed('spotify', ytm, refs.spotify!.url, 'youtube')
+    expect(e.kind).toBe('iframe')
+    expect(e.provider).toBe('youtubemusic')
+  })
+
+  it('prefers a real youtube ref over youtubemusic when both exist', () => {
+    const both: ProviderRefs = {
+      youtube: refs.youtube!,
+      youtubemusic: { url: 'https://music.youtube.com/watch?v=zzz' },
+    }
+    const e = buildEmbed('spotify', both, refs.spotify!.url, 'youtube')
+    expect(e.provider).toBe('youtube')
+  })
+
+  it('ignores a junk / non-embeddable preferred value', () => {
+    const e = buildEmbed('spotify', multi, refs.spotify!.url, 'tidal')
+    expect(e.provider).toBe('spotify')
+  })
+
+  it('is identical to the 3-arg call when preferred is undefined', () => {
+    expect(buildEmbed('spotify', multi, refs.spotify!.url, undefined)).toEqual(
+      buildEmbed('spotify', multi, refs.spotify!.url),
+    )
+  })
+})
+
+describe('resolvePreferredKey', () => {
+  it('returns the key when present and embeddable', () => {
+    expect(resolvePreferredKey('spotify', { spotify: refs.spotify! })).toBe('spotify')
+  })
+
+  it('aliases youtube <-> youtubemusic', () => {
+    expect(resolvePreferredKey('youtube', { youtubemusic: refs.youtube! })).toBe('youtubemusic')
+    expect(resolvePreferredKey('youtubemusic', { youtube: refs.youtube! })).toBe('youtube')
+  })
+
+  it('returns null for absent, junk, non-embeddable, or empty preferences', () => {
+    expect(resolvePreferredKey('soundcloud', { spotify: refs.spotify! })).toBeNull()
+    expect(resolvePreferredKey('tidal', refs)).toBeNull()
+    expect(resolvePreferredKey(null, refs)).toBeNull()
+    expect(resolvePreferredKey(undefined, refs)).toBeNull()
   })
 })

@@ -3,11 +3,13 @@ import { getFollowFeed, getLatest } from '@onrepeat/appview'
 import { db } from '../lib/db'
 import { hydrate, bsky } from '../lib/appview'
 import { getSession } from '../lib/session'
+import { readPreferredProvider } from '../lib/playback-preference.server'
 import { FeedList } from './_components/feed-list'
 import { EmptyState } from './_components/empty-state'
 
 export default async function Home() {
   const session = await getSession()
+  const preferredProvider = (await readPreferredProvider()) ?? undefined
 
   // Logged-out: Explore + an inline sign-in form.
   if (!session.did) {
@@ -30,7 +32,7 @@ export default async function Home() {
             <button type="submit" className="rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</button>
           </form>
         </div>
-        <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} loggedIn={false} />
+        <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} loggedIn={false} preferredProvider={preferredProvider} />
       </>
     )
   }
@@ -49,7 +51,7 @@ export default async function Home() {
             Nobody you follow has a current jam. <Link href="/explore" className="text-accent">Explore</Link> what&apos;s playing.
           </EmptyState>
         ) : (
-          <FeedList jams={jams} cursor={page.cursor} endpoint="/api/feed" itemsKey="feed" empty={null} loggedIn={true} />
+          <FeedList jams={jams} cursor={page.cursor} endpoint="/api/feed" itemsKey="feed" empty={null} loggedIn={true} preferredProvider={preferredProvider} />
         )}
       </>
     )

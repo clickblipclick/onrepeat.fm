@@ -53,12 +53,36 @@ export function embeddableProviders(refs: ProviderRefs): string[] {
 }
 
 /**
- * Pick a player for a jam: the source provider if embeddable, else the first
- * embeddable resolved ref, else a link-out to the source url.
+ * Resolve a preferred (logical) provider to the actual ref key to embed for this
+ * jam, or null if it can't be honored here. `youtube` matches either a `youtube`
+ * or `youtubemusic` ref (they share an embed); unknown/non-embeddable or
+ * not-present-in-refs preferences return null so callers fall back gracefully.
  */
-export function buildEmbed(sourceProvider: string | null, refs: ProviderRefs, sourceUrl: string): Embed {
+export function resolvePreferredKey(preferred: string | null | undefined, refs: ProviderRefs): string | null {
+  if (!preferred) return null
+  if (preferred === 'youtube' || preferred === 'youtubemusic') {
+    if (refs.youtube?.url) return 'youtube'
+    if (refs.youtubemusic?.url) return 'youtubemusic'
+    return null
+  }
+  return preferred in LABELS && refs[preferred]?.url ? preferred : null
+}
+
+/**
+ * Pick a player for a jam: the user's preferred service (if available + embeddable
+ * for this jam), else the source provider if embeddable, else the first embeddable
+ * resolved ref, else a link-out to the source url.
+ */
+export function buildEmbed(
+  sourceProvider: string | null,
+  refs: ProviderRefs,
+  sourceUrl: string,
+  preferred?: string | null,
+): Embed {
   const candidates: string[] = []
-  if (sourceProvider) candidates.push(sourceProvider)
+  const pref = resolvePreferredKey(preferred, refs)
+  if (pref) candidates.push(pref)
+  if (sourceProvider && !candidates.includes(sourceProvider)) candidates.push(sourceProvider)
   for (const p of embeddableProviders(refs)) if (!candidates.includes(p)) candidates.push(p)
 
   for (const provider of candidates) {

@@ -19,11 +19,13 @@ export function JamCard({
   player,
   actions,
   loggedIn = false,
+  preferredProvider,
 }: {
   jam: HydratedJamView
   player?: React.ReactNode
   actions?: React.ReactNode
   loggedIn?: boolean
+  preferredProvider?: string
 }) {
   const jamHref = `/jam/${encodeURIComponent(jam.authorDid)}/${rkeyOf(jam.uri)}`
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
@@ -45,6 +47,7 @@ export function JamCard({
           sourceUrl={jam.sourceUrl}
           artworkUrl={jam.artworkUrl}
           lazy
+          preferredProvider={preferredProvider}
         />
       )}
 

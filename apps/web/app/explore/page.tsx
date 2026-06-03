@@ -3,10 +3,12 @@ import { getLatest } from '@onrepeat/appview'
 import { db } from '../../lib/db'
 import { hydrate } from '../../lib/appview'
 import { getSession } from '../../lib/session'
+import { readPreferredProvider } from '../../lib/playback-preference.server'
 import { FeedList } from '../_components/feed-list'
 
 export default async function ExplorePage() {
   const session = await getSession()
+  const preferredProvider = (await readPreferredProvider()) ?? undefined
   const page = await getLatest(db, { viewerDid: session.did })
   const jams = await hydrate(page.jams)
   return (
@@ -19,6 +21,7 @@ export default async function ExplorePage() {
         itemsKey="feed"
         empty={<>No jams yet. <Link href="/post" className="text-accent">Set yours.</Link></>}
         loggedIn={!!session.did}
+        preferredProvider={preferredProvider}
       />
     </>
   )

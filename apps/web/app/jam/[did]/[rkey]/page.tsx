@@ -4,6 +4,7 @@ import { getJam } from '@onrepeat/appview'
 import { db } from '../../../../lib/db'
 import { hydrate, bsky } from '../../../../lib/appview'
 import { getSession } from '../../../../lib/session'
+import { readPreferredProvider } from '../../../../lib/playback-preference.server'
 import { Player } from '../../../_components/player'
 import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
@@ -19,6 +20,7 @@ export default async function JamPage({ params }: { params: Promise<{ did: strin
   const { did, rkey } = await params
   const uri = `at://${decodeURIComponent(did)}/${JAM_NSID}/${decodeURIComponent(rkey)}`
   const session = await getSession()
+  const preferredProvider = (await readPreferredProvider()) ?? undefined
   const detail = await getJam(db, { uri, viewerDid: session.did })
   if (!detail) notFound()
 
@@ -47,7 +49,7 @@ export default async function JamPage({ params }: { params: Promise<{ did: strin
       </div>
 
       <div className="mt-3 overflow-hidden rounded">
-        <Player sourceProvider={jam.sourceProvider} providerRefs={jam.providerRefs} sourceUrl={jam.sourceUrl} artworkUrl={jam.artworkUrl} />
+        <Player sourceProvider={jam.sourceProvider} providerRefs={jam.providerRefs} sourceUrl={jam.sourceUrl} artworkUrl={jam.artworkUrl} preferredProvider={preferredProvider} />
       </div>
 
       <div className="mt-3">
