@@ -1,6 +1,6 @@
 export type ProviderTier = 'cross-resolvable' | 'self-contained'
 
-/** Providers Odesli cannot match across services — play via their own embed. */
+/** Providers that are self-contained (not cross-resolvable) — play via their own embed. */
 const SELF_CONTAINED = new Set(['bandcamp'])
 
 export function providerTier(provider: string): ProviderTier {

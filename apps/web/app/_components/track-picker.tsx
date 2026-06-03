@@ -8,8 +8,8 @@ const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = 'w-full rounded border border-border bg-surface px-3 py-2'
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
- *  (Odesli via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl form
- *  fields so the surrounding <form> submits them; manual entry is the failure fallback. */
+ *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
+ *  form fields so the surrounding <form> submits them; manual entry is the failure fallback. */
 export function TrackPicker() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
