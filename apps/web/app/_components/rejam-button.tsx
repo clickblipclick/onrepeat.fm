@@ -9,7 +9,7 @@ export function ReJamButton({ jam, loggedIn }: { jam: ReJamArgs & { authorName: 
 
   function rejam() {
     if (!loggedIn) {
-      window.location.href = '/'
+      window.location.href = '/login'
       return
     }
     if (!window.confirm(`Re-jam this as your current jam? It'll replace your current jam, crediting @${jam.authorName}.`)) return

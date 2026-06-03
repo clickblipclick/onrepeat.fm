@@ -19,18 +19,7 @@ export default async function Home() {
       <>
         <div className="mb-4 rounded-md border border-border bg-surface p-4">
           <p className="mb-2 text-sm">One song. Seven days. Sign in with Bluesky to follow people and set your jam.</p>
-          <form action="/login" method="post" className="flex gap-2">
-            <input
-              name="handle"
-              placeholder="you.bsky.social"
-              autoCapitalize="off"
-              autoCorrect="off"
-              autoComplete="username"
-              required
-              className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm"
-            />
-            <button type="submit" className="rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</button>
-          </form>
+          <Link href="/login" className="inline-block rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</Link>
         </div>
         <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} loggedIn={false} preferredProvider={preferredProvider} />
       </>

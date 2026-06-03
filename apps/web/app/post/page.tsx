@@ -7,7 +7,7 @@ export default async function PostPage() {
   if (!session.did) {
     return (
       <p>
-        <Link href="/" className="text-accent">Sign in on the home page</Link> to set your jam.
+        <Link href="/login" className="text-accent">Sign in</Link> to set your jam.
       </p>
     )
   }

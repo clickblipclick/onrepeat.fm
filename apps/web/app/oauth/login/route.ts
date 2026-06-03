@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { oauthClient } from '../../lib/oauth-client'
+import { oauthClient } from '../../../lib/oauth-client'
 
 export async function POST(req: NextRequest) {
   const form = await req.formData()

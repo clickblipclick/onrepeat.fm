@@ -46,7 +46,7 @@ export async function SiteNav() {
               </form>
             </>
           ) : (
-            <Link href="/" className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent">
+            <Link href="/login" className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent">
               sign in
             </Link>
           )}

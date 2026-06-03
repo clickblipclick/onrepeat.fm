@@ -23,7 +23,7 @@ export function LikeButton({
 
   function toggle() {
     if (!loggedIn) {
-      window.location.href = '/'
+      window.location.href = '/login'
       return
     }
     const next = { liked: !base.liked, count: base.count + (base.liked ? -1 : 1) }
