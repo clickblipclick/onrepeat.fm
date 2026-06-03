@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mapItunes, searchTracks } from './itunes'
+import { mapItunes, searchTracks, lookupTrack } from './itunes'
 
 const fixture = {
   resultCount: 2,
@@ -46,5 +46,20 @@ describe('searchTracks', () => {
   it('throws on a non-ok response', async () => {
     const fetchFn = vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) }))
     await expect(searchTracks('teardrop', { fetchFn })).rejects.toThrow('itunes 503')
+  })
+})
+
+describe('lookupTrack', () => {
+  const body = { resultCount: 1, results: [{ trackName: 'T', artistName: 'A', artworkUrl100: 'https://x/100x100bb.jpg', trackViewUrl: 'https://music.apple.com/us/album/t/1?i=2' }] }
+  it('maps the first lookup result to a candidate (upsized art)', async () => {
+    const fetchFn = async () => ({ ok: true, status: 200, async json() { return body } })
+    expect(await lookupTrack('2', { fetchFn })).toEqual({
+      title: 'T', artist: 'A', artworkUrl: 'https://x/300x300bb.jpg',
+      sourceUrl: 'https://music.apple.com/us/album/t/1?i=2', provider: 'applemusic',
+    })
+  })
+  it('returns null on a non-OK response', async () => {
+    const fetchFn = async () => ({ ok: false, status: 500, async json() { return {} } })
+    expect(await lookupTrack('2', { fetchFn })).toBeNull()
   })
 })

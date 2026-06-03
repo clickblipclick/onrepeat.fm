@@ -61,3 +61,22 @@ export async function searchTracks(q: string, opts: SearchOptions = {}): Promise
   }
   return mapItunes(body)
 }
+
+const LOOKUP_ENDPOINT = 'https://itunes.apple.com/lookup'
+
+/** Look up a single Apple/iTunes track by id (free, no auth). null on miss/failure. */
+export async function lookupTrack(id: string, opts: SearchOptions = {}): Promise<TrackCandidate | null> {
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const timeoutMs = opts.timeoutMs ?? 8000
+  const res = await fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
+    signal: AbortSignal.timeout(timeoutMs),
+  })
+  if (!res.ok) return null
+  let body: ItunesBody
+  try {
+    body = (await res.json()) as ItunesBody
+  } catch {
+    return null
+  }
+  return mapItunes(body)[0] ?? null
+}
