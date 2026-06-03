@@ -38,4 +38,16 @@ describe('backfill', () => {
     const j1 = await db.selectFrom('jams').select('track_id').where('uri', '=', 'at://did:plc:a/fm.onrepeat.jam/1').executeTakeFirst()
     expect(j1?.track_id).toBe('ta:b|a') // identity from raw_artist|raw_title (no isrc)
   })
+
+  it('re-enqueues already-resolved/failed tracks so they pick up new cross-links', async () => {
+    await db.insertInto('tracks').values({ id: 'ta:b|a', title: 'A', artist: 'B', resolution_status: 'resolved' }).execute()
+    await db.insertInto('jams').values({
+      uri: 'at://did:plc:a/fm.onrepeat.jam/3', cid: 'c3', author_did: 'did:plc:a',
+      source_url: 'https://open.spotify.com/track/3', source_provider: 'spotify',
+      raw_title: 'A', raw_artist: 'B', created_at: '2026-05-30T00:00:00.000Z', track_id: 'ta:b|a',
+    }).execute()
+
+    const count = await backfill(db, boss)
+    expect(count).toBe(1) // the linked jam is not "unlinked"; the resolved track is re-enqueued
+  })
 })

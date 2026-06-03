@@ -1,7 +1,7 @@
 import type { PgBoss } from 'pg-boss' // v12 named export (NOT default)
 import type { DB } from '@onrepeat/db'
 import { JAM_NSID, type JamRecord } from '@onrepeat/lexicons'
-import { enqueueResolveForJam } from '@onrepeat/jobs'
+import { enqueueResolveForJam, enqueueResolve } from '@onrepeat/jobs'
 
 /**
  * Reconstruct a JamRecord from a `jams` row's denormalized columns (enough for the producer).
@@ -28,17 +28,33 @@ function recordFromRow(row: {
   }
 }
 
-/** Enqueue resolve jobs for every jam with no track_id. Idempotent. Returns the count enqueued. */
+/**
+ * Enqueue resolve jobs for (1) every jam with no track_id (via the producer, which
+ * links track_id) and (2) every already-linked track still in a `resolved`/`failed`
+ * state — re-enqueued directly so Odesli-era rows pick up the new Spotify/YouTube
+ * cross-links (the producer would skip `resolved`). Idempotent; returns the count.
+ */
 export async function backfill(db: DB, boss: PgBoss): Promise<number> {
-  const rows = await db
+  const unlinked = await db
     .selectFrom('jams')
     .select(['uri', 'source_url', 'source_provider', 'raw_title', 'raw_artist'])
     .where('track_id', 'is', null)
     .execute()
-
-  for (const row of rows) {
+  for (const row of unlinked) {
     await enqueueResolveForJam(boss, db, { uri: row.uri, record: recordFromRow(row) })
   }
-  console.log(`[resolver] backfill enqueued ${rows.length} jam(s)`)
-  return rows.length
+
+  const stale = await db
+    .selectFrom('tracks')
+    .innerJoin('jams', 'jams.track_id', 'tracks.id')
+    .select(['tracks.id as identity', 'jams.source_url as sourceUrl', 'jams.source_provider as sourceProvider'])
+    .where('tracks.resolution_status', 'in', ['resolved', 'failed'])
+    .distinctOn('tracks.id')
+    .execute()
+  for (const t of stale) {
+    await enqueueResolve(boss, { identity: t.identity, sourceUrl: t.sourceUrl, provider: t.sourceProvider ?? '' })
+  }
+
+  console.log(`[resolver] backfill enqueued ${unlinked.length} unlinked + ${stale.length} re-resolve`)
+  return unlinked.length + stale.length
 }
