@@ -50,7 +50,7 @@ describe('makeResolveHandler', () => {
   })
 
   it('rethrows a transient error when retries remain (pg-boss will retry)', async () => {
-    vi.mocked(resolveJob).mockRejectedValue(new Error('odesli 503'))
+    vi.mocked(resolveJob).mockRejectedValue(new Error('resolve 503'))
     const handler = makeResolveHandler(db, okDeps)
     await expect(handler([fakeJob({ retryCount: 0, retryLimit: 5 })])).rejects.toThrow(/503/)
     const t = await db.selectFrom('tracks').selectAll().where('id', '=', 'isrc:X').executeTakeFirst()
@@ -58,7 +58,7 @@ describe('makeResolveHandler', () => {
   })
 
   it('marks failed (no rethrow) on the final attempt', async () => {
-    vi.mocked(resolveJob).mockRejectedValue(new Error('odesli 503'))
+    vi.mocked(resolveJob).mockRejectedValue(new Error('resolve 503'))
     const handler = makeResolveHandler(db, okDeps)
     await handler([fakeJob({ retryCount: 5, retryLimit: 5 })])
     const t = await db.selectFrom('tracks').selectAll().where('id', '=', 'isrc:X').executeTakeFirst()
