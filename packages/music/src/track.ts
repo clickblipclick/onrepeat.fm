@@ -9,6 +9,7 @@ export interface TrackCandidate {
   artworkUrl?: string
   sourceUrl: string
   provider: string
+  durationSec?: number
 }
 
 type FetchLike = (

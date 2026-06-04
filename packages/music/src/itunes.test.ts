@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mapItunes, searchTracks, lookupTrack } from './itunes'
+import { mapItunes, searchTracks, lookupTrack, createItunesClient } from './itunes'
 
 const fixture = {
   resultCount: 2,
@@ -61,5 +61,20 @@ describe('lookupTrack', () => {
   it('returns null on a non-OK response', async () => {
     const fetchFn = async () => ({ ok: false, status: 500, async json() { return {} } })
     expect(await lookupTrack('2', { fetchFn })).toBeNull()
+  })
+})
+
+describe('itunes durationSec + client', () => {
+  const body = { resultCount: 1, results: [{ trackName: 'T', artistName: 'A', artworkUrl100: 'https://x/100x100bb.jpg', trackViewUrl: 'https://music.apple.com/us/album/t/1?i=2', trackTimeMillis: 213573 }] }
+  it('mapItunes includes durationSec from trackTimeMillis', async () => {
+    const fetchFn = async () => ({ ok: true, status: 200, async json() { return body } })
+    const [c] = await searchTracks('rick astley', { fetchFn })
+    expect(c?.durationSec).toBe(214)
+  })
+  it('createItunesClient.search/lookup return candidates', async () => {
+    const fetchFn = async () => ({ ok: true, status: 200, async json() { return body } })
+    const client = createItunesClient({ fetchFn })
+    expect((await client.search('x y'))[0]?.sourceUrl).toBe('https://music.apple.com/us/album/t/1?i=2')
+    expect((await client.lookup('2'))?.durationSec).toBe(214)
   })
 })

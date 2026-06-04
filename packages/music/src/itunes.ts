@@ -6,6 +6,7 @@ interface ItunesResult {
   artistName?: string
   artworkUrl100?: string
   trackViewUrl?: string
+  trackTimeMillis?: number
 }
 interface ItunesBody {
   resultCount?: number
@@ -28,6 +29,7 @@ export function mapItunes(body: ItunesBody): TrackCandidate[] {
       artworkUrl: upsizeArt(r.artworkUrl100),
       sourceUrl: r.trackViewUrl,
       provider: providerFromUrl(r.trackViewUrl) ?? 'applemusic',
+      durationSec: r.trackTimeMillis != null ? Math.round(r.trackTimeMillis / 1000) : undefined,
     })
   }
   return out
@@ -79,4 +81,17 @@ export async function lookupTrack(id: string, opts: SearchOptions = {}): Promise
     return null
   }
   return mapItunes(body)[0] ?? null
+}
+
+/** Injectable iTunes client for the resolver (wraps the keyless search/lookup). */
+export interface ItunesClient {
+  search(query: string): Promise<TrackCandidate[]>
+  lookup(id: string): Promise<TrackCandidate | null>
+}
+
+export function createItunesClient(opts: SearchOptions = {}): ItunesClient {
+  return {
+    search: (query) => searchTracks(query, opts),
+    lookup: (id) => lookupTrack(id, opts),
+  }
 }
