@@ -66,6 +66,18 @@ describe('buildEmbed', () => {
     const e = buildEmbed('unknown', {}, 'javascript:alert(1)')
     expect(e).toEqual({ kind: 'link', provider: 'unknown', href: '#' })
   })
+
+  it('builds a Bandcamp embed from the stored trackId', () => {
+    const refs: ProviderRefs = { bandcamp: { url: 'https://x.bandcamp.com/track/y', trackId: '1234567890' } }
+    const e = buildEmbed('bandcamp', refs, 'https://x.bandcamp.com/track/y')
+    expect(e.kind).toBe('iframe')
+    expect(e.provider).toBe('bandcamp')
+    if (e.kind === 'iframe') expect(e.src).toContain('bandcamp.com/EmbeddedPlayer/track=1234567890')
+  })
+  it('bandcamp without a trackId is not embeddable (link-out)', () => {
+    const e = buildEmbed('bandcamp', { bandcamp: { url: 'https://x.bandcamp.com/track/y' } }, 'https://x.bandcamp.com/track/y')
+    expect(e.kind).toBe('link')
+  })
 })
 
 describe('buildEmbed with a preferred provider', () => {

@@ -14,9 +14,19 @@ const LABELS: Record<string, string> = {
   youtubemusic: 'YouTube',
   applemusic: 'Apple Music',
   soundcloud: 'SoundCloud',
+  bandcamp: 'Bandcamp',
 }
 
-function iframeSrc(provider: string, url: string): string | null {
+type RefEntry = { url?: string; trackId?: string }
+
+function iframeSrc(provider: string, ref: RefEntry | undefined): string | null {
+  if (provider === 'bandcamp') {
+    return ref?.trackId
+      ? `https://bandcamp.com/EmbeddedPlayer/track=${ref.trackId}/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`
+      : null
+  }
+  const url = ref?.url
+  if (!url) return null
   let u: URL
   try {
     u = new URL(url)
@@ -25,8 +35,6 @@ function iframeSrc(provider: string, url: string): string | null {
   }
   switch (provider) {
     case 'spotify': {
-      // Pull the id after a `track` segment so locale-prefixed paths
-      // (/intl-de/track/{id}) work and non-track URLs (album/playlist) return null.
       const segments = u.pathname.split('/').filter(Boolean)
       const trackIdx = segments.indexOf('track')
       const id = trackIdx !== -1 ? segments[trackIdx + 1] : undefined
@@ -38,7 +46,6 @@ function iframeSrc(provider: string, url: string): string | null {
       return id ? `https://www.youtube.com/embed/${id}` : null
     }
     case 'applemusic':
-      // music.apple.com/... -> embed.music.apple.com/... (same path)
       return `https://embed.music.apple.com${u.pathname}${u.search}`
     case 'soundcloud':
       return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
@@ -49,7 +56,7 @@ function iframeSrc(provider: string, url: string): string | null {
 
 /** Resolved providers (in `refs`) that we can embed as an iframe. Stable insertion order. */
 export function embeddableProviders(refs: ProviderRefs): string[] {
-  return Object.keys(refs).filter((p) => p in LABELS && iframeSrc(p, refs[p]?.url ?? '') !== null)
+  return Object.keys(refs).filter((p) => p in LABELS && iframeSrc(p, refs[p]) !== null)
 }
 
 /**
@@ -86,9 +93,8 @@ export function buildEmbed(
   for (const p of embeddableProviders(refs)) if (!candidates.includes(p)) candidates.push(p)
 
   for (const provider of candidates) {
-    const url = refs[provider]?.url ?? (provider === sourceProvider ? sourceUrl : undefined)
-    if (!url) continue
-    const src = iframeSrc(provider, url)
+    const ref = refs[provider] ?? (provider === sourceProvider ? { url: sourceUrl } : undefined)
+    const src = iframeSrc(provider, ref)
     if (src) return { kind: 'iframe', provider, src, title: `${LABELS[provider]} player` }
   }
   // Defense-in-depth: never emit a non-http(s) href (e.g. a javascript: URL).
