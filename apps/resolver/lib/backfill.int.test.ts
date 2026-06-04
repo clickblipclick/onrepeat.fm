@@ -50,4 +50,15 @@ describe('backfill', () => {
     const count = await backfill(db, boss)
     expect(count).toBe(1) // the linked jam is not "unlinked"; the resolved track is re-enqueued
   })
+
+  it('re-enqueues self_contained (Bandcamp) tracks so they re-scrape the embed id', async () => {
+    await db.insertInto('tracks').values({ id: 'ta:bc|s', title: 'S', artist: 'A', resolution_status: 'self_contained' }).execute()
+    await db.insertInto('jams').values({
+      uri: 'at://did:plc:a/fm.onrepeat.jam/9', cid: 'c9', author_did: 'did:plc:a',
+      source_url: 'https://x.bandcamp.com/track/y', source_provider: 'bandcamp',
+      raw_title: 'S', raw_artist: 'A', created_at: '2026-05-30T00:00:00.000Z', track_id: 'ta:bc|s',
+    }).execute()
+    const count = await backfill(db, boss)
+    expect(count).toBe(1)
+  })
 })

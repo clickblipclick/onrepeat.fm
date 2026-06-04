@@ -30,9 +30,10 @@ function recordFromRow(row: {
 
 /**
  * Enqueue resolve jobs for (1) every jam with no track_id (via the producer, which
- * links track_id) and (2) every already-linked track still in a `resolved`/`failed`
- * state — re-enqueued directly so Odesli-era rows pick up the new Spotify/YouTube
- * cross-links (the producer would skip `resolved`). Idempotent; returns the count.
+ * links track_id) and (2) every already-linked track still in a `resolved`/`failed`/
+ * `self_contained` state — re-enqueued directly so Odesli-era rows pick up the new
+ * Spotify/YouTube cross-links and Bandcamp tracks re-scrape their embed trackId
+ * (the producer would skip `resolved`). Idempotent; returns the count.
  */
 export async function backfill(db: DB, boss: PgBoss): Promise<number> {
   const unlinked = await db
@@ -48,7 +49,7 @@ export async function backfill(db: DB, boss: PgBoss): Promise<number> {
     .selectFrom('tracks')
     .innerJoin('jams', 'jams.track_id', 'tracks.id')
     .select(['tracks.id as identity', 'jams.source_url as sourceUrl', 'jams.source_provider as sourceProvider'])
-    .where('tracks.resolution_status', 'in', ['resolved', 'failed'])
+    .where('tracks.resolution_status', 'in', ['resolved', 'failed', 'self_contained'])
     .distinctOn('tracks.id')
     .execute()
   for (const t of stale) {
