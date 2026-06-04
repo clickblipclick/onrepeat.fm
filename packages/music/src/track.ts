@@ -15,7 +15,7 @@ export interface TrackCandidate {
 type FetchLike = (
   url: string,
   init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
+) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>
 
 /** Apple Music track URLs carry the song id in the `i` query param. */
 function extractAppleTrackId(url: string): string | null {
@@ -23,6 +23,22 @@ function extractAppleTrackId(url: string): string | null {
     return new URL(url).searchParams.get('i')
   } catch {
     return null
+  }
+}
+
+/** Spotify oEmbed gives the title but not the artist; the track page exposes the
+ *  artist in a `music:musician_description` meta tag (fallback: og:description). */
+async function fetchSpotifyArtist(url: string, fetchFn: FetchLike): Promise<string> {
+  try {
+    const res = await fetchFn(url, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) return ''
+    const html = await res.text()
+    const m =
+      /<meta[^>]+name="music:musician_description"[^>]+content="([^"]+)"/.exec(html) ??
+      /<meta[^>]+property="og:description"[^>]+content="([^"·]+?)\s*·/.exec(html)
+    return m ? m[1]!.trim() : ''
+  } catch {
+    return ''
   }
 }
 
@@ -55,8 +71,13 @@ export async function deriveTrack(
     }
   }
 
-  const o = await fetchOembed(provider, url, { fetchFn: opts.fetchFn })
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const o = await fetchOembed(provider, url, { fetchFn })
   if (!o?.title) return null
+  if (provider === 'spotify') {
+    const artist = await fetchSpotifyArtist(url, fetchFn)
+    return { title: o.title.trim(), artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
+  }
   const { title, artist } = splitTitleArtist(o.title, o.author)
   return { title, artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
 }
