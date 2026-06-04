@@ -1,7 +1,6 @@
 export * from './track'
 export * from './itunes'
 export * from './match'
-export * from './spotify'
 export * from './youtube'
 export * from './oembed'
 export * from './resolve-track'
