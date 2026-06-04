@@ -17,6 +17,7 @@ export function ReJamButton({ jam, loggedIn }: { jam: ReJamArgs & { authorName: 
       const { authorName: _n, ...args } = jam
       const res = await reJamAction(args)
       if (res.ok) setDone(true)
+      else if (res.error === 'session-expired') window.location.href = '/login?expired=1'
     })
   }
 

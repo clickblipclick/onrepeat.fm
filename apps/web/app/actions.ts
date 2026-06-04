@@ -37,8 +37,9 @@ export async function postJamAction(
   _prevState: PostJamState | null,
   formData: FormData,
 ): Promise<PostJamState> {
-  const agent = await getSessionAgent()
-  if (!agent) return { ok: false, error: 'not logged in' }
+  const res = await getSessionAgent()
+  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  const agent = res.agent
 
   const sourceUrl = String(formData.get('sourceUrl') ?? '').trim()
   const title = String(formData.get('title') ?? '').trim()
@@ -66,8 +67,9 @@ export async function postJamAction(
 }
 
 export async function deriveTrackAction(url: string): Promise<TrackCandidate | null> {
-  const agent = await getSessionAgent()
-  if (!agent) return null
+  const res = await getSessionAgent()
+  if (!res.agent) return null
+  const agent = res.agent
   try {
     return await deriveTrack(url)
   } catch (err) {
@@ -88,8 +90,9 @@ export interface ActionResult {
 }
 
 export async function likeJamAction(subject: { uri: string; cid: string }): Promise<ActionResult> {
-  const agent = await getSessionAgent()
-  if (!agent) return { ok: false, error: 'not logged in' }
+  const res = await getSessionAgent()
+  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  const agent = res.agent
   try {
     const res = await likeJam(agent, subject)
     return { ok: true, likeUri: res.uri }
@@ -99,8 +102,9 @@ export async function likeJamAction(subject: { uri: string; cid: string }): Prom
 }
 
 export async function unlikeJamAction(subjectUri: string, likeUri?: string): Promise<ActionResult> {
-  const agent = await getSessionAgent()
-  if (!agent) return { ok: false, error: 'not logged in' }
+  const res = await getSessionAgent()
+  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  const agent = res.agent
   try {
     // Prefer the like-uri the client kept from this session; otherwise look up
     // the viewer's like on this subject in the index.
@@ -133,8 +137,9 @@ export interface ReJamArgs {
 }
 
 export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
-  const agent = await getSessionAgent()
-  if (!agent) return { ok: false, error: 'not logged in' }
+  const res = await getSessionAgent()
+  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  const agent = res.agent
   try {
     const { uri, cid, record } = await reJam(agent, {
       sourceJam: { uri: jam.uri, did: jam.did },

@@ -1,13 +1,23 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '../../lib/session'
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ expired?: string }>
+}) {
   const session = await getSession()
   if (session.did) redirect('/')
+  const { expired } = await searchParams
 
   return (
     <div className="mx-auto max-w-sm">
       <h1 className="mb-2 text-lg font-bold">Sign in</h1>
+      {expired && (
+        <p className="mb-4 rounded border border-accent bg-surface px-3 py-2 text-sm text-accent">
+          Your session expired — please sign in again.
+        </p>
+      )}
       <p className="mb-4 text-sm text-muted">
         One song. Seven days. Sign in with Bluesky to follow people and set your jam.
       </p>

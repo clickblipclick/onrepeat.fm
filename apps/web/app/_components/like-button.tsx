@@ -34,12 +34,16 @@ export function LikeButton({
         if (res.ok) {
           setLikeUri(res.likeUri)
           setBase(next)
+        } else if (res.error === 'session-expired') {
+          window.location.href = '/login?expired=1'
         }
       } else {
         const res = await unlikeJamAction(jamUri, likeUri)
         if (res.ok) {
           setLikeUri(undefined)
           setBase(next)
+        } else if (res.error === 'session-expired') {
+          window.location.href = '/login?expired=1'
         }
       }
     })

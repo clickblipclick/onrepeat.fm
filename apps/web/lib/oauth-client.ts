@@ -17,6 +17,10 @@ const oauthMode: 'dev' | 'prod' = _rawOauthMode
 
 const db = createDb(databaseUrl)
 
+// Shared session store. Also used by getSessionAgent to tell whether a failed
+// restore() left the stored session intact (transient) or deleted it (expired).
+export const oauthSessionStore = new KyselySessionStore(db)
+
 // Singleton across hot reloads in dev.
 const globalForOauth = globalThis as unknown as { __onrepeatOAuth?: ReturnType<typeof build> }
 
@@ -30,7 +34,7 @@ function build() {
     mode: oauthMode,
     publicUrl: process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000',
     stateStore: new KyselyStateStore(db),
-    sessionStore: new KyselySessionStore(db),
+    sessionStore: oauthSessionStore,
     // Cross-instance lock so concurrent token refreshes for the same session
     // can't rotate each other's refresh token and get the session revoked.
     requestLock: createPgAdvisoryLock(db),
