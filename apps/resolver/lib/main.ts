@@ -1,6 +1,7 @@
 import { createDb } from '@onrepeat/db'
 import { createBoss, createResolveQueue } from '@onrepeat/jobs'
-import { createSpotifyClient, createYoutubeClient, type ResolveDeps } from '@onrepeat/music'
+import { createItunesClient, createYoutubeClient, fetchBandcampEmbed } from '@onrepeat/music'
+import type { ResolverDeps } from './resolve'
 import { startResolver } from './worker'
 import { backfill } from './backfill'
 
@@ -25,16 +26,11 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // Built only for the worker path (not needed for --backfill). Each provider is
-  // optional: if its creds are absent we skip that provider's cross-links.
-  const deps: ResolveDeps = {}
-  if (process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) {
-    deps.spotify = createSpotifyClient({
-      clientId: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-    })
-  } else {
-    console.warn('[resolver] SPOTIFY_CLIENT_ID/SECRET not set — Spotify cross-links disabled')
+  // Built only for the worker path. iTunes is keyless (always on); YouTube needs a
+  // key (optional — absent → Apple-only cross-resolution); Bandcamp embeds via scrape.
+  const deps: ResolverDeps = {
+    itunes: createItunesClient(),
+    bandcamp: (url) => fetchBandcampEmbed(url),
   }
   if (process.env.YOUTUBE_API_KEY) {
     deps.youtube = createYoutubeClient({ apiKey: process.env.YOUTUBE_API_KEY })

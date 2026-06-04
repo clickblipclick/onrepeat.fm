@@ -1,14 +1,13 @@
 import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
 import type { DB } from '@onrepeat/db'
 import { RESOLVE_QUEUE, type ResolveJob } from '@onrepeat/jobs'
-import type { ResolveDeps } from '@onrepeat/music'
-import { resolveJob } from './resolve'
+import { resolveJob, type ResolverDeps } from './resolve'
 
 type ResolveJobMeta = JobWithMetadata<ResolveJob>
 
 /** pg-boss work handler. Resolves each job; on transient failure, retries unless it's
  *  the final attempt, in which case it records `failed` so the track never stays pending. */
-export function makeResolveHandler(db: DB, deps: ResolveDeps) {
+export function makeResolveHandler(db: DB, deps: ResolverDeps) {
   return async function handler(jobs: ResolveJobMeta[]): Promise<void> {
     // Assumes batchSize 1 (pg-boss default; startResolver doesn't override it): a throw on a
     // retry-remaining error aborts the rest of the batch. Fine at batchSize 1; if batch size
@@ -35,7 +34,7 @@ export function makeResolveHandler(db: DB, deps: ResolveDeps) {
 }
 
 /** Register the worker on a started boss. Single worker, one job at a time. */
-export async function startResolver(boss: PgBoss, db: DB, deps: ResolveDeps): Promise<void> {
+export async function startResolver(boss: PgBoss, db: DB, deps: ResolverDeps): Promise<void> {
   await boss.work<ResolveJob>(
     RESOLVE_QUEUE,
     { includeMetadata: true, localConcurrency: 1, pollingIntervalSeconds: 2 },

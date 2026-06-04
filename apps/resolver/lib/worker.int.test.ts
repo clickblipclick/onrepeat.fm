@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
-import type { ResolveDeps } from '@onrepeat/music'
+import { type ResolverDeps } from './resolve'
 
 const url = process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 const db = createDb(url)
@@ -15,7 +15,7 @@ vi.mock('./resolve', () => ({
 const { resolveJob } = await import('./resolve')
 const { makeResolveHandler } = await import('./worker')
 
-const okDeps: ResolveDeps = {}
+const okDeps: ResolverDeps = { itunes: { async search() { return [] }, async lookup() { return null } } }
 
 function fakeJob(over: Partial<{ retryCount: number; retryLimit: number }> = {}) {
   return {
