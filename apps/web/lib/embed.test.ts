@@ -142,4 +142,9 @@ describe('resolvePreferredKey', () => {
     expect(resolvePreferredKey(null, refs)).toBeNull()
     expect(resolvePreferredKey(undefined, refs)).toBeNull()
   })
+
+  it('resolves bandcamp only with a trackId', () => {
+    expect(resolvePreferredKey('bandcamp', { bandcamp: { url: 'https://x.bandcamp.com/track/y', trackId: '1' } })).toBe('bandcamp')
+    expect(resolvePreferredKey('bandcamp', { bandcamp: { url: 'https://x.bandcamp.com/track/y' } })).toBeNull()
+  })
 })

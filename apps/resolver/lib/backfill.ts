@@ -51,6 +51,7 @@ export async function backfill(db: DB, boss: PgBoss): Promise<number> {
     .select(['tracks.id as identity', 'jams.source_url as sourceUrl', 'jams.source_provider as sourceProvider'])
     .where('tracks.resolution_status', 'in', ['resolved', 'failed', 'self_contained'])
     .distinctOn('tracks.id')
+    .orderBy('tracks.id', 'asc')
     .execute()
   for (const t of stale) {
     await enqueueResolve(boss, { identity: t.identity, sourceUrl: t.sourceUrl, provider: t.sourceProvider ?? '' })

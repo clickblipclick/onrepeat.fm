@@ -72,6 +72,9 @@ export function resolvePreferredKey(preferred: string | null | undefined, refs: 
     if (refs.youtubemusic?.url) return 'youtubemusic'
     return null
   }
+  if (preferred === 'bandcamp') {
+    return refs.bandcamp?.trackId ? 'bandcamp' : null
+  }
   return preferred in LABELS && refs[preferred]?.url ? preferred : null
 }
 
