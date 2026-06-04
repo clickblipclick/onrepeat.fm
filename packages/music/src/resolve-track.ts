@@ -1,6 +1,5 @@
 import type { ProviderRefs } from '@onrepeat/db'
-import type { SpotifyClient } from './spotify'
-import { extractSpotifyTrackId } from './spotify'
+import type { ItunesClient } from './itunes'
 import type { YoutubeClient } from './youtube'
 import { isConfidentMatch } from './match'
 
@@ -9,11 +8,12 @@ export interface ResolveInput {
   sourceProvider: string | null
   title: string
   artist: string
-  isrc?: string | null
 }
 
 export interface ResolveDeps {
-  spotify?: SpotifyClient
+  /** iTunes/Apple — keyless, always available; the resolution anchor (provides duration). */
+  itunes: ItunesClient
+  /** YouTube Data API — optional (needs a key); skipped if absent. */
   youtube?: YoutubeClient
 }
 
@@ -21,58 +21,63 @@ export interface ResolutionResult {
   title?: string
   artist?: string
   artworkUrl?: string
-  isrc?: string
   providerRefs: ProviderRefs
 }
 
+/** Apple Music track URLs carry the song id in the `i` query param. */
+function appleId(url: string): string | null {
+  try {
+    return new URL(url).searchParams.get('i')
+  } catch {
+    return null
+  }
+}
+
 /**
- * Spotify-anchored resolution. The source platform is always included (embeddable
- * from its own URL). A confident Spotify hit becomes the canonical anchor (ISRC +
- * duration + metadata); YouTube is added only when it confidently matches that
- * anchor. Each provider is best-effort: a missing client or an error skips just
- * that provider — the result always carries at least the source ref.
+ * iTunes/Apple-anchored resolution. The source platform is always embeddable from
+ * its own URL. A confident iTunes match becomes the canonical anchor (Apple Music
+ * URL + duration + metadata); YouTube is added only when it confidently matches
+ * that anchor. Each provider is best-effort: a missing/erroring client skips just
+ * that provider — the result always carries at least the source ref. No ISRC.
  */
 export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Promise<ResolutionResult> {
   const providerRefs: ProviderRefs = {}
   if (input.sourceProvider) providerRefs[input.sourceProvider] = { url: input.sourceUrl }
 
   let anchor: { title: string; artist: string; durationSec?: number } = { title: input.title, artist: input.artist }
-  let isrc = input.isrc ?? undefined
   let canonicalTitle: string | undefined
   let canonicalArtist: string | undefined
   let artworkUrl: string | undefined
 
-  if (deps.spotify) {
-    try {
-      let sp = null as Awaited<ReturnType<SpotifyClient['lookupTrack']>>
-      if (input.sourceProvider === 'spotify') {
-        const id = extractSpotifyTrackId(input.sourceUrl)
-        if (id) sp = await deps.spotify.lookupTrack(id)
-        // Source is Spotify: lookup is definitive. If it yields nothing, do NOT
-        // search for a substitute (that could link a different recording).
-      } else {
-        const candidates = await deps.spotify.searchTrack(`${input.title} ${input.artist}`)
-        sp =
-          candidates.find((c) =>
-            isConfidentMatch(
-              { title: input.title, artist: input.artist },
-              { title: c.title, artist: c.artist, durationSec: Math.round(c.durationMs / 1000) },
-            ),
-          ) ?? null
-      }
-      if (sp) {
-        providerRefs.spotify = { url: sp.url }
-        anchor = { title: sp.title, artist: sp.artist, durationSec: Math.round(sp.durationMs / 1000) }
-        isrc = sp.isrc ?? isrc
-        canonicalTitle = sp.title
-        canonicalArtist = sp.artist
-        artworkUrl = sp.artworkUrl
-      }
-    } catch {
-      // Spotify unavailable for this job — skip, keep going.
+  // --- Apple anchor (iTunes) ---
+  try {
+    let apple = null as Awaited<ReturnType<ItunesClient['lookup']>>
+    if (input.sourceProvider === 'applemusic') {
+      const id = appleId(input.sourceUrl)
+      if (id) apple = await deps.itunes.lookup(id)
+      // Source is Apple: lookup is definitive; don't search for a substitute.
+    } else {
+      const candidates = await deps.itunes.search(`${input.title} ${input.artist}`)
+      apple =
+        candidates.find((c) =>
+          isConfidentMatch(
+            { title: input.title, artist: input.artist },
+            { title: c.title, artist: c.artist, durationSec: c.durationSec },
+          ),
+        ) ?? null
     }
+    if (apple) {
+      if (input.sourceProvider !== 'applemusic') providerRefs.applemusic = { url: apple.sourceUrl }
+      anchor = { title: apple.title, artist: apple.artist, durationSec: apple.durationSec }
+      canonicalTitle = apple.title
+      canonicalArtist = apple.artist
+      artworkUrl = apple.artworkUrl
+    }
+  } catch {
+    // iTunes unavailable for this job — skip Apple, keep going.
   }
 
+  // --- YouTube (validated against anchor) ---
   if (deps.youtube) {
     try {
       const vids = await deps.youtube.searchVideo(`${anchor.title} ${anchor.artist}`)
@@ -88,5 +93,5 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
     }
   }
 
-  return { title: canonicalTitle, artist: canonicalArtist, artworkUrl, isrc, providerRefs }
+  return { title: canonicalTitle, artist: canonicalArtist, artworkUrl, providerRefs }
 }

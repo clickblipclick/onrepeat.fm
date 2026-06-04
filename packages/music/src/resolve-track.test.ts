@@ -1,56 +1,51 @@
 import { describe, it, expect } from 'vitest'
 import { resolveTrack, type ResolveDeps } from './resolve-track'
-import type { SpotifyTrack } from './spotify'
+import type { TrackCandidate } from './track'
 
-const spTrack: SpotifyTrack = {
-  id: 'sp1', url: 'https://open.spotify.com/track/sp1', isrc: 'USX', title: 'Thinkin Bout You',
-  artist: 'Frank Ocean', durationMs: 200000, artworkUrl: 'https://img/a.jpg',
-}
+const apple: TrackCandidate = { title: 'Thinkin Bout You', artist: 'Frank Ocean', artworkUrl: 'https://img/a.jpg', sourceUrl: 'https://music.apple.com/us/album/t/1?i=2', provider: 'applemusic', durationSec: 200 }
 const ytVid = { videoId: 'yt1', url: 'https://www.youtube.com/watch?v=yt1', title: 'Frank Ocean - Thinkin Bout You', channelTitle: 'Chan' }
 
 function deps(over: Partial<ResolveDeps> = {}): ResolveDeps {
   return {
-    spotify: { async searchTrack() { return [spTrack] }, async lookupTrack() { return spTrack } },
+    itunes: { async search() { return [apple] }, async lookup() { return apple } },
     youtube: { async searchVideo() { return [ytVid] }, async lookupDurations() { return new Map([['yt1', 201]]) } },
     ...over,
   }
 }
+const base = { sourceUrl: 'https://open.spotify.com/track/sp1', sourceProvider: 'spotify', title: 'Thinkin Bout You', artist: 'Frank Ocean' }
 
-const base = { sourceUrl: 'https://music.apple.com/us/album/t/1?i=2', sourceProvider: 'applemusic', title: 'Thinkin Bout You', artist: 'Frank Ocean' }
-
-describe('resolveTrack', () => {
-  it('keeps the source ref and adds confident spotify + youtube links + isrc + canonical metadata', async () => {
+describe('resolveTrack (iTunes-anchored)', () => {
+  it('keeps source ref + adds apple (iTunes) and youtube + canonical metadata', async () => {
     const r = await resolveTrack(base, deps())
-    expect(r.providerRefs.applemusic).toEqual({ url: base.sourceUrl })
-    expect(r.providerRefs.spotify).toEqual({ url: 'https://open.spotify.com/track/sp1' })
+    expect(r.providerRefs.spotify).toEqual({ url: base.sourceUrl })
+    expect(r.providerRefs.applemusic).toEqual({ url: 'https://music.apple.com/us/album/t/1?i=2' })
     expect(r.providerRefs.youtube).toEqual({ url: 'https://www.youtube.com/watch?v=yt1' })
-    expect(r.isrc).toBe('USX')
     expect(r.title).toBe('Thinkin Bout You')
     expect(r.artworkUrl).toBe('https://img/a.jpg')
   })
 
-  it('uses Spotify lookup (not search) when the source IS spotify', async () => {
+  it('apple source: uses lookup (not search), no separate apple cross-link beyond source', async () => {
     let searched = false
     const r = await resolveTrack(
-      { ...base, sourceUrl: 'https://open.spotify.com/track/sp1', sourceProvider: 'spotify' },
-      deps({ spotify: { async searchTrack() { searched = true; return [] }, async lookupTrack() { return spTrack } } }),
+      { ...base, sourceUrl: 'https://music.apple.com/us/album/t/1?i=2', sourceProvider: 'applemusic' },
+      deps({ itunes: { async search() { searched = true; return [] }, async lookup() { return apple } } }),
     )
     expect(searched).toBe(false)
-    expect(r.providerRefs.spotify).toEqual({ url: 'https://open.spotify.com/track/sp1' })
+    expect(r.providerRefs.applemusic).toEqual({ url: 'https://music.apple.com/us/album/t/1?i=2' })
   })
 
-  it('omits spotify when no confident match is found', async () => {
-    const r = await resolveTrack(base, deps({ spotify: { async searchTrack() { return [{ ...spTrack, title: 'Totally Different Song', artist: 'Nobody', durationMs: 99000 }] }, async lookupTrack() { return null } } }))
-    expect(r.providerRefs.spotify).toBeUndefined()
+  it('omits apple when no confident iTunes match', async () => {
+    const r = await resolveTrack(base, deps({ itunes: { async search() { return [{ ...apple, title: 'Totally Different', artist: 'Nobody', durationSec: 99 }] }, async lookup() { return null } } }))
+    expect(r.providerRefs.applemusic).toBeUndefined()
   })
 
-  it('omits youtube when the duration disagrees', async () => {
+  it('omits youtube when duration disagrees', async () => {
     const r = await resolveTrack(base, deps({ youtube: { async searchVideo() { return [ytVid] }, async lookupDurations() { return new Map([['yt1', 320]]) } } }))
     expect(r.providerRefs.youtube).toBeUndefined()
   })
 
-  it('skips a provider whose client is absent or throws, still returning the source ref', async () => {
-    const r = await resolveTrack(base, { spotify: { async searchTrack() { throw new Error('boom') }, async lookupTrack() { throw new Error('boom') } } })
-    expect(r.providerRefs).toEqual({ applemusic: { url: base.sourceUrl } })
+  it('skips a throwing/absent provider, still returns source ref', async () => {
+    const r = await resolveTrack(base, { itunes: { async search() { throw new Error('x') }, async lookup() { throw new Error('x') } } })
+    expect(r.providerRefs).toEqual({ spotify: { url: base.sourceUrl } })
   })
 })
