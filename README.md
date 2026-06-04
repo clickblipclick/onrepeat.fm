@@ -45,17 +45,15 @@ The three services each auto-load their own `apps/<app>/.env.local`; see the mat
 |---|---|
 | `apps/web` | Next.js UI + JSON read API + OAuth login / write actions |
 | `apps/ingester` | Consumes the atproto firehose → indexes `fm.onrepeat.jam` / `like` into Postgres |
-| `apps/resolver` | pg-boss worker → resolves tracks to cross-platform links via Spotify + YouTube |
+| `apps/resolver` | pg-boss worker → resolves tracks to cross-platform links via iTunes/Apple + YouTube; Bandcamp jams embed inline |
 
-**Resolver API keys** — the resolver uses Spotify (free client-credentials app from the [Spotify developer dashboard](https://developer.spotify.com/dashboard)) and the YouTube Data API (free key from [Google Cloud Console](https://console.cloud.google.com)). Add them to `apps/resolver/.env.local`:
+**Resolver API keys** — cross-resolution uses the iTunes/Apple Search API, which is **keyless and always on** — no credentials required. Bandcamp jams embed inline with no key either. YouTube cross-links are optional: get a free **YouTube Data API v3** key from [Google Cloud Console](https://console.cloud.google.com) and add it to `apps/resolver/.env.local`:
 
 ```
-SPOTIFY_CLIENT_ID=…
-SPOTIFY_CLIENT_SECRET=…
 YOUTUBE_API_KEY=…
 ```
 
-Without them the resolver still runs and keeps each jam's original source embed; it just won't add that provider's cross-links. To re-resolve existing tracks after adding keys: `pnpm --filter @onrepeat/resolver backfill`.
+Without it the resolver still runs and provides Apple cross-links; you just won't get YouTube links. To re-resolve existing tracks: `pnpm --filter @onrepeat/resolver backfill`.
 
 Packages: `@onrepeat/core` · `lexicons` · `db` · `repo` · `oauth` · `jobs` · `appview`.
 
