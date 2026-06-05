@@ -68,4 +68,6 @@ Pick one. To inspect the app's real data, query the same `:5432` your services u
 
 ## Testing
 
-Unit tests run with `pnpm test`. Integration tests (`pnpm test:int`) hit a real Postgres at `localhost:5432/onrepeat_test` and apply migrations themselves — bring the DB up first (`pnpm db:up` or Postgres.app + `pnpm db:migrate`).
+Unit tests run with `pnpm test`.
+
+Integration tests (`pnpm test:int`) need Postgres on `:5432` (`pnpm db:up` or Postgres.app). They **truncate tables**, so they run against a **dedicated `onrepeat_inttest` database** — created automatically on first run and kept separate from the dev/app DB (`onrepeat_test`), which they never touch. Override the target with `DATABASE_URL_INTTEST`; a guard refuses to run if it ever resolves to `onrepeat_test`.

@@ -1,6 +1,7 @@
 import { providerFromUrl } from '@onrepeat/core'
 import { lookupTrack as itunesLookup } from './itunes'
 import { fetchOembed } from './oembed'
+import { youtubeVideoId } from './youtube'
 
 /** A normalized track the picker can post: enough to build a jam record. */
 export interface TrackCandidate {
@@ -10,6 +11,17 @@ export interface TrackCandidate {
   sourceUrl: string
   provider: string
   durationSec?: number
+  /** false only when we positively determined the source isn't music (a non-Music
+   *  YouTube video); undefined when unknown or unchecked. Callers warn only on false. */
+  isLikelyMusic?: boolean
+}
+
+export interface DeriveTrackOptions {
+  fetchFn?: FetchLike
+  /** Optional classifier for plain youtube.com videos: given a video id, resolves
+   *  true (music) / false (not music) / null (undeterminable). Only called for
+   *  provider 'youtube' on urls that carry a video id. */
+  classifyYoutubeMusic?: (videoId: string) => Promise<boolean | null>
 }
 
 type FetchLike = (
@@ -56,7 +68,7 @@ function splitTitleArtist(rawTitle: string, author: string | undefined): { title
  */
 export async function deriveTrack(
   url: string,
-  opts: { fetchFn?: FetchLike } = {},
+  opts: DeriveTrackOptions = {},
 ): Promise<TrackCandidate | null> {
   const provider = providerFromUrl(url)
   if (!provider) return null
@@ -79,5 +91,14 @@ export async function deriveTrack(
     return { title: o.title.trim(), artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
   }
   const { title, artist } = splitTitleArtist(o.title, o.author)
-  return { title, artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
+  const candidate: TrackCandidate = { title, artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
+
+  // Soft music check for plain YouTube videos (music.youtube.com is already music).
+  if (provider === 'youtube' && opts.classifyYoutubeMusic) {
+    const videoId = youtubeVideoId(url)
+    if (videoId && (await opts.classifyYoutubeMusic(videoId)) === false) {
+      candidate.isLikelyMusic = false
+    }
+  }
+  return candidate
 }

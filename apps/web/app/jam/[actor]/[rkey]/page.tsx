@@ -16,9 +16,18 @@ import { ReJamButton } from '../../../_components/rejam-button'
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
 const JAM_NSID = 'fm.onrepeat.jam'
 
-export default async function JamPage({ params }: { params: Promise<{ did: string; rkey: string }> }) {
-  const { did, rkey } = await params
-  const uri = `at://${decodeURIComponent(did)}/${JAM_NSID}/${decodeURIComponent(rkey)}`
+export default async function JamPage({ params }: { params: Promise<{ actor: string; rkey: string }> }) {
+  const { actor, rkey } = await params
+  // `actor` is a handle (pretty links) or a DID (older/shared links). Records are keyed
+  // by DID, so resolve a handle to its DID before building the at-uri.
+  const actorDecoded = decodeURIComponent(actor)
+  let authorDid = actorDecoded
+  if (!actorDecoded.startsWith('did:')) {
+    const prof = await bsky.getProfile(actorDecoded)
+    if (!prof) notFound()
+    authorDid = prof.did
+  }
+  const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
   const session = await getSession()
   const preferredProvider = (await readPreferredProvider()) ?? undefined
   const detail = await getJam(db, { uri, viewerDid: session.did })

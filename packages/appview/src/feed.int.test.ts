@@ -62,6 +62,22 @@ describe('getActorJams + getFollowFeed', () => {
     expect(page.cursor).toBeUndefined()
   })
 
+  it('getFollowFeed includes the viewer\'s own current jam, sorted chronologically (no self-follow)', async () => {
+    await insertJam('at://did:plc:a/fm.onrepeat.jam/cur', 'did:plc:a', new Date(Date.now() - 2 * 60_000).toISOString())
+    await insertJam('at://did:plc:me/fm.onrepeat.jam/cur', 'did:plc:me', new Date(Date.now() - 1 * 60_000).toISOString()) // mine, newest
+    const page = await getFollowFeed(db, { followedDids: ['did:plc:a'], viewerDid: 'did:plc:me', limit: 10 })
+    expect(page.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:me/fm.onrepeat.jam/cur',
+      'at://did:plc:a/fm.onrepeat.jam/cur',
+    ])
+  })
+
+  it('getFollowFeed shows your own current jam even when you follow nobody', async () => {
+    await insertJam('at://did:plc:me/fm.onrepeat.jam/cur', 'did:plc:me', recent())
+    const page = await getFollowFeed(db, { followedDids: [], viewerDid: 'did:plc:me', limit: 10 })
+    expect(page.jams.map((j) => j.uri)).toEqual(['at://did:plc:me/fm.onrepeat.jam/cur'])
+  })
+
   it('getActorJams paginates by cursor and never leaks other authors', async () => {
     await insertJam('at://did:plc:a/fm.onrepeat.jam/1', 'did:plc:a', '2026-05-29T00:00:00.000Z')
     await insertJam('at://did:plc:a/fm.onrepeat.jam/2', 'did:plc:a', '2026-05-30T00:00:00.000Z')

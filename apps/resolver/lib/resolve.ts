@@ -4,29 +4,33 @@ import { providerTier } from '@onrepeat/core'
 import type { ResolveJob } from '@onrepeat/jobs'
 import { resolveTrack, type ResolveDeps, type BandcampFetcher } from '@onrepeat/music'
 
-export type ResolverDeps = ResolveDeps & { bandcamp?: BandcampFetcher }
+/** Source-cover fetcher (Spotify/YouTube/SoundCloud oEmbed); used as an artwork fallback. */
+export type OembedFetcher = (provider: string, url: string) => Promise<{ thumbnail?: string } | null>
+
+export type ResolverDeps = ResolveDeps & { bandcamp?: BandcampFetcher; oembed?: OembedFetcher }
 
 /** Resolve one queue job onto its tracks row. Idempotent (keyed by job.identity). */
 export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): Promise<void> {
   const now = new Date()
 
   if (providerTier(job.provider) === 'self-contained') {
-    // Bandcamp (the only self-contained provider): scrape its embed id so the
-    // Player can stream it inline; fall back to a bare url (link-out) on failure.
-    let entry: { url: string; trackId?: string } = { url: job.sourceUrl }
+    // Bandcamp (the only self-contained provider): scrape its embed id so the Player can
+    // stream it inline (fall back to a bare url/link-out), and its cover art in the same
+    // request — Bandcamp jams have no artwork otherwise (the picker drops to manual entry).
+    const entry: { url: string; trackId?: string } = { url: job.sourceUrl }
+    let artworkUrl: string | undefined
     if (job.provider === 'bandcamp' && deps.bandcamp) {
-      const embed = await deps.bandcamp(job.sourceUrl)
-      if (embed) entry = { url: job.sourceUrl, trackId: embed.trackId }
+      const meta = await deps.bandcamp(job.sourceUrl)
+      if (meta?.trackId) entry.trackId = meta.trackId
+      if (meta?.artworkUrl) artworkUrl = meta.artworkUrl
     }
-    await db
-      .updateTable('tracks')
-      .set({
-        provider_refs: JSON.stringify({ [job.provider]: entry }),
-        resolution_status: 'self_contained',
-        resolved_at: now,
-      })
-      .where('id', '=', job.identity)
-      .execute()
+    const update: Updateable<TracksTable> = {
+      provider_refs: JSON.stringify({ [job.provider]: entry }),
+      resolution_status: 'self_contained',
+      resolved_at: now,
+    }
+    if (artworkUrl) update.artwork_url = artworkUrl
+    await db.updateTable('tracks').set(update).where('id', '=', job.identity).execute()
     return
   }
 
@@ -34,7 +38,7 @@ export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): P
   // as the anchor query for cross-platform search.
   const seed = await db
     .selectFrom('tracks')
-    .select(['title', 'artist'])
+    .select(['title', 'artist', 'artwork_url'])
     .where('id', '=', job.identity)
     .executeTakeFirst()
 
@@ -50,7 +54,15 @@ export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): P
   }
   if (result.title) update.title = result.title
   if (result.artist) update.artist = result.artist
-  if (result.artworkUrl) update.artwork_url = result.artworkUrl
+
+  // Artwork: prefer iTunes' canonical cover; else keep what we already have; else fetch the
+  // source's own cover (Spotify/YouTube/SoundCloud oEmbed) so the track has art without a match.
+  let artworkUrl: string | null | undefined = result.artworkUrl ?? seed?.artwork_url
+  if (!artworkUrl && deps.oembed) {
+    const o = await deps.oembed(job.provider, job.sourceUrl)
+    artworkUrl = o?.thumbnail
+  }
+  if (artworkUrl) update.artwork_url = artworkUrl
 
   await db.updateTable('tracks').set(update).where('id', '=', job.identity).execute()
 }

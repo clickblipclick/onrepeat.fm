@@ -6,9 +6,16 @@ export interface YoutubeVideo {
   durationSec?: number
 }
 
+export interface YoutubeVideoMeta {
+  durationSec?: number
+  /** YouTube `status.embeddable` — false when the uploader disabled embedded playback. */
+  embeddable?: boolean
+}
+
 export interface YoutubeClient {
   searchVideo(query: string): Promise<YoutubeVideo[]>
-  lookupDurations(ids: string[]): Promise<Map<string, number>>
+  /** Batch-fetch per-video duration + embeddability in one videos.list call. */
+  lookupVideos(ids: string[]): Promise<Map<string, YoutubeVideoMeta>>
 }
 
 type FetchLike = (
@@ -44,7 +51,43 @@ export function mapYoutubeSearch(body: { items?: SearchItem[] }): YoutubeVideo[]
   return out
 }
 
+/** Extract the video id from a youtube.com/youtu.be/music.youtube.com watch url; null
+ *  for playlist/channel urls (no single video) or anything non-youtube. */
+export function youtubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+    if (host === 'youtu.be') return u.pathname.slice(1) || null
+    if (host === 'youtube.com' || host.endsWith('.youtube.com')) return u.searchParams.get('v')
+    return null
+  } catch {
+    return null
+  }
+}
+
 const API = 'https://www.googleapis.com/youtube/v3'
+
+/** Look up a video's YouTube category id via the Data API ('10' === Music). Returns
+ *  null on a blank id, a not-found video, or any error — callers treat null as "unknown". */
+export async function fetchYoutubeCategory(
+  videoId: string,
+  opts: { apiKey: string; fetchFn?: FetchLike; timeoutMs?: number },
+): Promise<string | null> {
+  const id = videoId.trim()
+  if (!id) return null
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  try {
+    const res = await fetchFn(
+      `${API}/videos?part=snippet&id=${encodeURIComponent(id)}&key=${encodeURIComponent(opts.apiKey)}`,
+      { signal: AbortSignal.timeout(opts.timeoutMs ?? 8000) },
+    )
+    if (!res.ok) return null
+    const body = (await res.json()) as { items?: { snippet?: { categoryId?: string } }[] }
+    return body.items?.[0]?.snippet?.categoryId ?? null
+  } catch {
+    return null
+  }
+}
 
 export interface YoutubeClientOptions {
   apiKey: string
@@ -74,14 +117,18 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
       }
       return mapYoutubeSearch(body)
     },
-    async lookupDurations(ids) {
-      const map = new Map<string, number>()
+    async lookupVideos(ids) {
+      const map = new Map<string, YoutubeVideoMeta>()
       if (ids.length === 0) return map
-      const body = (await get(`/videos?part=contentDetails&id=${ids.map(encodeURIComponent).join(',')}`)) as {
-        items?: { id?: string; contentDetails?: { duration?: string } }[]
+      const body = (await get(`/videos?part=contentDetails,status&id=${ids.map(encodeURIComponent).join(',')}`)) as {
+        items?: { id?: string; contentDetails?: { duration?: string }; status?: { embeddable?: boolean } }[]
       }
       for (const it of body.items ?? []) {
-        if (it.id && it.contentDetails?.duration) map.set(it.id, parseIso8601Duration(it.contentDetails.duration))
+        if (!it.id) continue
+        map.set(it.id, {
+          durationSec: it.contentDetails?.duration ? parseIso8601Duration(it.contentDetails.duration) : undefined,
+          embeddable: it.status?.embeddable,
+        })
       }
       return map
     },

@@ -1,6 +1,7 @@
 import type { ProviderRefs } from '@onrepeat/db'
 import type { ItunesClient } from './itunes'
 import type { YoutubeClient } from './youtube'
+import { youtubeVideoId } from './youtube'
 import { isConfidentMatch } from './match'
 
 export interface ResolveInput {
@@ -77,16 +78,30 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
     // iTunes unavailable for this job — skip Apple, keep going.
   }
 
-  // --- YouTube (validated against anchor) ---
+  // --- YouTube ---
+  const sourceIsYoutube = input.sourceProvider === 'youtube' || input.sourceProvider === 'youtubemusic'
   if (deps.youtube) {
     try {
-      const vids = await deps.youtube.searchVideo(`${anchor.title} ${anchor.artist}`)
-      if (vids.length) {
-        const durations = await deps.youtube.lookupDurations(vids.map((v) => v.videoId))
-        const match = vids.find((v) =>
-          isConfidentMatch(anchor, { title: v.title, artist: v.channelTitle, durationSec: durations.get(v.videoId) }),
-        )
-        if (match) providerRefs.youtube = { url: match.url }
+      if (sourceIsYoutube) {
+        // Source already covers YouTube; don't cross-link (it would duplicate the ref
+        // or overwrite the user's pasted video). Just check the source can embed — if
+        // the uploader disabled it, mark the ref so the player falls back to link-out.
+        const vid = youtubeVideoId(input.sourceUrl)
+        const ref = input.sourceProvider ? providerRefs[input.sourceProvider] : undefined
+        if (vid && ref) {
+          const meta = await deps.youtube.lookupVideos([vid])
+          if (meta.get(vid)?.embeddable === false) ref.embeddable = false
+        }
+      } else {
+        const vids = await deps.youtube.searchVideo(`${anchor.title} ${anchor.artist}`)
+        if (vids.length) {
+          const meta = await deps.youtube.lookupVideos(vids.map((v) => v.videoId))
+          const match = vids.find((v) =>
+            isConfidentMatch(anchor, { title: v.title, artist: v.channelTitle, durationSec: meta.get(v.videoId)?.durationSec }),
+          )
+          // Don't add a cross-link that can't embed — it would be a dead "YouTube" option.
+          if (match && meta.get(match.videoId)?.embeddable !== false) providerRefs.youtube = { url: match.url }
+        }
       }
     } catch {
       // YouTube unavailable/quota — skip.

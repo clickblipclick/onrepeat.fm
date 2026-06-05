@@ -34,4 +34,39 @@ describe('deriveTrack', () => {
     const fetchFn = async () => { throw new Error('network') }
     expect(await deriveTrack('https://open.spotify.com/track/x', { fetchFn })).toBeNull()
   })
+
+  const ytOembed = (title: string, author = 'Chan') => async () =>
+    ({ ok: true, status: 200, async json() { return { title, author_name: author } }, async text() { return '' } })
+
+  it('flags a non-music youtube video (isLikelyMusic false) via the classifier', async () => {
+    const classifyYoutubeMusic = async (videoId: string) => { expect(videoId).toBe('abc'); return false }
+    const r = await deriveTrack('https://www.youtube.com/watch?v=abc', { fetchFn: ytOembed('How to Tie a Tie'), classifyYoutubeMusic })
+    expect(r?.isLikelyMusic).toBe(false)
+  })
+
+  it('does not flag a music youtube video (isLikelyMusic stays undefined)', async () => {
+    const classifyYoutubeMusic = async () => true
+    const r = await deriveTrack('https://www.youtube.com/watch?v=abc', { fetchFn: ytOembed('Artist - Song'), classifyYoutubeMusic })
+    expect(r?.isLikelyMusic).toBeUndefined()
+  })
+
+  it('does not classify when there is no videoId (e.g. a playlist url)', async () => {
+    let called = false
+    const classifyYoutubeMusic = async () => { called = true; return false }
+    const r = await deriveTrack('https://www.youtube.com/playlist?list=PL', { fetchFn: ytOembed('Popular Music Videos', 'Music'), classifyYoutubeMusic })
+    expect(called).toBe(false)
+    expect(r?.isLikelyMusic).toBeUndefined()
+  })
+
+  it('does not classify non-youtube providers (spotify)', async () => {
+    let called = false
+    const classifyYoutubeMusic = async () => { called = true; return false }
+    const fetchFn = async (u: string) => {
+      if (u.includes('/oembed')) return { ok: true, status: 200, async json() { return { title: 'Song' } }, async text() { return '' } }
+      return { ok: true, status: 200, async json() { return {} }, async text() { return '<meta name="music:musician_description" content="Artist">' } }
+    }
+    const r = await deriveTrack('https://open.spotify.com/track/x', { fetchFn, classifyYoutubeMusic })
+    expect(called).toBe(false)
+    expect(r?.isLikelyMusic).toBeUndefined()
+  })
 })

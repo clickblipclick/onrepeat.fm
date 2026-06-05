@@ -16,6 +16,9 @@ export function TrackPicker() {
   const [selected, setSelected] = useState<TrackCandidate | null>(null)
   const [manual, setManual] = useState(false)
   const [busy, setBusy] = useState(false)
+  // Autofilled title/artist show as read-only text (keeps the canonical metadata that
+  // drives dedup/resolution); an explicit "edit" reveals editable inputs.
+  const [editing, setEditing] = useState(false)
   const seq = useRef(0)
 
   useEffect(() => {
@@ -44,6 +47,7 @@ export function TrackPicker() {
     if (c) {
       setSelected(c)
       setResults([])
+      setEditing(false)
     } else {
       setManual(true) // keep the URL; let them type title/artist
     }
@@ -60,13 +64,42 @@ export function TrackPicker() {
             <span className="accent-grid h-14 w-14 rounded" />
           )}
           <div className="min-w-0 flex-1">
-            <input name="title" defaultValue={selected.title} aria-label="Song title" className={`${inputCls} mb-1`} />
-            <input name="artist" defaultValue={selected.artist} aria-label="Artist" className={inputCls} />
+            <input
+              name="title"
+              defaultValue={selected.title}
+              readOnly={!editing}
+              aria-label="Song title"
+              className={editing ? `${inputCls} mb-1` : 'w-full truncate bg-transparent font-bold focus:outline-none'}
+            />
+            <input
+              name="artist"
+              defaultValue={selected.artist}
+              readOnly={!editing}
+              aria-label="Artist"
+              className={editing ? inputCls : 'w-full truncate bg-transparent text-sm text-muted focus:outline-none'}
+            />
           </div>
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            aria-pressed={editing}
+            className="shrink-0 self-start text-xs text-muted hover:text-accent"
+          >
+            {editing ? 'done' : 'edit'}
+          </button>
         </div>
         <input type="hidden" name="sourceUrl" value={selected.sourceUrl} />
         <input type="hidden" name="artworkUrl" value={selected.artworkUrl ?? ''} />
-        <button type="button" onClick={() => { setSelected(null); setQuery('') }} className="mt-2 text-xs text-muted hover:text-accent">
+        {selected.isLikelyMusic === false && (
+          <p className="mt-2 text-xs text-amber-700" role="status">
+            ⚠ This doesn’t look like music — you can post it anyway, or{' '}
+            <button type="button" onClick={() => { setSelected(null); setQuery(''); setEditing(false) }} className="underline hover:text-accent">
+              pick another
+            </button>
+            .
+          </p>
+        )}
+        <button type="button" onClick={() => { setSelected(null); setQuery(''); setEditing(false) }} className="mt-2 text-xs text-muted hover:text-accent">
           change track
         </button>
       </div>
@@ -98,7 +131,7 @@ export function TrackPicker() {
         <ul className="mt-1 divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
           {results.map((r) => (
             <li key={r.sourceUrl}>
-              <button type="button" onClick={() => { setSelected(r); setResults([]) }} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-bg">
+              <button type="button" onClick={() => { setSelected(r); setResults([]); setEditing(false) }} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-bg">
                 {r.artworkUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={r.artworkUrl} alt="" className="h-10 w-10 rounded object-cover" />

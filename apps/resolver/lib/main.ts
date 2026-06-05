@@ -1,6 +1,6 @@
 import { createDb } from '@onrepeat/db'
 import { createBoss, createResolveQueue } from '@onrepeat/jobs'
-import { createItunesClient, createYoutubeClient, fetchBandcampEmbed } from '@onrepeat/music'
+import { createItunesClient, createYoutubeClient, fetchBandcampEmbed, fetchOembed } from '@onrepeat/music'
 import type { ResolverDeps } from './resolve'
 import { startResolver } from './worker'
 import { backfill } from './backfill'
@@ -31,6 +31,7 @@ async function main(): Promise<void> {
   const deps: ResolverDeps = {
     itunes: createItunesClient(),
     bandcamp: (url) => fetchBandcampEmbed(url),
+    oembed: (provider, url) => fetchOembed(provider, url),
   }
   if (process.env.YOUTUBE_API_KEY) {
     deps.youtube = createYoutubeClient({ apiKey: process.env.YOUTUBE_API_KEY })

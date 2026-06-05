@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getSessionAgent } from '../lib/session'
 import { postJam, likeJam, unlikeJam, reJam, type PostJamResult } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
-import { deriveTrack, type TrackCandidate } from '@onrepeat/music'
+import { deriveTrack, fetchYoutubeCategory, type TrackCandidate } from '@onrepeat/music'
 import { db } from '../lib/db'
 import { indexJam } from '@onrepeat/db'
 
@@ -69,9 +69,17 @@ export async function postJamAction(
 export async function deriveTrackAction(url: string): Promise<TrackCandidate | null> {
   const res = await getSessionAgent()
   if (!res.agent) return null
-  const agent = res.agent
+  // When a YouTube Data API key is configured, flag plain youtube.com videos that
+  // aren't in the Music category ('10') so the form can warn before posting.
+  const apiKey = process.env.YOUTUBE_API_KEY
+  const classifyYoutubeMusic = apiKey
+    ? async (videoId: string) => {
+        const cat = await fetchYoutubeCategory(videoId, { apiKey })
+        return cat == null ? null : cat === '10'
+      }
+    : undefined
   try {
-    return await deriveTrack(url)
+    return await deriveTrack(url, { classifyYoutubeMusic })
   } catch (err) {
     console.error('[web] deriveTrackAction failed', err)
     return null

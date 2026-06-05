@@ -27,7 +27,7 @@ export function JamCard({
   loggedIn?: boolean
   preferredProvider?: string
 }) {
-  const jamHref = `/jam/${encodeURIComponent(jam.authorDid)}/${rkeyOf(jam.uri)}`
+  const jamHref = `/jam/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
   return (
     <article className="overflow-hidden rounded-md border border-border bg-surface">

@@ -208,20 +208,26 @@ export async function getJam(db: DB, params: { uri: string; viewerDid?: string }
 }
 
 /**
- * Follow-feed: the current jam (latest <7 days) of each followed DID, newest-first.
- * Fetches one current jam per author via DISTINCT ON, then orders/paginates in memory
+ * Follow-feed: the current jam (latest <7 days) of each followed DID — plus the viewer's
+ * own current jam (home feeds conventionally include your own posts without a self-follow) —
+ * newest-first. One current jam per author via DISTINCT ON, then ordered/paginated in memory
  * (bounded by the follow count). `followedDids` is supplied by the caller (from bsky).
  */
 export async function getFollowFeed(db: DB, params: PageParams & { followedDids: string[] }): Promise<Page> {
   const limit = clampLimit(params.limit)
-  if (params.followedDids.length === 0) return { jams: [] }
-  // MVP: DISTINCT ON yields one current jam per followed author (≤ ~10k follows typical),
+  // Home feeds conventionally include your own jam without a self-follow — fold the
+  // viewer into the author set (deduped; you can't follow yourself on bsky anyway).
+  const authorDids = params.viewerDid
+    ? Array.from(new Set([...params.followedDids, params.viewerDid]))
+    : params.followedDids
+  if (authorDids.length === 0) return { jams: [] }
+  // MVP: DISTINCT ON yields one current jam per author (≤ ~10k follows typical),
   // sorted + paginated in memory. If follows scale to 50k+, push ORDER BY + LIMIT into SQL.
   const currentRows = await db
     .selectFrom('jams')
     .distinctOn('author_did')
     .select(['uri', 'created_at'])
-    .where('author_did', 'in', params.followedDids)
+    .where('author_did', 'in', authorDids)
     .where('created_at', '>', sql<Date>`now() - interval '7 days'`)
     .orderBy('author_did')
     .orderBy('created_at', 'desc')

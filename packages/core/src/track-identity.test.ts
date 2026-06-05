@@ -24,6 +24,17 @@ describe('trackIdentity', () => {
       .toBe('ta:sig|naive')
   })
 
+  it('collapses (parentheticals), [brackets], and feat tails so decorations dedupe', () => {
+    const clean = trackIdentity({ title: 'Bohemian Rhapsody', artist: 'Queen' })
+    expect(clean).toBe('ta:queen|bohemian rhapsody')
+    expect(trackIdentity({ title: 'Bohemian Rhapsody (Official Video Remastered)', artist: 'Queen' })).toBe(clean)
+    expect(trackIdentity({ title: 'Bohemian Rhapsody [Remastered 2011]', artist: 'Queen' })).toBe(clean)
+    expect(trackIdentity({ title: 'Dancing On My Own (feat. Someone)', artist: 'Robyn' }))
+      .toBe(trackIdentity({ title: 'Dancing On My Own', artist: 'Robyn' }))
+    expect(trackIdentity({ title: 'This Is What You Came For', artist: 'Calvin Harris feat. Rihanna' }))
+      .toBe(trackIdentity({ title: 'This Is What You Came For', artist: 'Calvin Harris' }))
+  })
+
   it('ignores empty/whitespace ISRC and Odesli id', () => {
     expect(trackIdentity({ isrc: '   ', odesliId: '', title: 'A', artist: 'B' }))
       .toBe('ta:b|a')

@@ -8,7 +8,7 @@ const ytVid = { videoId: 'yt1', url: 'https://www.youtube.com/watch?v=yt1', titl
 function deps(over: Partial<ResolveDeps> = {}): ResolveDeps {
   return {
     itunes: { async search() { return [apple] }, async lookup() { return apple } },
-    youtube: { async searchVideo() { return [ytVid] }, async lookupDurations() { return new Map([['yt1', 201]]) } },
+    youtube: { async searchVideo() { return [ytVid] }, async lookupVideos() { return new Map([['yt1', { durationSec: 201, embeddable: true }]]) } },
     ...over,
   }
 }
@@ -40,12 +40,44 @@ describe('resolveTrack (iTunes-anchored)', () => {
   })
 
   it('omits youtube when duration disagrees', async () => {
-    const r = await resolveTrack(base, deps({ youtube: { async searchVideo() { return [ytVid] }, async lookupDurations() { return new Map([['yt1', 320]]) } } }))
+    const r = await resolveTrack(base, deps({ youtube: { async searchVideo() { return [ytVid] }, async lookupVideos() { return new Map([['yt1', { durationSec: 320, embeddable: true }]]) } } }))
+    expect(r.providerRefs.youtube).toBeUndefined()
+  })
+
+  it('omits the youtube cross-link when the matched video is not embeddable', async () => {
+    const r = await resolveTrack(base, deps({ youtube: { async searchVideo() { return [ytVid] }, async lookupVideos() { return new Map([['yt1', { durationSec: 201, embeddable: false }]]) } } }))
     expect(r.providerRefs.youtube).toBeUndefined()
   })
 
   it('skips a throwing/absent provider, still returns source ref', async () => {
     const r = await resolveTrack(base, { itunes: { async search() { throw new Error('x') }, async lookup() { throw new Error('x') } } })
     expect(r.providerRefs).toEqual({ spotify: { url: base.sourceUrl } })
+  })
+
+  it('youtubemusic source: keeps the source ref, adds no duplicate youtube cross-link', async () => {
+    let searched = false
+    const r = await resolveTrack(
+      { ...base, sourceUrl: 'https://music.youtube.com/watch?v=ytm1', sourceProvider: 'youtubemusic' },
+      deps({ youtube: { async searchVideo() { searched = true; return [ytVid] }, async lookupVideos() { return new Map([['ytm1', { embeddable: true }]]) } } }),
+    )
+    expect(searched).toBe(false)
+    expect(r.providerRefs.youtubemusic).toEqual({ url: 'https://music.youtube.com/watch?v=ytm1' })
+    expect(r.providerRefs.youtube).toBeUndefined()
+  })
+
+  it('youtube source: keeps the pasted video, never overwrites it with a search hit', async () => {
+    const r = await resolveTrack(
+      { ...base, sourceUrl: 'https://www.youtube.com/watch?v=mine', sourceProvider: 'youtube' },
+      deps({ youtube: { async searchVideo() { return [ytVid] }, async lookupVideos() { return new Map([['mine', { embeddable: true }]]) } } }),
+    )
+    expect(r.providerRefs.youtube).toEqual({ url: 'https://www.youtube.com/watch?v=mine' })
+  })
+
+  it('flags a non-embeddable youtube source ref so the player can fall back', async () => {
+    const r = await resolveTrack(
+      { ...base, sourceUrl: 'https://www.youtube.com/watch?v=mine', sourceProvider: 'youtube' },
+      deps({ youtube: { async searchVideo() { return [] }, async lookupVideos() { return new Map([['mine', { embeddable: false }]]) } } }),
+    )
+    expect(r.providerRefs.youtube).toEqual({ url: 'https://www.youtube.com/watch?v=mine', embeddable: false })
   })
 })

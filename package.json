@@ -10,7 +10,7 @@
     "dev:web": "pnpm --filter @onrepeat/web dev",
     "dev:services": "concurrently -k -n ingest,resolve -c green,magenta \"pnpm --filter @onrepeat/ingester dev\" \"pnpm --filter @onrepeat/resolver dev\"",
     "test": "vitest run",
-    "test:int": "vitest run --config vitest.int.config.ts",
+    "test:int": "pnpm --filter @onrepeat/db exec tsx src/inttest-create.ts && vitest run --config vitest.int.config.ts",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",

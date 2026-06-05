@@ -72,11 +72,31 @@ describe('buildEmbed', () => {
     const e = buildEmbed('bandcamp', refs, 'https://x.bandcamp.com/track/y')
     expect(e.kind).toBe('iframe')
     expect(e.provider).toBe('bandcamp')
-    if (e.kind === 'iframe') expect(e.src).toContain('bandcamp.com/EmbeddedPlayer/track=1234567890')
+    if (e.kind === 'iframe') {
+      expect(e.src).toContain('bandcamp.com/EmbeddedPlayer/track=1234567890')
+      expect(e.src).toContain('artwork=small') // compact ~120px player, consistent with the other bars
+    }
   })
   it('bandcamp without a trackId is not embeddable (link-out)', () => {
     const e = buildEmbed('bandcamp', { bandcamp: { url: 'https://x.bandcamp.com/track/y' } }, 'https://x.bandcamp.com/track/y')
     expect(e.kind).toBe('link')
+  })
+
+  it('treats a youtube ref flagged embeddable:false as non-embeddable (link-out)', () => {
+    const url = 'https://www.youtube.com/watch?v=x'
+    const e = buildEmbed('youtube', { youtube: { url, embeddable: false } }, url)
+    expect(e.kind).toBe('link')
+  })
+
+  it('falls back to another provider when the youtube source is not embeddable', () => {
+    const r: ProviderRefs = { youtube: { url: 'https://www.youtube.com/watch?v=x', embeddable: false }, spotify: refs.spotify! }
+    const e = buildEmbed('youtube', r, 'https://www.youtube.com/watch?v=x')
+    expect(e.kind).toBe('iframe')
+    expect(e.provider).toBe('spotify')
+  })
+
+  it('excludes a non-embeddable youtube ref from the switcher list', () => {
+    expect(embeddableProviders({ youtube: { url: refs.youtube!.url, embeddable: false }, spotify: refs.spotify! })).toEqual(['spotify'])
   })
 })
 
@@ -134,6 +154,10 @@ describe('resolvePreferredKey', () => {
   it('aliases youtube <-> youtubemusic', () => {
     expect(resolvePreferredKey('youtube', { youtubemusic: refs.youtube! })).toBe('youtubemusic')
     expect(resolvePreferredKey('youtubemusic', { youtube: refs.youtube! })).toBe('youtube')
+  })
+
+  it('does not resolve a youtube preference to a non-embeddable ref', () => {
+    expect(resolvePreferredKey('youtube', { youtube: { url: refs.youtube!.url, embeddable: false } })).toBeNull()
   })
 
   it('returns null for absent, junk, non-embeddable, or empty preferences', () => {

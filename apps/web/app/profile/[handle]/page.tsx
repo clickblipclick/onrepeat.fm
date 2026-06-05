@@ -44,7 +44,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ handle
           <h2 className="mt-6 mb-2 text-xs uppercase text-muted">Archive</h2>
           <div className="grid grid-cols-4 gap-2">
             {archive.map((jam) => (
-              <Link key={jam.uri} href={`/jam/${encodeURIComponent(jam.authorDid)}/${rkeyOf(jam.uri)}`} className="block aspect-square overflow-hidden rounded border border-border" title={`${jam.title} — ${jam.artist}`}>
+              <Link key={jam.uri} href={`/jam/${encodeURIComponent(profile.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`} className="block aspect-square overflow-hidden rounded border border-border" title={`${jam.title} — ${jam.artist}`}>
                 {jam.artworkUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={jam.artworkUrl} alt={`${jam.title} by ${jam.artist}`} loading="lazy" className="h-full w-full object-cover" />

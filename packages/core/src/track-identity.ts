@@ -10,6 +10,10 @@ function normalizeText(s: string): string {
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '') // strip combining diacritics
     .toLowerCase()
+    // Drop decorations so identity matches @onrepeat/music's normalizeTokens — otherwise
+    // "Bohemian Rhapsody (Official Video Remastered)" dedupes apart from "Bohemian Rhapsody".
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ') // (parentheticals) / [brackets]
+    .replace(/\b(feat|ft|featuring)\b.*$/g, ' ') // featured-artist tails
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
