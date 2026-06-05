@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
 import { JAM_NSID, LIKE_NSID, validateRecord } from '@onrepeat/lexicons'
-import { postJam, likeJam, unlikeJam, reJam } from './write'
+import { postJam, likeJam, unlikeJam, reJam, deleteJam } from './write'
 
 let network: TestNetworkNoAppView
 let agent: any
@@ -99,5 +99,21 @@ describe('write ops against a real PDS', () => {
       uri: sourceUri,
       did: sourceDid,
     })
+  })
+
+  it('deleteJam removes a jam record from the repo', async () => {
+    const jam = await postJam(agent, baseJam)
+    const rkey = jam.uri.split('/').pop()!
+    const before = await agent.com.atproto.repo
+      .getRecord({ repo: did, collection: JAM_NSID, rkey })
+      .catch(() => null)
+    expect(before).not.toBeNull()
+
+    await deleteJam(agent, rkey)
+
+    const after = await agent.com.atproto.repo
+      .getRecord({ repo: did, collection: JAM_NSID, rkey })
+      .catch(() => null)
+    expect(after).toBeNull()
   })
 })
