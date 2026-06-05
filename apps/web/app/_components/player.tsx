@@ -138,7 +138,7 @@ export function Player({
           src={artworkUrl}
           alt=""
           decoding="async"
-          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'scale-100 blur-0'}`}
+          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'blur-0 scale-100'}`}
         />
       ) : (
         <span aria-hidden className="accent-grid absolute inset-0" />
@@ -155,7 +155,7 @@ export function Player({
             type="button"
             onClick={() => setPlaying(false)}
             aria-label="Close player"
-            className="absolute inset-0 cursor-zoom-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+            className="absolute inset-0 cursor-zoom-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset"
           />
           {/* The embed floats over the blurred cover; pointer-events-none lets clicks on the
               surrounding art reach the close button, while the embed itself stays interactive. */}
@@ -203,7 +203,7 @@ export function Player({
           {/* bottom scrim so the platform buttons stay legible over any artwork */}
           <span
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 to-transparent"
+            className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/70 to-transparent"
           />
           <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-1.5 p-2.5">
             {platforms.map((p) => (

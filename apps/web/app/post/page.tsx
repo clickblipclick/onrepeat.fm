@@ -16,7 +16,7 @@ export default async function PostPage() {
   }
   return (
     <>
-      <h1 className="mb-4 text-sm uppercase text-muted">Set your jam</h1>
+      <h1 className="mb-4 text-sm text-muted uppercase">Set your jam</h1>
       <PostJamForm />
     </>
   )

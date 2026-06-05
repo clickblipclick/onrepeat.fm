@@ -13,7 +13,7 @@ export default async function ExplorePage() {
   const jams = await hydrate(page.jams)
   return (
     <>
-      <h1 className="mb-4 text-sm uppercase text-muted">Latest jams</h1>
+      <h1 className="mb-4 text-sm text-muted uppercase">Latest jams</h1>
       <FeedList
         jams={jams}
         cursor={page.cursor}

@@ -24,6 +24,7 @@
     "@types/node": "^20.14.0",
     "concurrently": "^9.0.0",
     "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }

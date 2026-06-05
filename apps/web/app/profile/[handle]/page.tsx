@@ -42,7 +42,7 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      <h2 className="mt-6 mb-2 text-xs uppercase text-muted">Current jam</h2>
+      <h2 className="mt-6 mb-2 text-xs text-muted uppercase">Current jam</h2>
       {current ? (
         <JamCard
           jam={current}
@@ -57,7 +57,7 @@ export default async function ProfilePage({
 
       {archive.length > 0 && (
         <>
-          <h2 className="mt-6 mb-2 text-xs uppercase text-muted">Archive</h2>
+          <h2 className="mt-6 mb-2 text-xs text-muted uppercase">Archive</h2>
           <div className="grid grid-cols-4 gap-2">
             {archive.map((jam) => (
               <Link

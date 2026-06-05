@@ -107,7 +107,7 @@ export default async function JamPage({
 
       {detail.likerDids.length > 0 && (
         <div className="mt-4">
-          <div className="text-xs uppercase text-muted">Liked by</div>
+          <div className="text-xs text-muted uppercase">Liked by</div>
           <div className="mt-1 flex flex-wrap gap-1">
             {detail.likerDids.slice(0, 12).map((d) => {
               const p = likerProfiles.get(d)
@@ -124,7 +124,7 @@ export default async function JamPage({
 
       {reJams.length > 0 && (
         <div className="mt-4">
-          <div className="text-xs uppercase text-muted">
+          <div className="text-xs text-muted uppercase">
             Re-jams ({reJams.length})
           </div>
           <div className="mt-1 flex flex-col gap-1.5">

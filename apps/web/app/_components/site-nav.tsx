@@ -41,7 +41,7 @@ export async function SiteNav() {
             <>
               <Link
                 href="/post"
-                className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent"
+                className="rounded border border-ink px-2 py-1 hover:border-accent hover:bg-accent hover:text-on-accent"
               >
                 + set your jam
               </Link>
@@ -64,7 +64,7 @@ export async function SiteNav() {
           ) : (
             <Link
               href="/login"
-              className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent"
+              className="rounded border border-ink px-2 py-1 hover:border-accent hover:bg-accent hover:text-on-accent"
             >
               sign in
             </Link>

@@ -53,7 +53,7 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
-        <h1 className="mb-4 text-sm uppercase text-muted">Following</h1>
+        <h1 className="mb-4 text-sm text-muted uppercase">Following</h1>
         {jams.length === 0 ? (
           <EmptyState>
             Nobody you follow has a current jam.{' '}
@@ -78,7 +78,7 @@ export default async function Home() {
   } catch {
     return (
       <>
-        <h1 className="mb-4 text-sm uppercase text-muted">Following</h1>
+        <h1 className="mb-4 text-sm text-muted uppercase">Following</h1>
         <EmptyState>
           Couldn&apos;t load your feed right now.{' '}
           <Link href="/explore" className="text-accent">
