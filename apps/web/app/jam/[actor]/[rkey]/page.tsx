@@ -11,6 +11,7 @@ import { RelativeTime } from '../../../_components/relative-time'
 import { isCurrentJam } from '../../../../lib/format'
 import { LikeButton } from '../../../_components/like-button'
 import { ReJamButton } from '../../../_components/rejam-button'
+import { DeleteJamButton } from '../../../_components/delete-jam-button'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -103,6 +104,12 @@ export default async function JamPage({
             authorName: authorName(jam.author),
           }}
         />
+        {session.did === jam.authorDid && (
+          <DeleteJamButton
+            jamUri={jam.uri}
+            profileHandle={jam.author.handle ?? jam.authorDid}
+          />
+        )}
       </div>
 
       {detail.likerDids.length > 0 && (
