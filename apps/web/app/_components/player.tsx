@@ -1,30 +1,30 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import type { ProviderRefs } from "@onrepeat/db";
+import { useEffect, useState } from 'react'
+import type { ProviderRefs } from '@onrepeat/db'
 import {
   buildEmbed,
   embeddableProviders,
   resolvePreferredKey,
   LABELS,
   type Embed,
-} from "../../lib/embed";
+} from '../../lib/embed'
 import {
   parseProvider,
   playbackCookieString,
-} from "../../lib/playback-preference";
-import { YouTubeEmbed } from "./youtube-embed";
+} from '../../lib/playback-preference'
+import { YouTubeEmbed } from './youtube-embed'
 
 // Reasonable embed dimensions per provider, sized inside the square cover frame:
 // "bar" players get a fixed height, video gets 16:9, everything else stays square.
 const EMBED_FRAME: Record<string, string> = {
-  youtube: "aspect-video w-full",
-  youtubemusic: "aspect-video w-full",
-  spotify: "h-[152px] w-full",
-  applemusic: "h-[175px] w-full",
-  bandcamp: "h-[120px] w-full",
-};
-const DEFAULT_FRAME = "aspect-square w-full";
+  youtube: 'aspect-video w-full',
+  youtubemusic: 'aspect-video w-full',
+  spotify: 'h-[152px] w-full',
+  applemusic: 'h-[175px] w-full',
+  bandcamp: 'h-[120px] w-full',
+}
+const DEFAULT_FRAME = 'aspect-square w-full'
 
 /** Cross-platform player. Click-to-play by default (`lazy`): shows the album art as a
  *  poster and only mounts the third-party embed once the user hits play — keeps the art
@@ -39,69 +39,69 @@ export function Player({
   lazy = true,
   preferredProvider,
 }: {
-  sourceProvider: string | null;
-  providerRefs: ProviderRefs;
-  sourceUrl: string;
-  artworkUrl: string | null;
-  lazy?: boolean;
-  preferredProvider?: string;
+  sourceProvider: string | null
+  providerRefs: ProviderRefs
+  sourceUrl: string
+  artworkUrl: string | null
+  lazy?: boolean
+  preferredProvider?: string
 }) {
   const def = buildEmbed(
     sourceProvider,
     providerRefs,
     sourceUrl,
     preferredProvider,
-  );
-  const others = embeddableProviders(providerRefs);
+  )
+  const others = embeddableProviders(providerRefs)
   // Platforms offered on the poster — the resolved embeddable refs, or the source
   // itself when nothing's resolved yet (def is always an iframe past the link guard).
-  const platforms = others.length > 0 ? others : [def.provider];
-  const [active, setActive] = useState<Embed>(def);
-  const [playing, setPlaying] = useState(!lazy);
+  const platforms = others.length > 0 ? others : [def.provider]
+  const [active, setActive] = useState<Embed>(def)
+  const [playing, setPlaying] = useState(!lazy)
   // The saved-default provider (drives the marker). Picking a provider in the
   // switcher persists it as the default for future jams via a (non-httpOnly) cookie.
-  const [pref, setPref] = useState<string | null>(preferredProvider ?? null);
-  const [loaded, setLoaded] = useState(false); // the embed iframe finished loading
-  const [failed, setFailed] = useState(false); // YouTube embed errored (region/age/disabled)
-  const markedKey = resolvePreferredKey(pref, providerRefs);
+  const [pref, setPref] = useState<string | null>(preferredProvider ?? null)
+  const [loaded, setLoaded] = useState(false) // the embed iframe finished loading
+  const [failed, setFailed] = useState(false) // YouTube embed errored (region/age/disabled)
+  const markedKey = resolvePreferredKey(pref, providerRefs)
   const ytId =
-    active.kind === "iframe"
-      ? (active.src.match(/\/embed\/([^?]+)/)?.[1] ?? "")
-      : "";
+    active.kind === 'iframe'
+      ? (active.src.match(/\/embed\/([^?]+)/)?.[1] ?? '')
+      : ''
   const isYouTube =
-    active.provider === "youtube" || active.provider === "youtubemusic";
+    active.provider === 'youtube' || active.provider === 'youtubemusic'
 
   function choose(p: string) {
-    setActive(buildEmbed(p, providerRefs, sourceUrl));
-    const logical = parseProvider(p);
+    setActive(buildEmbed(p, providerRefs, sourceUrl))
+    const logical = parseProvider(p)
     if (logical) {
-      setPref(logical);
+      setPref(logical)
       document.cookie = playbackCookieString(
         logical,
-        location.protocol === "https:",
-      );
+        location.protocol === 'https:',
+      )
     }
   }
 
   /** Launch a specific platform from the poster: load its embed and start playing. */
   function launch(p: string) {
-    choose(p);
-    setPlaying(true);
+    choose(p)
+    setPlaying(true)
   }
 
   // Reveal the embed only once it loads — with a fallback so it never stays hidden if
   // onLoad doesn't fire. Reset on close. (The blur in/out is pure CSS off `playing`.)
   useEffect(() => {
     if (!playing) {
-      setLoaded(false);
-      setFailed(false);
-      return;
+      setLoaded(false)
+      setFailed(false)
+      return
     }
-    const fallback = setTimeout(() => setLoaded(true), 4000);
-    return () => clearTimeout(fallback);
-  }, [playing]);
+    const fallback = setTimeout(() => setLoaded(true), 4000)
+    return () => clearTimeout(fallback)
+  }, [playing])
 
-  if (def.kind === "link") {
+  if (def.kind === 'link') {
     return (
       <a
         href={def.href}
@@ -125,7 +125,7 @@ export function Player({
           open in {def.provider} ↗
         </span>
       </a>
-    );
+    )
   }
 
   return (
@@ -138,14 +138,14 @@ export function Player({
           src={artworkUrl}
           alt=""
           decoding="async"
-          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? "scale-110 blur-md" : "scale-100 blur-0"}`}
+          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'scale-100 blur-0'}`}
         />
       ) : (
         <span aria-hidden className="accent-grid absolute inset-0" />
       )}
       <span
         aria-hidden
-        className={`absolute inset-0 bg-black/25 transition-opacity duration-200 ${playing ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 bg-black/25 transition-opacity duration-200 ${playing ? 'opacity-100' : 'opacity-0'}`}
       />
 
       {playing ? (
@@ -161,7 +161,7 @@ export function Player({
               surrounding art reach the close button, while the embed itself stays interactive. */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
             <div
-              className={`overflow-hidden rounded-xl shadow-2xl ring-1 ring-black/10 transition-opacity duration-200 ${loaded ? "pointer-events-auto opacity-100" : "opacity-0"} ${EMBED_FRAME[active.provider] ?? DEFAULT_FRAME}`}
+              className={`overflow-hidden rounded-xl shadow-2xl ring-1 ring-black/10 transition-opacity duration-200 ${loaded ? 'pointer-events-auto opacity-100' : 'opacity-0'} ${EMBED_FRAME[active.provider] ?? DEFAULT_FRAME}`}
             >
               {isYouTube ? (
                 failed ? (
@@ -179,8 +179,8 @@ export function Player({
                     videoId={ytId}
                     onReady={() => setLoaded(true)}
                     onError={() => {
-                      setFailed(true);
-                      setLoaded(true);
+                      setFailed(true)
+                      setLoaded(true)
                     }}
                     className="block h-full w-full"
                   />
@@ -188,8 +188,8 @@ export function Player({
               ) : (
                 <iframe
                   key={active.provider}
-                  src={active.kind === "iframe" ? active.src : undefined}
-                  title={active.kind === "iframe" ? active.title : "player"}
+                  src={active.kind === 'iframe' ? active.src : undefined}
+                  title={active.kind === 'iframe' ? active.title : 'player'}
                   onLoad={() => setLoaded(true)}
                   className="block h-full w-full"
                   allow="autoplay; encrypted-media; clipboard-write; fullscreen"
@@ -227,5 +227,5 @@ export function Player({
         </>
       )}
     </div>
-  );
+  )
 }

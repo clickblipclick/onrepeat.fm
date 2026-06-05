@@ -16,7 +16,11 @@ import { ReJamButton } from '../../../_components/rejam-button'
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
 const JAM_NSID = 'fm.onrepeat.jam'
 
-export default async function JamPage({ params }: { params: Promise<{ actor: string; rkey: string }> }) {
+export default async function JamPage({
+  params,
+}: {
+  params: Promise<{ actor: string; rkey: string }>
+}) {
   const { actor, rkey } = await params
   // `actor` is a handle (pretty links) or a DID (older/shared links). Records are keyed
   // by DID, so resolve a handle to its DID before building the at-uri.
@@ -49,16 +53,27 @@ export default async function JamPage({ params }: { params: Promise<{ actor: str
   return (
     <article className="rounded-md border border-border bg-surface p-4">
       <div className="flex items-center gap-2 text-sm">
-        <Link href={profileHref} className="flex items-center gap-2 hover:text-accent">
+        <Link
+          href={profileHref}
+          className="flex items-center gap-2 hover:text-accent"
+        >
           <Avatar author={jam.author} />
           <span className="font-bold">{authorName(jam.author)}</span>
         </Link>
         <RelativeTime iso={jam.createdAt} />
-        {isCurrentJam(jam.createdAt) && <span className="text-muted">· current jam</span>}
+        {isCurrentJam(jam.createdAt) && (
+          <span className="text-muted">· current jam</span>
+        )}
       </div>
 
       <div className="mt-3 overflow-hidden rounded">
-        <Player sourceProvider={jam.sourceProvider} providerRefs={jam.providerRefs} sourceUrl={jam.sourceUrl} artworkUrl={jam.artworkUrl} preferredProvider={preferredProvider} />
+        <Player
+          sourceProvider={jam.sourceProvider}
+          providerRefs={jam.providerRefs}
+          sourceUrl={jam.sourceUrl}
+          artworkUrl={jam.artworkUrl}
+          preferredProvider={preferredProvider}
+        />
       </div>
 
       <div className="mt-3">
@@ -68,10 +83,25 @@ export default async function JamPage({ params }: { params: Promise<{ actor: str
       </div>
 
       <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm text-muted">
-        <LikeButton jamUri={jam.uri} jamCid={jam.cid} initialCount={jam.likeCount} initialLiked={jam.likedByYou} loggedIn={!!session.did} />
+        <LikeButton
+          jamUri={jam.uri}
+          jamCid={jam.cid}
+          initialCount={jam.likeCount}
+          initialLiked={jam.likedByYou}
+          loggedIn={!!session.did}
+        />
         <ReJamButton
           loggedIn={!!session.did}
-          jam={{ uri: jam.uri, did: jam.authorDid, sourceUrl: jam.sourceUrl, sourceProvider: jam.sourceProvider, title: jam.title, artist: jam.artist, artworkUrl: jam.artworkUrl, authorName: authorName(jam.author) }}
+          jam={{
+            uri: jam.uri,
+            did: jam.authorDid,
+            sourceUrl: jam.sourceUrl,
+            sourceProvider: jam.sourceProvider,
+            title: jam.title,
+            artist: jam.artist,
+            artworkUrl: jam.artworkUrl,
+            authorName: authorName(jam.author),
+          }}
         />
       </div>
 
@@ -83,18 +113,29 @@ export default async function JamPage({ params }: { params: Promise<{ actor: str
               const p = likerProfiles.get(d)
               return <Avatar key={d} author={p ?? { did: d }} size={22} />
             })}
-            {detail.likerDids.length > 12 && <span className="self-center text-xs text-muted">+{detail.likerDids.length - 12}</span>}
+            {detail.likerDids.length > 12 && (
+              <span className="self-center text-xs text-muted">
+                +{detail.likerDids.length - 12}
+              </span>
+            )}
           </div>
         </div>
       )}
 
       {reJams.length > 0 && (
         <div className="mt-4">
-          <div className="text-xs uppercase text-muted">Re-jams ({reJams.length})</div>
+          <div className="text-xs uppercase text-muted">
+            Re-jams ({reJams.length})
+          </div>
           <div className="mt-1 flex flex-col gap-1.5">
             {reJams.map((rj) => (
-              <Link key={rj.uri} href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`} className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent">
-                <b>{authorName(rj.author)}</b> re-jammed · <RelativeTime iso={rj.createdAt} />
+              <Link
+                key={rj.uri}
+                href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
+                className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
+              >
+                <b>{authorName(rj.author)}</b> re-jammed ·{' '}
+                <RelativeTime iso={rj.createdAt} />
               </Link>
             ))}
           </div>

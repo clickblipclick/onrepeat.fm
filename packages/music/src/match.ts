@@ -28,12 +28,23 @@ export function isConfidentMatch(
   opts: { durationToleranceSec?: number } = {},
 ): boolean {
   const tol = opts.durationToleranceSec ?? 4
-  const bothDurations = anchor.durationSec != null && candidate.durationSec != null
-  if (bothDurations && Math.abs(anchor.durationSec! - candidate.durationSec!) > tol) return false
+  const bothDurations =
+    anchor.durationSec != null && candidate.durationSec != null
+  if (
+    bothDurations &&
+    Math.abs(anchor.durationSec! - candidate.durationSec!) > tol
+  )
+    return false
 
-  const want = new Set([...normalizeTokens(anchor.title), ...normalizeTokens(anchor.artist)])
+  const want = new Set([
+    ...normalizeTokens(anchor.title),
+    ...normalizeTokens(anchor.artist),
+  ])
   if (want.size === 0) return false
-  const have = new Set([...normalizeTokens(candidate.title), ...normalizeTokens(candidate.artist)])
+  const have = new Set([
+    ...normalizeTokens(candidate.title),
+    ...normalizeTokens(candidate.artist),
+  ])
   let hit = 0
   for (const t of want) if (have.has(t)) hit++
   const ratio = hit / want.size

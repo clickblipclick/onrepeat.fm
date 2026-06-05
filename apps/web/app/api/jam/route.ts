@@ -11,7 +11,8 @@ export async function GET(req: Request) {
   const session = await getSession()
   try {
     const detail = await getJam(db, { uri, viewerDid: session.did })
-    if (!detail) return NextResponse.json({ error: 'not found' }, { status: 404 })
+    if (!detail)
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
 
     // Hydrate jam author + re-jam authors via the shared (already-degrading) helper.
     const [jam] = await hydrate([detail.jam])
@@ -22,7 +23,10 @@ export async function GET(req: Request) {
       const likerProfiles = await bsky.getProfiles(detail.likerDids)
       likers = detail.likerDids.map((did) => likerProfiles.get(did) ?? { did })
     } catch (err) {
-      console.error('[web] /api/jam liker hydration failed; serving DID-only likers', err)
+      console.error(
+        '[web] /api/jam liker hydration failed; serving DID-only likers',
+        err,
+      )
       likers = detail.likerDids.map((did) => ({ did }))
     }
     return NextResponse.json({ jam, reJams, likers })

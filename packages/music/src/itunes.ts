@@ -29,13 +29,19 @@ export function mapItunes(body: ItunesBody): TrackCandidate[] {
       artworkUrl: upsizeArt(r.artworkUrl100),
       sourceUrl: r.trackViewUrl,
       provider: providerFromUrl(r.trackViewUrl) ?? 'applemusic',
-      durationSec: r.trackTimeMillis != null ? Math.round(r.trackTimeMillis / 1000) : undefined,
+      durationSec:
+        r.trackTimeMillis != null
+          ? Math.round(r.trackTimeMillis / 1000)
+          : undefined,
     })
   }
   return out
 }
 
-type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>
+type FetchLike = (
+  url: string,
+  init?: { signal?: AbortSignal },
+) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>
 
 export interface SearchOptions {
   fetchFn?: FetchLike
@@ -46,7 +52,10 @@ export interface SearchOptions {
 const ENDPOINT = 'https://itunes.apple.com/search'
 
 /** Search songs by free text. Returns [] for queries under 2 chars (no network call). */
-export async function searchTracks(q: string, opts: SearchOptions = {}): Promise<TrackCandidate[]> {
+export async function searchTracks(
+  q: string,
+  opts: SearchOptions = {},
+): Promise<TrackCandidate[]> {
   const term = q.trim()
   if (term.length < 2) return []
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
@@ -67,12 +76,18 @@ export async function searchTracks(q: string, opts: SearchOptions = {}): Promise
 const LOOKUP_ENDPOINT = 'https://itunes.apple.com/lookup'
 
 /** Look up a single Apple/iTunes track by id (free, no auth). null on miss/failure. */
-export async function lookupTrack(id: string, opts: SearchOptions = {}): Promise<TrackCandidate | null> {
+export async function lookupTrack(
+  id: string,
+  opts: SearchOptions = {},
+): Promise<TrackCandidate | null> {
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
-  const res = await fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
-    signal: AbortSignal.timeout(timeoutMs),
-  })
+  const res = await fetchFn(
+    `${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`,
+    {
+      signal: AbortSignal.timeout(timeoutMs),
+    },
+  )
   if (!res.ok) return null
   let body: ItunesBody
   try {

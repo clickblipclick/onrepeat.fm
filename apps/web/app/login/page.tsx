@@ -19,7 +19,8 @@ export default async function LoginPage({
         </p>
       )}
       <p className="mb-4 text-sm text-muted">
-        One song. Seven days. Sign in with Bluesky to follow people and set your jam.
+        One song. Seven days. Sign in with Bluesky to follow people and set your
+        jam.
       </p>
       <form action="/oauth/login" method="post" className="flex gap-2">
         <input
@@ -31,11 +32,21 @@ export default async function LoginPage({
           required
           className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm"
         />
-        <button type="submit" className="rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</button>
+        <button
+          type="submit"
+          className="rounded bg-accent px-3 py-2 text-sm text-on-accent"
+        >
+          Sign in
+        </button>
       </form>
       <p className="mt-4 text-sm text-muted">
         New to Bluesky?{' '}
-        <a href="https://bsky.app" target="_blank" rel="noreferrer" className="text-accent">
+        <a
+          href="https://bsky.app"
+          target="_blank"
+          rel="noreferrer"
+          className="text-accent"
+        >
           Create an account →
         </a>
       </p>

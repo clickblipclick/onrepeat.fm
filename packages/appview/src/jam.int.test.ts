@@ -2,15 +2,35 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
 import { getJam } from './read'
 
-const url = process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
+const url =
+  process.env.DATABASE_URL ??
+  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 const db = createDb(url)
 
-async function insertJam(uri: string, did: string, createdAt: string, viaUri?: string, viaDid?: string) {
-  await db.insertInto('jams').values({
-    uri, cid: 'c', author_did: did, track_id: null,
-    source_url: 'u', source_provider: 'spotify', raw_title: 'T', raw_artist: 'A',
-    caption: null, via_uri: viaUri ?? null, via_did: viaDid ?? null, created_at: createdAt,
-  }).execute()
+async function insertJam(
+  uri: string,
+  did: string,
+  createdAt: string,
+  viaUri?: string,
+  viaDid?: string,
+) {
+  await db
+    .insertInto('jams')
+    .values({
+      uri,
+      cid: 'c',
+      author_did: did,
+      track_id: null,
+      source_url: 'u',
+      source_provider: 'spotify',
+      raw_title: 'T',
+      raw_artist: 'A',
+      caption: null,
+      via_uri: viaUri ?? null,
+      via_did: viaDid ?? null,
+      created_at: createdAt,
+    })
+    .execute()
 }
 
 describe('getJam', () => {
@@ -32,19 +52,46 @@ describe('getJam', () => {
     const subject = 'at://did:plc:a/fm.onrepeat.jam/1'
     await insertJam(subject, 'did:plc:a', '2026-05-30T00:00:00.000Z')
     // two re-jams of it
-    await insertJam('at://did:plc:b/fm.onrepeat.jam/1', 'did:plc:b', '2026-05-30T01:00:00.000Z', subject, 'did:plc:a')
-    await insertJam('at://did:plc:c/fm.onrepeat.jam/1', 'did:plc:c', '2026-05-30T02:00:00.000Z', subject, 'did:plc:a')
-    await db.insertInto('likes').values([
-      { uri: 'at://did:plc:v/fm.onrepeat.like/1', author_did: 'did:plc:viewer', subject_uri: subject, created_at: '2026-05-30T03:00:00.000Z' },
-      { uri: 'at://did:plc:w/fm.onrepeat.like/1', author_did: 'did:plc:w', subject_uri: subject, created_at: '2026-05-30T03:00:00.000Z' },
-    ]).execute()
+    await insertJam(
+      'at://did:plc:b/fm.onrepeat.jam/1',
+      'did:plc:b',
+      '2026-05-30T01:00:00.000Z',
+      subject,
+      'did:plc:a',
+    )
+    await insertJam(
+      'at://did:plc:c/fm.onrepeat.jam/1',
+      'did:plc:c',
+      '2026-05-30T02:00:00.000Z',
+      subject,
+      'did:plc:a',
+    )
+    await db
+      .insertInto('likes')
+      .values([
+        {
+          uri: 'at://did:plc:v/fm.onrepeat.like/1',
+          author_did: 'did:plc:viewer',
+          subject_uri: subject,
+          created_at: '2026-05-30T03:00:00.000Z',
+        },
+        {
+          uri: 'at://did:plc:w/fm.onrepeat.like/1',
+          author_did: 'did:plc:w',
+          subject_uri: subject,
+          created_at: '2026-05-30T03:00:00.000Z',
+        },
+      ])
+      .execute()
 
     const res = await getJam(db, { uri: subject, viewerDid: 'did:plc:viewer' })
     expect(res).not.toBeNull()
     expect(res!.jam.uri).toBe(subject)
     expect(res!.jam.likeCount).toBe(2)
     expect(res!.jam.likedByYou).toBe(true)
-    expect(new Set(res!.likerDids)).toEqual(new Set(['did:plc:viewer', 'did:plc:w']))
+    expect(new Set(res!.likerDids)).toEqual(
+      new Set(['did:plc:viewer', 'did:plc:w']),
+    )
     expect(res!.reJams.map((j) => j.uri)).toEqual([
       'at://did:plc:c/fm.onrepeat.jam/1', // newest first
       'at://did:plc:b/fm.onrepeat.jam/1',
@@ -52,7 +99,9 @@ describe('getJam', () => {
   })
 
   it('returns null for an unknown jam', async () => {
-    expect(await getJam(db, { uri: 'at://did:plc:none/fm.onrepeat.jam/x' })).toBeNull()
+    expect(
+      await getJam(db, { uri: 'at://did:plc:none/fm.onrepeat.jam/x' }),
+    ).toBeNull()
   })
 
   it('returns empty likers/re-jams and likedByYou=false for a bare jam', async () => {

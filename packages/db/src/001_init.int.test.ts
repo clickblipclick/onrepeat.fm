@@ -39,10 +39,7 @@ describe('001_init migration', () => {
   })
 
   it('defaults a track to pending resolution with empty refs', async () => {
-    await db
-      .insertInto('tracks')
-      .values({ id: 'isrc:USRC12300001' })
-      .execute()
+    await db.insertInto('tracks').values({ id: 'isrc:USRC12300001' }).execute()
 
     const row = await db
       .selectFrom('tracks')
@@ -53,12 +50,17 @@ describe('001_init migration', () => {
     expect(row?.resolution_status).toBe('pending')
     expect(row?.provider_refs).toEqual({})
 
-    await db.deleteFrom('tracks').where('id', '=', 'isrc:USRC12300001').execute()
+    await db
+      .deleteFrom('tracks')
+      .where('id', '=', 'isrc:USRC12300001')
+      .execute()
   })
 
   it('rejects an invalid resolution_status (CHECK constraint)', async () => {
     await expect(
-      sql`insert into tracks (id, resolution_status) values ('isrc:BAD', 'bogus')`.execute(db),
+      sql`insert into tracks (id, resolution_status) values ('isrc:BAD', 'bogus')`.execute(
+        db,
+      ),
     ).rejects.toThrow()
   })
 })

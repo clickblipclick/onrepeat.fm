@@ -36,6 +36,9 @@ export async function createResolveQueue(boss: PgBoss): Promise<void> {
 }
 
 /** Enqueue a resolve job; dedups by identity (returns null if a job for it is already queued). */
-export function enqueueResolve(boss: PgBoss, job: ResolveJob): Promise<string | null> {
+export function enqueueResolve(
+  boss: PgBoss,
+  job: ResolveJob,
+): Promise<string | null> {
   return boss.send(RESOLVE_QUEUE, job, { singletonKey: job.identity })
 }

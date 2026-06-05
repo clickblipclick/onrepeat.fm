@@ -38,7 +38,9 @@ function fakeCommit(p: {
 describe('toIngestEvent', () => {
   it('normalizes a jam create', () => {
     const record = { $type: JAM_NSID, sourceUrl: 'u' }
-    const evt = toIngestEvent(fakeCommit({ event: 'create', collection: JAM_NSID, record, seq: 42 }))
+    const evt = toIngestEvent(
+      fakeCommit({ event: 'create', collection: JAM_NSID, record, seq: 42 }),
+    )
     expect(evt).toEqual({
       action: 'create',
       uri: 'at://did:plc:author/fm.onrepeat.jam/rkey1',
@@ -51,7 +53,9 @@ describe('toIngestEvent', () => {
   })
 
   it('normalizes a like delete with null cid and undefined record', () => {
-    const evt = toIngestEvent(fakeCommit({ event: 'delete', collection: LIKE_NSID }))
+    const evt = toIngestEvent(
+      fakeCommit({ event: 'delete', collection: LIKE_NSID }),
+    )
     expect(evt?.action).toBe('delete')
     expect(evt?.cid).toBeNull()
     expect(evt?.record).toBeUndefined()
@@ -59,11 +63,20 @@ describe('toIngestEvent', () => {
   })
 
   it('ignores collections we do not index', () => {
-    expect(toIngestEvent(fakeCommit({ event: 'create', collection: 'app.bsky.feed.post' }))).toBeNull()
+    expect(
+      toIngestEvent(
+        fakeCommit({ event: 'create', collection: 'app.bsky.feed.post' }),
+      ),
+    ).toBeNull()
   })
 
   it('ignores non-commit events', () => {
-    const identity = { event: 'identity', seq: 1, time: 't', did: 'did:plc:author' } as unknown as Event
+    const identity = {
+      event: 'identity',
+      seq: 1,
+      time: 't',
+      did: 'did:plc:author',
+    } as unknown as Event
     expect(toIngestEvent(identity)).toBeNull()
   })
 })

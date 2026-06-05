@@ -44,7 +44,11 @@ describe('write ops against a real PDS', () => {
     expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
     expect(res.record.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     const rkey = res.uri.split('/').pop()!
-    const got = await agent.com.atproto.repo.getRecord({ repo: did, collection: JAM_NSID, rkey })
+    const got = await agent.com.atproto.repo.getRecord({
+      repo: did,
+      collection: JAM_NSID,
+      rkey,
+    })
     expect(validateRecord(JAM_NSID, got.data.value).success).toBe(true)
     expect((got.data.value as any).caption).toBe('on repeat')
   })
@@ -54,7 +58,10 @@ describe('write ops against a real PDS', () => {
     const like = await likeJam(agent, { uri: jam.uri, cid: jam.cid })
     const likeRkey = like.uri.split('/').pop()!
 
-    const before = await agent.com.atproto.repo.listRecords({ repo: did, collection: LIKE_NSID })
+    const before = await agent.com.atproto.repo.listRecords({
+      repo: did,
+      collection: LIKE_NSID,
+    })
     expect(before.data.records.length).toBeGreaterThan(0)
 
     await unlikeJam(agent, likeRkey)
@@ -82,8 +89,15 @@ describe('write ops against a real PDS', () => {
     expect(res.record.via).toEqual({ uri: sourceUri, did: sourceDid })
 
     const rkey = res.uri.split('/').pop()!
-    const got = await agent.com.atproto.repo.getRecord({ repo: did, collection: JAM_NSID, rkey })
+    const got = await agent.com.atproto.repo.getRecord({
+      repo: did,
+      collection: JAM_NSID,
+      rkey,
+    })
     expect(validateRecord(JAM_NSID, got.data.value).success).toBe(true)
-    expect((got.data.value as any).via).toEqual({ uri: sourceUri, did: sourceDid })
+    expect((got.data.value as any).via).toEqual({
+      uri: sourceUri,
+      did: sourceDid,
+    })
   })
 })

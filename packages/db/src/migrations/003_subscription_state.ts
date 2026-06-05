@@ -8,7 +8,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('subscription_state')
     .addColumn('service', 'text', (c) => c.primaryKey())
     .addColumn('cursor', 'bigint', (c) => c.notNull())
-    .addColumn('updated_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+    .addColumn('updated_at', 'timestamptz', (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
     .execute()
 }
 

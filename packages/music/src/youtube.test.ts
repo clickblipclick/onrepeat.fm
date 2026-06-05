@@ -9,10 +9,16 @@ import {
 
 describe('youtubeVideoId', () => {
   it('extracts the id from watch / youtu.be / music urls, null otherwise', () => {
-    expect(youtubeVideoId('https://www.youtube.com/watch?v=abc123')).toBe('abc123')
+    expect(youtubeVideoId('https://www.youtube.com/watch?v=abc123')).toBe(
+      'abc123',
+    )
     expect(youtubeVideoId('https://youtu.be/abc123')).toBe('abc123')
-    expect(youtubeVideoId('https://music.youtube.com/watch?v=abc123&list=RDx')).toBe('abc123')
-    expect(youtubeVideoId('https://www.youtube.com/playlist?list=PL123')).toBeNull()
+    expect(
+      youtubeVideoId('https://music.youtube.com/watch?v=abc123&list=RDx'),
+    ).toBe('abc123')
+    expect(
+      youtubeVideoId('https://www.youtube.com/playlist?list=PL123'),
+    ).toBeNull()
     expect(youtubeVideoId('https://www.youtube.com/@google')).toBeNull()
     expect(youtubeVideoId('https://example.com/watch?v=abc')).toBeNull()
     expect(youtubeVideoId('not a url')).toBeNull()
@@ -24,25 +30,60 @@ describe('fetchYoutubeCategory', () => {
     const fetchFn = async (url: string) => {
       expect(url).toContain('/videos?part=snippet')
       expect(url).toContain('id=v1')
-      return { ok: true, status: 200, async json() { return { items: [{ snippet: { categoryId: '10' } }] } } }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return { items: [{ snippet: { categoryId: '10' } }] }
+        },
+      }
     }
-    expect(await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn })).toBe('10')
+    expect(await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn })).toBe(
+      '10',
+    )
   })
 
   it('returns null on a non-ok response (e.g. quota)', async () => {
-    const fetchFn = async () => ({ ok: false, status: 403, async json() { return {} } })
-    expect(await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn })).toBeNull()
+    const fetchFn = async () => ({
+      ok: false,
+      status: 403,
+      async json() {
+        return {}
+      },
+    })
+    expect(
+      await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn }),
+    ).toBeNull()
   })
 
   it('returns null when the video is not found', async () => {
-    const fetchFn = async () => ({ ok: true, status: 200, async json() { return { items: [] } } })
-    expect(await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn })).toBeNull()
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return { items: [] }
+      },
+    })
+    expect(
+      await fetchYoutubeCategory('v1', { apiKey: 'k', fetchFn }),
+    ).toBeNull()
   })
 
   it('returns null for a blank id without fetching', async () => {
     let called = false
-    const fetchFn = async () => { called = true; return { ok: true, status: 200, async json() { return {} } } }
-    expect(await fetchYoutubeCategory('  ', { apiKey: 'k', fetchFn })).toBeNull()
+    const fetchFn = async () => {
+      called = true
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {}
+        },
+      }
+    }
+    expect(
+      await fetchYoutubeCategory('  ', { apiKey: 'k', fetchFn }),
+    ).toBeNull()
     expect(called).toBe(false)
   })
 })
@@ -60,12 +101,20 @@ describe('mapYoutubeSearch', () => {
   it('maps search items, dropping ones without a videoId', () => {
     const out = mapYoutubeSearch({
       items: [
-        { id: { videoId: 'v1' }, snippet: { title: 'A - B', channelTitle: 'Chan' } },
+        {
+          id: { videoId: 'v1' },
+          snippet: { title: 'A - B', channelTitle: 'Chan' },
+        },
         { id: {}, snippet: { title: 'x' } },
       ],
     })
     expect(out).toEqual([
-      { videoId: 'v1', url: 'https://www.youtube.com/watch?v=v1', title: 'A - B', channelTitle: 'Chan' },
+      {
+        videoId: 'v1',
+        url: 'https://www.youtube.com/watch?v=v1',
+        title: 'A - B',
+        channelTitle: 'Chan',
+      },
     ])
   })
 })
@@ -73,12 +122,45 @@ describe('mapYoutubeSearch', () => {
 describe('createYoutubeClient', () => {
   const fetchFn = async (url: string) => {
     if (url.includes('/search')) {
-      return { ok: true, status: 200, async json() { return { items: [{ id: { videoId: 'v1' }, snippet: { title: 'A - B', channelTitle: 'Chan' } }] } } }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            items: [
+              {
+                id: { videoId: 'v1' },
+                snippet: { title: 'A - B', channelTitle: 'Chan' },
+              },
+            ],
+          }
+        },
+      }
     }
     if (url.includes('/videos')) {
-      return { ok: true, status: 200, async json() { return { items: [{ id: 'v1', contentDetails: { duration: 'PT3M21S' }, status: { embeddable: false } }] } } }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            items: [
+              {
+                id: 'v1',
+                contentDetails: { duration: 'PT3M21S' },
+                status: { embeddable: false },
+              },
+            ],
+          }
+        },
+      }
     }
-    return { ok: false, status: 404, async json() { return {} } }
+    return {
+      ok: false,
+      status: 404,
+      async json() {
+        return {}
+      },
+    }
   }
 
   it('searchVideo returns mapped videos', async () => {
@@ -88,7 +170,13 @@ describe('createYoutubeClient', () => {
 
   it('lookupVideos returns duration and embeddability per id (one part=contentDetails,status call)', async () => {
     let calledUrl = ''
-    const c = createYoutubeClient({ apiKey: 'k', fetchFn: async (u: string) => { calledUrl = u; return fetchFn(u) } })
+    const c = createYoutubeClient({
+      apiKey: 'k',
+      fetchFn: async (u: string) => {
+        calledUrl = u
+        return fetchFn(u)
+      },
+    })
     const m = await c.lookupVideos(['v1'])
     expect(m.get('v1')).toEqual({ durationSec: 201, embeddable: false })
     expect(calledUrl).toContain('part=contentDetails,status')

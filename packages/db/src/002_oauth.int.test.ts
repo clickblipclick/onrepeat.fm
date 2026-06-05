@@ -22,7 +22,10 @@ describe('002_oauth migration', () => {
   })
 
   it('round-trips an oauth_state row', async () => {
-    await db.insertInto('oauth_state').values({ key: 'k1', state: '{"a":1}' }).execute()
+    await db
+      .insertInto('oauth_state')
+      .values({ key: 'k1', state: '{"a":1}' })
+      .execute()
     const row = await db
       .selectFrom('oauth_state')
       .selectAll()
@@ -43,6 +46,9 @@ describe('002_oauth migration', () => {
       .where('did', '=', 'did:plc:abc')
       .executeTakeFirst()
     expect(row?.session).toBe('{"tokens":true}')
-    await db.deleteFrom('oauth_session').where('did', '=', 'did:plc:abc').execute()
+    await db
+      .deleteFrom('oauth_session')
+      .where('did', '=', 'did:plc:abc')
+      .execute()
   })
 })

@@ -31,22 +31,41 @@ export async function SiteNav() {
           onrepeat<span className="text-accent">.fm</span>
         </Link>
         <div className="flex items-center gap-4">
-          <Link href="/" className="hover:text-accent">following</Link>
-          <Link href="/explore" className="hover:text-accent">explore</Link>
+          <Link href="/" className="hover:text-accent">
+            following
+          </Link>
+          <Link href="/explore" className="hover:text-accent">
+            explore
+          </Link>
           {session.did ? (
             <>
-              <Link href="/post" className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent">
+              <Link
+                href="/post"
+                className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent"
+              >
                 + set your jam
               </Link>
-              <Link href={`/profile/${encodeURIComponent(profileActor)}`} aria-label="your profile" className="block">
-                <Avatar author={{ did: session.did, avatar: profileAvatar }} size={24} />
+              <Link
+                href={`/profile/${encodeURIComponent(profileActor)}`}
+                aria-label="your profile"
+                className="block"
+              >
+                <Avatar
+                  author={{ did: session.did, avatar: profileAvatar }}
+                  size={24}
+                />
               </Link>
               <form action="/logout" method="post">
-                <button type="submit" className="text-muted hover:text-accent">sign out</button>
+                <button type="submit" className="text-muted hover:text-accent">
+                  sign out
+                </button>
               </form>
             </>
           ) : (
-            <Link href="/login" className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent">
+            <Link
+              href="/login"
+              className="rounded border border-ink px-2 py-1 hover:bg-accent hover:text-on-accent hover:border-accent"
+            >
               sign in
             </Link>
           )}

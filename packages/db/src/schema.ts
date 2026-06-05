@@ -11,10 +11,21 @@ export interface ActorsTable {
 }
 
 export interface ProviderRefs {
-  [provider: string]: { url: string; trackUri?: string; videoId?: string; songId?: string; trackId?: string; embeddable?: boolean }
+  [provider: string]: {
+    url: string
+    trackUri?: string
+    videoId?: string
+    songId?: string
+    trackId?: string
+    embeddable?: boolean
+  }
 }
 
-export type ResolutionStatus = 'pending' | 'resolved' | 'self_contained' | 'failed'
+export type ResolutionStatus =
+  | 'pending'
+  | 'resolved'
+  | 'self_contained'
+  | 'failed'
 
 export interface TracksTable {
   id: string

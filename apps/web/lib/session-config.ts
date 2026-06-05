@@ -12,7 +12,9 @@ export interface SessionData {
   did?: string
 }
 
-export function sessionCookieOptions(nodeEnv: string | undefined): SessionOptions['cookieOptions'] {
+export function sessionCookieOptions(
+  nodeEnv: string | undefined,
+): SessionOptions['cookieOptions'] {
   return {
     httpOnly: true,
     sameSite: 'lax',

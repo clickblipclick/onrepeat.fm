@@ -1,8 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
 import { type ResolverDeps } from './resolve'
 
-const url = process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
+const url =
+  process.env.DATABASE_URL ??
+  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 const db = createDb(url)
 
 // Mock resolveJob so we can control whether it succeeds or throws, without depending
@@ -15,13 +25,28 @@ vi.mock('./resolve', () => ({
 const { resolveJob } = await import('./resolve')
 const { makeResolveHandler } = await import('./worker')
 
-const okDeps: ResolverDeps = { itunes: { async search() { return [] }, async lookup() { return null } } }
+const okDeps: ResolverDeps = {
+  itunes: {
+    async search() {
+      return []
+    },
+    async lookup() {
+      return null
+    },
+  },
+}
 
-function fakeJob(over: Partial<{ retryCount: number; retryLimit: number }> = {}) {
+function fakeJob(
+  over: Partial<{ retryCount: number; retryLimit: number }> = {},
+) {
   return {
     id: 'j1',
     name: 'resolve-track',
-    data: { identity: 'isrc:X', sourceUrl: 'https://open.spotify.com/track/x', provider: 'spotify' },
+    data: {
+      identity: 'isrc:X',
+      sourceUrl: 'https://open.spotify.com/track/x',
+      provider: 'spotify',
+    },
     retryCount: 0,
     retryLimit: 5,
     ...over,
@@ -36,9 +61,15 @@ describe('makeResolveHandler', () => {
   beforeEach(async () => {
     vi.mocked(resolveJob).mockReset()
     await db.deleteFrom('tracks').execute()
-    await db.insertInto('tracks').values({ id: 'isrc:X', title: 'Seed', resolution_status: 'pending' }).execute()
+    await db
+      .insertInto('tracks')
+      .values({ id: 'isrc:X', title: 'Seed', resolution_status: 'pending' })
+      .execute()
   })
-  afterAll(async () => { await db.deleteFrom('tracks').execute(); await db.destroy() })
+  afterAll(async () => {
+    await db.deleteFrom('tracks').execute()
+    await db.destroy()
+  })
 
   it('resolves successfully', async () => {
     vi.mocked(resolveJob).mockResolvedValue(undefined)
@@ -52,8 +83,14 @@ describe('makeResolveHandler', () => {
   it('rethrows a transient error when retries remain (pg-boss will retry)', async () => {
     vi.mocked(resolveJob).mockRejectedValue(new Error('resolve 503'))
     const handler = makeResolveHandler(db, okDeps)
-    await expect(handler([fakeJob({ retryCount: 0, retryLimit: 5 })])).rejects.toThrow(/503/)
-    const t = await db.selectFrom('tracks').selectAll().where('id', '=', 'isrc:X').executeTakeFirst()
+    await expect(
+      handler([fakeJob({ retryCount: 0, retryLimit: 5 })]),
+    ).rejects.toThrow(/503/)
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'isrc:X')
+      .executeTakeFirst()
     expect(t?.resolution_status).toBe('pending')
   })
 
@@ -61,7 +98,11 @@ describe('makeResolveHandler', () => {
     vi.mocked(resolveJob).mockRejectedValue(new Error('resolve 503'))
     const handler = makeResolveHandler(db, okDeps)
     await handler([fakeJob({ retryCount: 5, retryLimit: 5 })])
-    const t = await db.selectFrom('tracks').selectAll().where('id', '=', 'isrc:X').executeTakeFirst()
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'isrc:X')
+      .executeTakeFirst()
     expect(t?.resolution_status).toBe('failed')
   })
 })

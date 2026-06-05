@@ -1,6 +1,10 @@
 import { createDb } from '@onrepeat/db'
 import type { JamRecord } from '@onrepeat/lexicons'
-import { createBoss, createResolveQueue, enqueueResolveForJam } from '@onrepeat/jobs'
+import {
+  createBoss,
+  createResolveQueue,
+  enqueueResolveForJam,
+} from '@onrepeat/jobs'
 import { createIngester } from './firehose'
 
 function requireEnv(name: string): string {
@@ -23,7 +27,10 @@ async function main(): Promise<void> {
     relay,
     hooks: {
       onJamIndexed: (evt) =>
-        enqueueResolveForJam(boss, db, { uri: evt.uri, record: evt.record as JamRecord }),
+        enqueueResolveForJam(boss, db, {
+          uri: evt.uri,
+          record: evt.record as JamRecord,
+        }),
     },
   })
 

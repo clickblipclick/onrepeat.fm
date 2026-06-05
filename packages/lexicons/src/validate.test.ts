@@ -40,7 +40,10 @@ describe('validateRecord (like)', () => {
   it('accepts a valid like', () => {
     const like = {
       $type: LIKE_NSID,
-      subject: { uri: 'at://did:plc:x/fm.onrepeat.jam/123', cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna' },
+      subject: {
+        uri: 'at://did:plc:x/fm.onrepeat.jam/123',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+      },
       createdAt: '2026-05-29T12:00:00.000Z',
     }
     expect(validateRecord(LIKE_NSID, like).success).toBe(true)

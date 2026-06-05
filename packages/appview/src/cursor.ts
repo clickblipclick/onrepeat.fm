@@ -14,6 +14,7 @@ export function decodeCursor(s: string): Cursor {
   if (sep === -1) throw new Error('invalid cursor')
   const createdAt = decoded.slice(0, sep)
   const uri = decoded.slice(sep + 1)
-  if (!createdAt || !uri || !uri.startsWith('at://')) throw new Error('invalid cursor')
+  if (!createdAt || !uri || !uri.startsWith('at://'))
+    throw new Error('invalid cursor')
   return { createdAt, uri }
 }

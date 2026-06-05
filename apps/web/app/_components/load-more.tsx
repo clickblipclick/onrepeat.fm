@@ -35,8 +35,14 @@ export function LoadMore({
       const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}cursor=${encodeURIComponent(cursor!)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error('load failed')
-      const data = (await res.json()) as Record<string, HydratedJamView[] | string | undefined>
-      setItems((prev) => [...prev, ...((data[itemsKey] as HydratedJamView[]) ?? [])])
+      const data = (await res.json()) as Record<
+        string,
+        HydratedJamView[] | string | undefined
+      >
+      setItems((prev) => [
+        ...prev,
+        ...((data[itemsKey] as HydratedJamView[]) ?? []),
+      ])
       setCursor(data.cursor as string | undefined)
     } catch {
       setError(true)
@@ -48,11 +54,25 @@ export function LoadMore({
   return (
     <>
       {items.map((jam) => (
-        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} preferredProvider={preferredProvider} />
+        <JamCard
+          key={jam.uri}
+          jam={jam}
+          loggedIn={loggedIn}
+          preferredProvider={preferredProvider}
+        />
       ))}
       {cursor && (
-        <button type="button" onClick={more} disabled={loading} className="w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent">
-          {loading ? 'loading…' : error ? "couldn't load — retry" : 'load more ↓'}
+        <button
+          type="button"
+          onClick={more}
+          disabled={loading}
+          className="w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent"
+        >
+          {loading
+            ? 'loading…'
+            : error
+              ? "couldn't load — retry"
+              : 'load more ↓'}
         </button>
       )}
     </>

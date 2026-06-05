@@ -2,15 +2,29 @@ import type { Updateable } from 'kysely'
 import type { DB, TracksTable } from '@onrepeat/db'
 import { providerTier } from '@onrepeat/core'
 import type { ResolveJob } from '@onrepeat/jobs'
-import { resolveTrack, type ResolveDeps, type BandcampFetcher } from '@onrepeat/music'
+import {
+  resolveTrack,
+  type ResolveDeps,
+  type BandcampFetcher,
+} from '@onrepeat/music'
 
 /** Source-cover fetcher (Spotify/YouTube/SoundCloud oEmbed); used as an artwork fallback. */
-export type OembedFetcher = (provider: string, url: string) => Promise<{ thumbnail?: string } | null>
+export type OembedFetcher = (
+  provider: string,
+  url: string,
+) => Promise<{ thumbnail?: string } | null>
 
-export type ResolverDeps = ResolveDeps & { bandcamp?: BandcampFetcher; oembed?: OembedFetcher }
+export type ResolverDeps = ResolveDeps & {
+  bandcamp?: BandcampFetcher
+  oembed?: OembedFetcher
+}
 
 /** Resolve one queue job onto its tracks row. Idempotent (keyed by job.identity). */
-export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): Promise<void> {
+export async function resolveJob(
+  db: DB,
+  deps: ResolverDeps,
+  job: ResolveJob,
+): Promise<void> {
   const now = new Date()
 
   if (providerTier(job.provider) === 'self-contained') {
@@ -30,7 +44,11 @@ export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): P
       resolved_at: now,
     }
     if (artworkUrl) update.artwork_url = artworkUrl
-    await db.updateTable('tracks').set(update).where('id', '=', job.identity).execute()
+    await db
+      .updateTable('tracks')
+      .set(update)
+      .where('id', '=', job.identity)
+      .execute()
     return
   }
 
@@ -43,7 +61,12 @@ export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): P
     .executeTakeFirst()
 
   const result = await resolveTrack(
-    { sourceUrl: job.sourceUrl, sourceProvider: job.provider, title: seed?.title ?? '', artist: seed?.artist ?? '' },
+    {
+      sourceUrl: job.sourceUrl,
+      sourceProvider: job.provider,
+      title: seed?.title ?? '',
+      artist: seed?.artist ?? '',
+    },
     deps,
   )
 
@@ -57,12 +80,17 @@ export async function resolveJob(db: DB, deps: ResolverDeps, job: ResolveJob): P
 
   // Artwork: prefer iTunes' canonical cover; else keep what we already have; else fetch the
   // source's own cover (Spotify/YouTube/SoundCloud oEmbed) so the track has art without a match.
-  let artworkUrl: string | null | undefined = result.artworkUrl ?? seed?.artwork_url
+  let artworkUrl: string | null | undefined =
+    result.artworkUrl ?? seed?.artwork_url
   if (!artworkUrl && deps.oembed) {
     const o = await deps.oembed(job.provider, job.sourceUrl)
     artworkUrl = o?.thumbnail
   }
   if (artworkUrl) update.artwork_url = artworkUrl
 
-  await db.updateTable('tracks').set(update).where('id', '=', job.identity).execute()
+  await db
+    .updateTable('tracks')
+    .set(update)
+    .where('id', '=', job.identity)
+    .execute()
 }

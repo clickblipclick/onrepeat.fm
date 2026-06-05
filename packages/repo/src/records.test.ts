@@ -24,7 +24,10 @@ describe('buildJamRecord', () => {
       via: { uri: 'at://did:plc:x/fm.onrepeat.jam/1', did: 'did:plc:x' },
     })
     expect(r.caption).toBe('all week')
-    expect(r.via).toEqual({ uri: 'at://did:plc:x/fm.onrepeat.jam/1', did: 'did:plc:x' })
+    expect(r.via).toEqual({
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      did: 'did:plc:x',
+    })
     expect(validateRecord(JAM_NSID, r).success).toBe(true)
   })
 
@@ -36,7 +39,9 @@ describe('buildJamRecord', () => {
   })
 
   it('throws when the built record would be invalid (caption too long)', () => {
-    expect(() => buildJamRecord({ ...baseJam, caption: 'x'.repeat(141) })).toThrow(/invalid jam/i)
+    expect(() =>
+      buildJamRecord({ ...baseJam, caption: 'x'.repeat(141) }),
+    ).toThrow(/invalid jam/i)
   })
 })
 

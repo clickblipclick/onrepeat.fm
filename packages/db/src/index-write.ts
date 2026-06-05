@@ -32,7 +32,11 @@ export function jamRow(
 }
 
 /** Build a likes insert row. */
-export function likeRow(uri: string, did: string, record: LikeRecord): Insertable<LikesTable> {
+export function likeRow(
+  uri: string,
+  did: string,
+  record: LikeRecord,
+): Insertable<LikesTable> {
   return {
     uri,
     author_did: did,

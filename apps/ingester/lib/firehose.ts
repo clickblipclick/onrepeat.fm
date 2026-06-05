@@ -23,7 +23,9 @@ export interface CreateIngesterOpts {
   hooks?: IngesterHooks
 }
 
-export async function createIngester(opts: CreateIngesterOpts): Promise<IngesterRuntime> {
+export async function createIngester(
+  opts: CreateIngesterOpts,
+): Promise<IngesterRuntime> {
   const { db, relay, hooks = defaultHooks } = opts
   const idResolver = new IdResolver()
   const startCursor = await loadCursor(db, SERVICE)
@@ -69,7 +71,9 @@ export async function createIngester(opts: CreateIngesterOpts): Promise<Ingester
 
   return {
     async start() {
-      console.log(`[ingester] connecting to ${relay} from cursor ${startCursor ?? 'live tail'}`)
+      console.log(
+        `[ingester] connecting to ${relay} from cursor ${startCursor ?? 'live tail'}`,
+      )
       firehose.start()
     },
     async stop() {

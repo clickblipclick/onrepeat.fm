@@ -36,7 +36,9 @@ interface SearchItem {
 }
 
 /** Pure: map a search.list response to videos (drops items without a videoId). */
-export function mapYoutubeSearch(body: { items?: SearchItem[] }): YoutubeVideo[] {
+export function mapYoutubeSearch(body: {
+  items?: SearchItem[]
+}): YoutubeVideo[] {
   const out: YoutubeVideo[] = []
   for (const it of body.items ?? []) {
     const videoId = it.id?.videoId
@@ -58,7 +60,8 @@ export function youtubeVideoId(url: string): string | null {
     const u = new URL(url)
     const host = u.hostname.toLowerCase()
     if (host === 'youtu.be') return u.pathname.slice(1) || null
-    if (host === 'youtube.com' || host.endsWith('.youtube.com')) return u.searchParams.get('v')
+    if (host === 'youtube.com' || host.endsWith('.youtube.com'))
+      return u.searchParams.get('v')
     return null
   } catch {
     return null
@@ -82,7 +85,9 @@ export async function fetchYoutubeCategory(
       { signal: AbortSignal.timeout(opts.timeoutMs ?? 8000) },
     )
     if (!res.ok) return null
-    const body = (await res.json()) as { items?: { snippet?: { categoryId?: string } }[] }
+    const body = (await res.json()) as {
+      items?: { snippet?: { categoryId?: string } }[]
+    }
     return body.items?.[0]?.snippet?.categoryId ?? null
   } catch {
     return null
@@ -101,9 +106,12 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
 
   async function get(path: string): Promise<unknown> {
     const sep = path.includes('?') ? '&' : '?'
-    const res = await fetchFn(`${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`, {
-      signal: AbortSignal.timeout(timeoutMs),
-    })
+    const res = await fetchFn(
+      `${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`,
+      {
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    )
     if (!res.ok) throw new Error(`youtube ${res.status}`)
     return res.json()
   }
@@ -112,7 +120,9 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
     async searchVideo(query) {
       const q = query.trim()
       if (!q) return []
-      const body = (await get(`/search?part=snippet&type=video&maxResults=3&q=${encodeURIComponent(q)}`)) as {
+      const body = (await get(
+        `/search?part=snippet&type=video&maxResults=3&q=${encodeURIComponent(q)}`,
+      )) as {
         items?: SearchItem[]
       }
       return mapYoutubeSearch(body)
@@ -120,13 +130,21 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
     async lookupVideos(ids) {
       const map = new Map<string, YoutubeVideoMeta>()
       if (ids.length === 0) return map
-      const body = (await get(`/videos?part=contentDetails,status&id=${ids.map(encodeURIComponent).join(',')}`)) as {
-        items?: { id?: string; contentDetails?: { duration?: string }; status?: { embeddable?: boolean } }[]
+      const body = (await get(
+        `/videos?part=contentDetails,status&id=${ids.map(encodeURIComponent).join(',')}`,
+      )) as {
+        items?: {
+          id?: string
+          contentDetails?: { duration?: string }
+          status?: { embeddable?: boolean }
+        }[]
       }
       for (const it of body.items ?? []) {
         if (!it.id) continue
         map.set(it.id, {
-          durationSec: it.contentDetails?.duration ? parseIso8601Duration(it.contentDetails.duration) : undefined,
+          durationSec: it.contentDetails?.duration
+            ? parseIso8601Duration(it.contentDetails.duration)
+            : undefined,
           embeddable: it.status?.embeddable,
         })
       }

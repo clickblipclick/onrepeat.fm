@@ -39,7 +39,10 @@ export function buildJamRecord(input: JamInput): JamRecord {
   return record
 }
 
-export function buildLikeRecord(subject: StrongRef, createdAt?: string): LikeRecord {
+export function buildLikeRecord(
+  subject: StrongRef,
+  createdAt?: string,
+): LikeRecord {
   const record: LikeRecord = {
     $type: LIKE_NSID,
     subject,

@@ -39,7 +39,10 @@ function likeEvent(over: Partial<IngestEvent> = {}): IngestEvent {
     collection: LIKE_NSID,
     record: {
       $type: LIKE_NSID,
-      subject: { uri: 'at://did:plc:other/fm.onrepeat.jam/1', cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna' },
+      subject: {
+        uri: 'at://did:plc:other/fm.onrepeat.jam/1',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+      },
       createdAt: '2026-05-30T00:00:00.000Z',
     },
     seq: 1,
@@ -69,12 +72,20 @@ describe('handleIngestEvent', () => {
   it('indexes a jam create with track_id null and records the actor', async () => {
     await handleIngestEvent(db, jamEvent())
 
-    const jam = await db.selectFrom('jams').selectAll().where('uri', '=', jamEvent().uri).executeTakeFirst()
+    const jam = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', jamEvent().uri)
+      .executeTakeFirst()
     expect(jam?.track_id).toBeNull()
     expect(jam?.raw_title).toBe('Song')
     expect(jam?.source_provider).toBe('spotify')
 
-    const actor = await db.selectFrom('actors').selectAll().where('did', '=', 'did:plc:author').executeTakeFirst()
+    const actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
     expect(actor?.did).toBe('did:plc:author')
     expect(actor?.last_seen).not.toBeNull()
   })
@@ -82,7 +93,11 @@ describe('handleIngestEvent', () => {
   it('is idempotent on at-uri (apply same create twice → one row)', async () => {
     await handleIngestEvent(db, jamEvent())
     await handleIngestEvent(db, jamEvent())
-    const rows = await db.selectFrom('jams').selectAll().where('uri', '=', jamEvent().uri).execute()
+    const rows = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', jamEvent().uri)
+      .execute()
     expect(rows).toHaveLength(1)
   })
 
@@ -103,15 +118,26 @@ describe('handleIngestEvent', () => {
         },
       }),
     )
-    const jam = await db.selectFrom('jams').selectAll().where('uri', '=', jamEvent().uri).executeTakeFirst()
+    const jam = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', jamEvent().uri)
+      .executeTakeFirst()
     expect(jam?.raw_title).toBe('Song (Remastered)')
     expect(jam?.cid).toBe('bafyjam2')
   })
 
   it('removes a row on delete', async () => {
     await handleIngestEvent(db, jamEvent())
-    await handleIngestEvent(db, jamEvent({ action: 'delete', cid: null, record: undefined }))
-    const rows = await db.selectFrom('jams').selectAll().where('uri', '=', jamEvent().uri).execute()
+    await handleIngestEvent(
+      db,
+      jamEvent({ action: 'delete', cid: null, record: undefined }),
+    )
+    const rows = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', jamEvent().uri)
+      .execute()
     expect(rows).toHaveLength(0)
   })
 
@@ -135,15 +161,27 @@ describe('handleIngestEvent', () => {
 
   it('indexes a like create', async () => {
     await handleIngestEvent(db, likeEvent())
-    const like = await db.selectFrom('likes').selectAll().where('uri', '=', likeEvent().uri).executeTakeFirst()
+    const like = await db
+      .selectFrom('likes')
+      .selectAll()
+      .where('uri', '=', likeEvent().uri)
+      .executeTakeFirst()
     expect(like?.subject_uri).toBe('at://did:plc:other/fm.onrepeat.jam/1')
   })
 
   it('fires onJamIndexed for jam create and update, but not for likes', async () => {
     const seen: string[] = []
-    const hooks = { onJamIndexed: async (e: IngestEvent) => { seen.push(e.action) } }
+    const hooks = {
+      onJamIndexed: async (e: IngestEvent) => {
+        seen.push(e.action)
+      },
+    }
     await handleIngestEvent(db, jamEvent(), hooks) // create
-    await handleIngestEvent(db, jamEvent({ action: 'update', cid: 'bafyjam2' }), hooks) // update
+    await handleIngestEvent(
+      db,
+      jamEvent({ action: 'update', cid: 'bafyjam2' }),
+      hooks,
+    ) // update
     await handleIngestEvent(db, likeEvent(), hooks) // like → must not fire
     expect(seen).toEqual(['create', 'update'])
   })
@@ -151,7 +189,11 @@ describe('handleIngestEvent', () => {
   it('preserves resolver-owned track_id across an update', async () => {
     await handleIngestEvent(db, jamEvent())
     // Simulate Plan 4 having resolved the track.
-    await db.updateTable('jams').set({ track_id: 'track-123' }).where('uri', '=', jamEvent().uri).execute()
+    await db
+      .updateTable('jams')
+      .set({ track_id: 'track-123' })
+      .where('uri', '=', jamEvent().uri)
+      .execute()
     await handleIngestEvent(
       db,
       jamEvent({
@@ -167,7 +209,11 @@ describe('handleIngestEvent', () => {
         },
       }),
     )
-    const jam = await db.selectFrom('jams').selectAll().where('uri', '=', jamEvent().uri).executeTakeFirst()
+    const jam = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', jamEvent().uri)
+      .executeTakeFirst()
     expect(jam?.track_id).toBe('track-123') // untouched by the ingester
     expect(jam?.raw_title).toBe('Edited')
   })

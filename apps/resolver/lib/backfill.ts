@@ -42,21 +42,38 @@ export async function backfill(db: DB, boss: PgBoss): Promise<number> {
     .where('track_id', 'is', null)
     .execute()
   for (const row of unlinked) {
-    await enqueueResolveForJam(boss, db, { uri: row.uri, record: recordFromRow(row) })
+    await enqueueResolveForJam(boss, db, {
+      uri: row.uri,
+      record: recordFromRow(row),
+    })
   }
 
   const stale = await db
     .selectFrom('tracks')
     .innerJoin('jams', 'jams.track_id', 'tracks.id')
-    .select(['tracks.id as identity', 'jams.source_url as sourceUrl', 'jams.source_provider as sourceProvider'])
-    .where('tracks.resolution_status', 'in', ['resolved', 'failed', 'self_contained'])
+    .select([
+      'tracks.id as identity',
+      'jams.source_url as sourceUrl',
+      'jams.source_provider as sourceProvider',
+    ])
+    .where('tracks.resolution_status', 'in', [
+      'resolved',
+      'failed',
+      'self_contained',
+    ])
     .distinctOn('tracks.id')
     .orderBy('tracks.id', 'asc')
     .execute()
   for (const t of stale) {
-    await enqueueResolve(boss, { identity: t.identity, sourceUrl: t.sourceUrl, provider: t.sourceProvider ?? '' })
+    await enqueueResolve(boss, {
+      identity: t.identity,
+      sourceUrl: t.sourceUrl,
+      provider: t.sourceProvider ?? '',
+    })
   }
 
-  console.log(`[resolver] backfill enqueued ${unlinked.length} unlinked + ${stale.length} re-resolve`)
+  console.log(
+    `[resolver] backfill enqueued ${unlinked.length} unlinked + ${stale.length} re-resolve`,
+  )
   return unlinked.length + stale.length
 }

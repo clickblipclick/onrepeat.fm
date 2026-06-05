@@ -33,7 +33,9 @@ describe('createOAuthClient', () => {
       stateStore,
       sessionStore,
     })
-    expect(client.clientMetadata.client_id.startsWith('http://localhost')).toBe(true)
+    expect(client.clientMetadata.client_id.startsWith('http://localhost')).toBe(
+      true,
+    )
     expect(JSON.stringify(client.clientMetadata.redirect_uris)).toContain(
       'http://127.0.0.1:3000/oauth/callback',
     )
@@ -61,8 +63,12 @@ describe('createOAuthClient', () => {
       stateStore,
       sessionStore,
     })
-    expect(client.clientMetadata.client_id).toBe('https://onrepeat.fm/client-metadata.json')
-    expect(client.clientMetadata.token_endpoint_auth_method).toBe('private_key_jwt')
+    expect(client.clientMetadata.client_id).toBe(
+      'https://onrepeat.fm/client-metadata.json',
+    )
+    expect(client.clientMetadata.token_endpoint_auth_method).toBe(
+      'private_key_jwt',
+    )
   })
 
   it('prod mode without a keyset throws', () => {
@@ -87,7 +93,9 @@ describe('createOAuthClient', () => {
 
     const lockWarning = () =>
       warn.mock.calls.some((args) =>
-        args.some((a) => typeof a === 'string' && a.includes('No lock mechanism')),
+        args.some(
+          (a) => typeof a === 'string' && a.includes('No lock mechanism'),
+        ),
       )
 
     it('warns when no requestLock is provided (library in-process fallback)', () => {
@@ -101,7 +109,10 @@ describe('createOAuthClient', () => {
     })
 
     it('forwards a provided requestLock so the missing-lock warning is silenced', () => {
-      const requestLock = async <T>(_name: string, fn: () => T | PromiseLike<T>) => fn()
+      const requestLock = async <T>(
+        _name: string,
+        fn: () => T | PromiseLike<T>,
+      ) => fn()
       createOAuthClient({
         mode: 'dev',
         publicUrl: 'http://127.0.0.1:3000',

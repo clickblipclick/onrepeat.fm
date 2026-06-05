@@ -12,7 +12,12 @@ function fakeAgent(did = 'did:plc:me') {
         repo: {
           async createRecord(params: any) {
             calls.push({ op: 'create', params })
-            return { data: { uri: `at://${did}/${params.collection}/rkey1`, cid: 'cid1' } }
+            return {
+              data: {
+                uri: `at://${did}/${params.collection}/rkey1`,
+                cid: 'cid1',
+              },
+            }
           },
           async deleteRecord(params: any) {
             calls.push({ op: 'delete', params })
@@ -52,7 +57,10 @@ describe('postJam', () => {
 describe('likeJam / unlikeJam', () => {
   it('likeJam creates a like pointing at the subject', async () => {
     const { agent, calls } = fakeAgent()
-    const subject = { uri: 'at://did:plc:x/fm.onrepeat.jam/1', cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna' }
+    const subject = {
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+    }
     await likeJam(agent, subject)
     expect(calls[0]!.params.collection).toBe(LIKE_NSID)
     expect(calls[0]!.params.record.subject).toEqual(subject)
@@ -71,16 +79,25 @@ describe('reJam', () => {
   it('posts a new jam carrying via attribution from the source and returns record', async () => {
     const { agent, calls } = fakeAgent()
     const res = await reJam(agent, {
-      sourceJam: { uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' },
+      sourceJam: {
+        uri: 'at://did:plc:src/fm.onrepeat.jam/9',
+        did: 'did:plc:src',
+      },
       track: baseJam,
     })
     const rec = calls[0]!.params.record
     expect(rec.$type).toBe(JAM_NSID)
-    expect(rec.via).toEqual({ uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' })
+    expect(rec.via).toEqual({
+      uri: 'at://did:plc:src/fm.onrepeat.jam/9',
+      did: 'did:plc:src',
+    })
     expect(res.uri).toContain(JAM_NSID)
     expect(res.cid).toBe('cid1')
     expect(res.record.title).toBe(baseJam.title)
     expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
-    expect(res.record.via).toEqual({ uri: 'at://did:plc:src/fm.onrepeat.jam/9', did: 'did:plc:src' })
+    expect(res.record.via).toEqual({
+      uri: 'at://did:plc:src/fm.onrepeat.jam/9',
+      did: 'did:plc:src',
+    })
   })
 })

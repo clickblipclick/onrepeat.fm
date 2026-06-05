@@ -5,14 +5,18 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('oauth_state')
     .addColumn('key', 'text', (c) => c.primaryKey())
     .addColumn('state', 'text', (c) => c.notNull())
-    .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
     .execute()
 
   await db.schema
     .createTable('oauth_session')
     .addColumn('did', 'text', (c) => c.primaryKey())
     .addColumn('session', 'text', (c) => c.notNull())
-    .addColumn('updated_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+    .addColumn('updated_at', 'timestamptz', (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
     .execute()
 }
 

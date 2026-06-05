@@ -1,6 +1,13 @@
-import { createBskyClient, hydrateAuthors, type JamView, type HydratedJamView } from '@onrepeat/appview'
+import {
+  createBskyClient,
+  hydrateAuthors,
+  type JamView,
+  type HydratedJamView,
+} from '@onrepeat/appview'
 
-const globalForBsky = globalThis as unknown as { __onrepeatBsky?: ReturnType<typeof createBskyClient> }
+const globalForBsky = globalThis as unknown as {
+  __onrepeatBsky?: ReturnType<typeof createBskyClient>
+}
 export const bsky = globalForBsky.__onrepeatBsky ?? createBskyClient()
 if (process.env.NODE_ENV !== 'production') globalForBsky.__onrepeatBsky = bsky
 
@@ -12,10 +19,15 @@ if (process.env.NODE_ENV !== 'production') globalForBsky.__onrepeatBsky = bsky
  */
 export async function hydrate(jams: JamView[]): Promise<HydratedJamView[]> {
   try {
-    const profiles = await bsky.getProfiles([...new Set(jams.map((j) => j.authorDid))])
+    const profiles = await bsky.getProfiles([
+      ...new Set(jams.map((j) => j.authorDid)),
+    ])
     return hydrateAuthors(jams, profiles)
   } catch (err) {
-    console.error('[web] profile hydration failed; serving DID-only authors', err)
+    console.error(
+      '[web] profile hydration failed; serving DID-only authors',
+      err,
+    )
     return hydrateAuthors(jams, new Map())
   }
 }

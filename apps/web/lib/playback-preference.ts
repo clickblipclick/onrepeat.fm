@@ -18,14 +18,21 @@ export const PLAYBACK_PREF_MAX_AGE = 365 * 24 * 60 * 60
  * The logical services a user can prefer. `youtubemusic` is deliberately absent:
  * it shares YouTube's embed, so it's folded into `youtube` (see `parseProvider`).
  */
-export const VALID_PROVIDERS = ['spotify', 'youtube', 'applemusic', 'soundcloud'] as const
+export const VALID_PROVIDERS = [
+  'spotify',
+  'youtube',
+  'applemusic',
+  'soundcloud',
+] as const
 export type PlaybackProvider = (typeof VALID_PROVIDERS)[number]
 
 const VALID = new Set<string>(VALID_PROVIDERS)
 
 /** Validate a raw cookie/click value into a logical provider, or null. Folds the
  *  youtubemusic alias into youtube and ignores anything unknown (junk/tampered). */
-export function parseProvider(raw: string | undefined | null): PlaybackProvider | null {
+export function parseProvider(
+  raw: string | undefined | null,
+): PlaybackProvider | null {
   if (!raw) return null
   const v = raw.trim().toLowerCase()
   const normalized = v === 'youtubemusic' ? 'youtube' : v
@@ -33,7 +40,10 @@ export function parseProvider(raw: string | undefined | null): PlaybackProvider 
 }
 
 /** Build the `document.cookie` / Set-Cookie string for the preference. */
-export function playbackCookieString(provider: PlaybackProvider, secure: boolean): string {
+export function playbackCookieString(
+  provider: PlaybackProvider,
+  secure: boolean,
+): string {
   const attrs = [
     `${PLAYBACK_PREF_COOKIE}=${encodeURIComponent(provider)}`,
     'Path=/',

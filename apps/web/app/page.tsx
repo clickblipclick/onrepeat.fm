@@ -18,10 +18,26 @@ export default async function Home() {
     return (
       <>
         <div className="mb-4 rounded-md border border-border bg-surface p-4">
-          <p className="mb-2 text-sm">One song. Seven days. Sign in with Bluesky to follow people and set your jam.</p>
-          <Link href="/login" className="inline-block rounded bg-accent px-3 py-2 text-sm text-on-accent">Sign in</Link>
+          <p className="mb-2 text-sm">
+            One song. Seven days. Sign in with Bluesky to follow people and set
+            your jam.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block rounded bg-accent px-3 py-2 text-sm text-on-accent"
+          >
+            Sign in
+          </Link>
         </div>
-        <FeedList jams={jams} cursor={page.cursor} endpoint="/api/latest" itemsKey="feed" empty={<>No jams yet.</>} loggedIn={false} preferredProvider={preferredProvider} />
+        <FeedList
+          jams={jams}
+          cursor={page.cursor}
+          endpoint="/api/latest"
+          itemsKey="feed"
+          empty={<>No jams yet.</>}
+          loggedIn={false}
+          preferredProvider={preferredProvider}
+        />
       </>
     )
   }
@@ -30,17 +46,32 @@ export default async function Home() {
   // (or the feed query) fails, degrade to an empty state rather than erroring the page.
   try {
     const followedDids = await bsky.getFollows(session.did)
-    const page = await getFollowFeed(db, { followedDids, viewerDid: session.did })
+    const page = await getFollowFeed(db, {
+      followedDids,
+      viewerDid: session.did,
+    })
     const jams = await hydrate(page.jams)
     return (
       <>
         <h1 className="mb-4 text-sm uppercase text-muted">Following</h1>
         {jams.length === 0 ? (
           <EmptyState>
-            Nobody you follow has a current jam. <Link href="/explore" className="text-accent">Explore</Link> what&apos;s playing.
+            Nobody you follow has a current jam.{' '}
+            <Link href="/explore" className="text-accent">
+              Explore
+            </Link>{' '}
+            what&apos;s playing.
           </EmptyState>
         ) : (
-          <FeedList jams={jams} cursor={page.cursor} endpoint="/api/feed" itemsKey="feed" empty={null} loggedIn={true} preferredProvider={preferredProvider} />
+          <FeedList
+            jams={jams}
+            cursor={page.cursor}
+            endpoint="/api/feed"
+            itemsKey="feed"
+            empty={null}
+            loggedIn={true}
+            preferredProvider={preferredProvider}
+          />
         )}
       </>
     )
@@ -49,7 +80,11 @@ export default async function Home() {
       <>
         <h1 className="mb-4 text-sm uppercase text-muted">Following</h1>
         <EmptyState>
-          Couldn&apos;t load your feed right now. <Link href="/explore" className="text-accent">Explore</Link> what&apos;s playing.
+          Couldn&apos;t load your feed right now.{' '}
+          <Link href="/explore" className="text-accent">
+            Explore
+          </Link>{' '}
+          what&apos;s playing.
         </EmptyState>
       </>
     )

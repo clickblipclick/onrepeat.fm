@@ -32,7 +32,10 @@ export function JamCard({
   return (
     <article className="overflow-hidden rounded-md border border-border bg-surface">
       <div className="surface-grid flex items-center gap-2 border-b border-border px-3 py-2 text-sm">
-        <Link href={profileHref} className="flex items-center gap-2 hover:text-accent">
+        <Link
+          href={profileHref}
+          className="flex items-center gap-2 hover:text-accent"
+        >
           <Avatar author={jam.author} />
           <span className="font-bold">{authorName(jam.author)}</span>
         </Link>
@@ -60,7 +63,13 @@ export function JamCard({
         <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
           {actions ?? (
             <>
-              <LikeButton jamUri={jam.uri} jamCid={jam.cid} initialCount={jam.likeCount} initialLiked={jam.likedByYou} loggedIn={loggedIn} />
+              <LikeButton
+                jamUri={jam.uri}
+                jamCid={jam.cid}
+                initialCount={jam.likeCount}
+                initialLiked={jam.likedByYou}
+                loggedIn={loggedIn}
+              />
               <ReJamButton
                 loggedIn={loggedIn}
                 jam={{

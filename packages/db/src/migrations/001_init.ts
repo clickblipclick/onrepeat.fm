@@ -22,9 +22,16 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('title', 'text')
     .addColumn('artist', 'text')
     .addColumn('artwork_url', 'text')
-    .addColumn('provider_refs', 'jsonb', (c) => c.notNull().defaultTo(sql`'{}'::jsonb`))
+    .addColumn('provider_refs', 'jsonb', (c) =>
+      c.notNull().defaultTo(sql`'{}'::jsonb`),
+    )
     .addColumn('resolution_status', 'text', (c) =>
-      c.notNull().defaultTo('pending').check(sql`resolution_status in ('pending', 'resolved', 'self_contained', 'failed')`),
+      c
+        .notNull()
+        .defaultTo('pending')
+        .check(
+          sql`resolution_status in ('pending', 'resolved', 'self_contained', 'failed')`,
+        ),
     )
     .addColumn('resolved_at', 'timestamptz')
     .execute()
@@ -43,7 +50,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('via_uri', 'text')
     .addColumn('via_did', 'text')
     .addColumn('created_at', 'timestamptz', (c) => c.notNull())
-    .addColumn('indexed_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+    .addColumn('indexed_at', 'timestamptz', (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
     .execute()
 
   await db.schema
@@ -52,11 +61,15 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('author_did', 'text', (c) => c.notNull())
     .addColumn('subject_uri', 'text', (c) => c.notNull())
     .addColumn('created_at', 'timestamptz', (c) => c.notNull())
-    .addColumn('indexed_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+    .addColumn('indexed_at', 'timestamptz', (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
     .execute()
 
   // Drives "current jam per author" lookups (latest within 7 days).
-  await sql`create index jams_author_created_idx on jams (author_did, created_at desc)`.execute(db)
+  await sql`create index jams_author_created_idx on jams (author_did, created_at desc)`.execute(
+    db,
+  )
   // Drives the Explore / Latest feed.
   await sql`create index jams_created_idx on jams (created_at desc)`.execute(db)
   // Drives like counts and liked-by lookups.

@@ -4,7 +4,10 @@ import { db } from '../../../../lib/db'
 import { hydrate } from '../../../../lib/appview'
 import { getSession } from '../../../../lib/session'
 
-export async function GET(req: Request, ctx: { params: Promise<{ did: string }> }) {
+export async function GET(
+  req: Request,
+  ctx: { params: Promise<{ did: string }> },
+) {
   const { did } = await ctx.params
   const { searchParams } = new URL(req.url)
   const cursor = searchParams.get('cursor') ?? undefined

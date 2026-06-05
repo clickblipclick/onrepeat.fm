@@ -5,11 +5,16 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@atproto/oauth-client-node": "^0.4.1",
     "@atproto/jwk-jose": "^0.2.0",
     "@onrepeat/db": "workspace:*"
   },
-  "devDependencies": { "typescript": "^5.5.0", "kysely": "^0.27.0" }
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "kysely": "^0.27.0"
+  }
 }

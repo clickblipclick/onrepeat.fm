@@ -30,7 +30,9 @@ describe('withRetry', () => {
     const fn = vi.fn(async () => {
       throw new Error('always')
     })
-    await expect(withRetry(fn, { attempts: 3, baseDelayMs: 1, sleep })).rejects.toThrow('always')
+    await expect(
+      withRetry(fn, { attempts: 3, baseDelayMs: 1, sleep }),
+    ).rejects.toThrow('always')
     expect(fn).toHaveBeenCalledTimes(3)
     expect(sleep).toHaveBeenCalledTimes(2) // not 3 — no sleep after the final failure
   })

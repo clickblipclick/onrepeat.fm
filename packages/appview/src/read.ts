@@ -56,7 +56,8 @@ async function loadLikeInfo(
     .where('subject_uri', 'in', uris)
     .groupBy('subject_uri')
     .execute()
-  for (const c of counts) m.set(c.subject_uri, { count: Number(c.count), likedByYou: false })
+  for (const c of counts)
+    m.set(c.subject_uri, { count: Number(c.count), likedByYou: false })
   if (viewerDid) {
     const liked = await db
       .selectFrom('likes')
@@ -73,17 +74,33 @@ async function loadLikeInfo(
 }
 
 /** Load full JamViews for a set of uris (joined to tracks + likes), preserving the given order. */
-export async function loadJamsByUris(db: DB, uris: string[], viewerDid?: string): Promise<JamView[]> {
+export async function loadJamsByUris(
+  db: DB,
+  uris: string[],
+  viewerDid?: string,
+): Promise<JamView[]> {
   if (uris.length === 0) return []
   const rows = await db
     .selectFrom('jams')
     .leftJoin('tracks', 'tracks.id', 'jams.track_id')
     .select([
-      'jams.uri', 'jams.cid', 'jams.author_did', 'jams.created_at', 'jams.caption',
-      'jams.source_url', 'jams.source_provider', 'jams.raw_title', 'jams.raw_artist', 'jams.raw_artwork_url',
-      'jams.via_uri', 'jams.via_did',
-      'tracks.title as track_title', 'tracks.artist as track_artist', 'tracks.artwork_url as track_artwork',
-      'tracks.provider_refs as provider_refs', 'tracks.resolution_status as resolution_status',
+      'jams.uri',
+      'jams.cid',
+      'jams.author_did',
+      'jams.created_at',
+      'jams.caption',
+      'jams.source_url',
+      'jams.source_provider',
+      'jams.raw_title',
+      'jams.raw_artist',
+      'jams.raw_artwork_url',
+      'jams.via_uri',
+      'jams.via_did',
+      'tracks.title as track_title',
+      'tracks.artist as track_artist',
+      'tracks.artwork_url as track_artwork',
+      'tracks.provider_refs as provider_refs',
+      'tracks.resolution_status as resolution_status',
     ])
     .where('jams.uri', 'in', uris)
     .execute()
@@ -95,7 +112,9 @@ export async function loadJamsByUris(db: DB, uris: string[], viewerDid?: string)
       uri: r.uri,
       cid: r.cid,
       authorDid: r.author_did,
-      createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
+      createdAt: new Date(
+        r.created_at as unknown as string | Date,
+      ).toISOString(),
       caption: r.caption,
       title: r.track_title ?? r.raw_title ?? '',
       artist: r.track_artist ?? r.raw_artist ?? '',
@@ -103,18 +122,24 @@ export async function loadJamsByUris(db: DB, uris: string[], viewerDid?: string)
       sourceUrl: r.source_url,
       sourceProvider: r.source_provider,
       providerRefs: (r.provider_refs as ProviderRefs | null) ?? {},
-      resolutionStatus: (r.resolution_status as ResolutionStatus | null) ?? null,
+      resolutionStatus:
+        (r.resolution_status as ResolutionStatus | null) ?? null,
       likeCount: li.count,
       likedByYou: li.likedByYou,
       via: r.via_uri && r.via_did ? { uri: r.via_uri, did: r.via_did } : null,
     })
   }
   // preserve input order, drop any uri that had no row
-  return uris.map((u) => byUri.get(u)).filter((v): v is JamView => v !== undefined)
+  return uris
+    .map((u) => byUri.get(u))
+    .filter((v): v is JamView => v !== undefined)
 }
 
 /** Build the next-page cursor from the last item, if there are more rows. */
-function buildCursor(items: { createdAt: string; uri: string }[], hasMore: boolean): string | undefined {
+function buildCursor(
+  items: { createdAt: string; uri: string }[],
+  hasMore: boolean,
+): string | undefined {
   if (!hasMore || items.length === 0) return undefined
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const last = items[items.length - 1]!
@@ -122,9 +147,14 @@ function buildCursor(items: { createdAt: string; uri: string }[], hasMore: boole
 }
 
 /** Explore/Latest — network-wide recent jams, newest-first. */
-export async function getLatest(db: DB, params: PageParams = {}): Promise<Page> {
+export async function getLatest(
+  db: DB,
+  params: PageParams = {},
+): Promise<Page> {
   const limit = clampLimit(params.limit)
-  const cur: Cursor | undefined = params.cursor ? decodeCursor(params.cursor) : undefined
+  const cur: Cursor | undefined = params.cursor
+    ? decodeCursor(params.cursor)
+    : undefined
   let q = db
     .selectFrom('jams')
     .select(['uri', 'created_at'])
@@ -143,7 +173,11 @@ export async function getLatest(db: DB, params: PageParams = {}): Promise<Page> 
   const idRows = await q.execute()
   const hasMore = idRows.length > limit
   const pageRows = idRows.slice(0, limit)
-  const jams = await loadJamsByUris(db, pageRows.map((r) => r.uri), params.viewerDid)
+  const jams = await loadJamsByUris(
+    db,
+    pageRows.map((r) => r.uri),
+    params.viewerDid,
+  )
   const cursorItems = pageRows.map((r) => ({
     createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
     uri: r.uri,
@@ -152,7 +186,10 @@ export async function getLatest(db: DB, params: PageParams = {}): Promise<Page> 
 }
 
 /** A profile's jams, newest-first (jams[0] is the current jam if <7 days old). */
-export async function getActorJams(db: DB, params: PageParams & { did: string }): Promise<Page> {
+export async function getActorJams(
+  db: DB,
+  params: PageParams & { did: string },
+): Promise<Page> {
   const limit = clampLimit(params.limit)
   const cur = params.cursor ? decodeCursor(params.cursor) : undefined
   let q = db
@@ -174,7 +211,11 @@ export async function getActorJams(db: DB, params: PageParams & { did: string })
   const idRows = await q.execute()
   const hasMore = idRows.length > limit
   const pageRows = idRows.slice(0, limit)
-  const jams = await loadJamsByUris(db, pageRows.map((r) => r.uri), params.viewerDid)
+  const jams = await loadJamsByUris(
+    db,
+    pageRows.map((r) => r.uri),
+    params.viewerDid,
+  )
   const cursorItems = pageRows.map((r) => ({
     createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
     uri: r.uri,
@@ -189,13 +230,20 @@ export interface JamDetail {
 }
 
 /** A single jam + its likers (DIDs) + the re-jams that adopted it, newest-first. Null if not found. */
-export async function getJam(db: DB, params: { uri: string; viewerDid?: string }): Promise<JamDetail | null> {
+export async function getJam(
+  db: DB,
+  params: { uri: string; viewerDid?: string },
+): Promise<JamDetail | null> {
   const [jam] = await loadJamsByUris(db, [params.uri], params.viewerDid)
   if (!jam) return null
   // Separate from loadLikeInfo (which returns only count + likedByYou aggregates): we need the
   // full liker DID list for the detail view to hydrate into profiles. MVP: unbounded — for a
   // viral jam this could be thousands; a future route handler should cap/paginate before sending.
-  const likers = await db.selectFrom('likes').select('author_did').where('subject_uri', '=', params.uri).execute()
+  const likers = await db
+    .selectFrom('likes')
+    .select('author_did')
+    .where('subject_uri', '=', params.uri)
+    .execute()
   const reJamRows = await db
     .selectFrom('jams')
     .select('uri')
@@ -203,7 +251,11 @@ export async function getJam(db: DB, params: { uri: string; viewerDid?: string }
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .execute()
-  const reJams = await loadJamsByUris(db, reJamRows.map((r) => r.uri), params.viewerDid)
+  const reJams = await loadJamsByUris(
+    db,
+    reJamRows.map((r) => r.uri),
+    params.viewerDid,
+  )
   return { jam, likerDids: likers.map((l) => l.author_did), reJams }
 }
 
@@ -213,7 +265,10 @@ export async function getJam(db: DB, params: { uri: string; viewerDid?: string }
  * newest-first. One current jam per author via DISTINCT ON, then ordered/paginated in memory
  * (bounded by the follow count). `followedDids` is supplied by the caller (from bsky).
  */
-export async function getFollowFeed(db: DB, params: PageParams & { followedDids: string[] }): Promise<Page> {
+export async function getFollowFeed(
+  db: DB,
+  params: PageParams & { followedDids: string[] },
+): Promise<Page> {
   const limit = clampLimit(params.limit)
   // Home feeds conventionally include your own jam without a self-follow — fold the
   // viewer into the author set (deduped; you can't follow yourself on bsky anyway).
@@ -235,14 +290,35 @@ export async function getFollowFeed(db: DB, params: PageParams & { followedDids:
     .execute()
   // newest-first across authors, then cursor + limit (in memory; set is <= #follows)
   const sorted = currentRows
-    .map((r) => ({ uri: r.uri, createdAt: new Date(r.created_at as unknown as string | Date).toISOString() }))
-    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.uri < b.uri ? 1 : -1))
+    .map((r) => ({
+      uri: r.uri,
+      createdAt: new Date(
+        r.created_at as unknown as string | Date,
+      ).toISOString(),
+    }))
+    .sort((a, b) =>
+      a.createdAt < b.createdAt
+        ? 1
+        : a.createdAt > b.createdAt
+          ? -1
+          : a.uri < b.uri
+            ? 1
+            : -1,
+    )
   const cur = params.cursor ? decodeCursor(params.cursor) : undefined
   const afterCursor = cur
-    ? sorted.filter((r) => r.createdAt < cur.createdAt || (r.createdAt === cur.createdAt && r.uri < cur.uri))
+    ? sorted.filter(
+        (r) =>
+          r.createdAt < cur.createdAt ||
+          (r.createdAt === cur.createdAt && r.uri < cur.uri),
+      )
     : sorted
   const pageIds = afterCursor.slice(0, limit)
   const hasMore = afterCursor.length > limit
-  const jams = await loadJamsByUris(db, pageIds.map((r) => r.uri), params.viewerDid)
+  const jams = await loadJamsByUris(
+    db,
+    pageIds.map((r) => r.uri),
+    params.viewerDid,
+  )
   return { jams, cursor: buildCursor(pageIds, hasMore) }
 }

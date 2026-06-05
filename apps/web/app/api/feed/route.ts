@@ -8,7 +8,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const cursor = searchParams.get('cursor') ?? undefined
   const session = await getSession()
-  if (!session.did) return NextResponse.json({ error: 'login required' }, { status: 401 })
+  if (!session.did)
+    return NextResponse.json({ error: 'login required' }, { status: 401 })
 
   // The follow graph comes from the upstream bsky service; if it's unavailable the feed
   // genuinely cannot be assembled → 502 (bad gateway), distinct from a local failure.
@@ -21,7 +22,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const page = await getFollowFeed(db, { followedDids, viewerDid: session.did, cursor })
+    const page = await getFollowFeed(db, {
+      followedDids,
+      viewerDid: session.did,
+      cursor,
+    })
     const feed = await hydrate(page.jams)
     return NextResponse.json({ feed, cursor: page.cursor })
   } catch (err) {

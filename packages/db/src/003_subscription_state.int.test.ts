@@ -47,6 +47,9 @@ describe('003_subscription_state migration', () => {
       .executeTakeFirst()
     expect(Number(row?.cursor)).toBe(250)
 
-    await db.deleteFrom('subscription_state').where('service', '=', 'firehose').execute()
+    await db
+      .deleteFrom('subscription_state')
+      .where('service', '=', 'firehose')
+      .execute()
   })
 })

@@ -27,7 +27,12 @@ export interface DeriveTrackOptions {
 type FetchLike = (
   url: string,
   init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>
+) => Promise<{
+  ok: boolean
+  status: number
+  json(): Promise<unknown>
+  text(): Promise<string>
+}>
 
 /** Apple Music track URLs carry the song id in the `i` query param. */
 function extractAppleTrackId(url: string): string | null {
@@ -40,14 +45,21 @@ function extractAppleTrackId(url: string): string | null {
 
 /** Spotify oEmbed gives the title but not the artist; the track page exposes the
  *  artist in a `music:musician_description` meta tag (fallback: og:description). */
-async function fetchSpotifyArtist(url: string, fetchFn: FetchLike): Promise<string> {
+async function fetchSpotifyArtist(
+  url: string,
+  fetchFn: FetchLike,
+): Promise<string> {
   try {
     const res = await fetchFn(url, { signal: AbortSignal.timeout(8000) })
     if (!res.ok) return ''
     const html = await res.text()
     const m =
-      /<meta[^>]+name="music:musician_description"[^>]+content="([^"]+)"/.exec(html) ??
-      /<meta[^>]+property="og:description"[^>]+content="([^"·]+?)\s*·/.exec(html)
+      /<meta[^>]+name="music:musician_description"[^>]+content="([^"]+)"/.exec(
+        html,
+      ) ??
+      /<meta[^>]+property="og:description"[^>]+content="([^"·]+?)\s*·/.exec(
+        html,
+      )
     return m ? m[1]!.trim() : ''
   } catch {
     return ''
@@ -55,10 +67,16 @@ async function fetchSpotifyArtist(url: string, fetchFn: FetchLike): Promise<stri
 }
 
 /** Split common "Artist - Title" video titles; else keep title and use author as artist. */
-function splitTitleArtist(rawTitle: string, author: string | undefined): { title: string; artist: string } {
+function splitTitleArtist(
+  rawTitle: string,
+  author: string | undefined,
+): { title: string; artist: string } {
   const m = rawTitle.match(/^(.*?)\s[-–]\s(.*)$/)
   if (m) return { artist: m[1]!.trim(), title: m[2]!.trim() }
-  return { title: rawTitle.trim(), artist: (author ?? '').replace(/\s*-\s*Topic$/i, '').trim() }
+  return {
+    title: rawTitle.trim(),
+    artist: (author ?? '').replace(/\s*-\s*Topic$/i, '').trim(),
+  }
 }
 
 /**
@@ -88,10 +106,22 @@ export async function deriveTrack(
   if (!o?.title) return null
   if (provider === 'spotify') {
     const artist = await fetchSpotifyArtist(url, fetchFn)
-    return { title: o.title.trim(), artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
+    return {
+      title: o.title.trim(),
+      artist,
+      artworkUrl: o.thumbnail,
+      sourceUrl: url,
+      provider,
+    }
   }
   const { title, artist } = splitTitleArtist(o.title, o.author)
-  const candidate: TrackCandidate = { title, artist, artworkUrl: o.thumbnail, sourceUrl: url, provider }
+  const candidate: TrackCandidate = {
+    title,
+    artist,
+    artworkUrl: o.thumbnail,
+    sourceUrl: url,
+    provider,
+  }
 
   // Soft music check for plain YouTube videos (music.youtube.com is already music).
   if (provider === 'youtube' && opts.classifyYoutubeMusic) {

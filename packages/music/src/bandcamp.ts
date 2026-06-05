@@ -28,7 +28,9 @@ export async function fetchBandcampEmbed(
 ): Promise<BandcampMeta | null> {
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   try {
-    const res = await fetchFn(url, { signal: AbortSignal.timeout(opts.timeoutMs ?? 8000) })
+    const res = await fetchFn(url, {
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+    })
     if (!res.ok) return null
     const html = await res.text()
     const trackId = parseBandcampEmbedId(html) ?? undefined

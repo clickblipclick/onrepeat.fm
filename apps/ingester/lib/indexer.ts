@@ -28,7 +28,8 @@ export async function handleIngestEvent(
     .execute()
 
   if (evt.action === 'delete') {
-    await db.deleteFrom(evt.collection === JAM_NSID ? 'jams' : 'likes')
+    await db
+      .deleteFrom(evt.collection === JAM_NSID ? 'jams' : 'likes')
       .where('uri', '=', evt.uri)
       .execute()
     return
@@ -37,7 +38,9 @@ export async function handleIngestEvent(
   // create | update — validate against the lexicon, skip if malformed.
   const result = validateRecord(evt.collection, evt.record)
   if (!result.success) {
-    console.warn(`[ingester] skipping invalid ${evt.collection} ${evt.uri}: ${result.error}`)
+    console.warn(
+      `[ingester] skipping invalid ${evt.collection} ${evt.uri}: ${result.error}`,
+    )
     return
   }
 
@@ -48,7 +51,12 @@ export async function handleIngestEvent(
       console.warn(`[ingester] skipping jam ${evt.uri} with missing cid`)
       return
     }
-    await indexJam(db, { uri: evt.uri, cid: evt.cid, did: evt.did, record: evt.record as JamRecord })
+    await indexJam(db, {
+      uri: evt.uri,
+      cid: evt.cid,
+      did: evt.did,
+      record: evt.record as JamRecord,
+    })
     await hooks.onJamIndexed(evt)
   } else {
     const row = likeRow(evt.uri, evt.did, evt.record as LikeRecord)

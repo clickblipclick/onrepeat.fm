@@ -9,11 +9,17 @@ export type ValidationOutcome =
   | { success: false; error: string }
 
 /** Validate a record (must include a matching `$type`) against its lexicon. */
-export function validateRecord(nsid: string, value: unknown): ValidationOutcome {
+export function validateRecord(
+  nsid: string,
+  value: unknown,
+): ValidationOutcome {
   try {
     lexicons.assertValidRecord(nsid, value)
     return { success: true }
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
   }
 }

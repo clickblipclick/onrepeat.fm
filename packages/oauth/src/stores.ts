@@ -51,7 +51,9 @@ export class KyselySessionStore implements NodeSavedSessionStore {
     await this.db
       .insertInto('oauth_session')
       .values({ did, session })
-      .onConflict((oc) => oc.column('did').doUpdateSet({ session, updated_at: new Date() }))
+      .onConflict((oc) =>
+        oc.column('did').doUpdateSet({ session, updated_at: new Date() }),
+      )
       .execute()
   }
 

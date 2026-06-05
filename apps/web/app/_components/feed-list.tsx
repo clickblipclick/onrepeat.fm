@@ -25,9 +25,19 @@ export function FeedList({
   return (
     <div className="flex flex-col gap-4">
       {jams.map((jam) => (
-        <JamCard key={jam.uri} jam={jam} loggedIn={loggedIn} preferredProvider={preferredProvider} />
+        <JamCard
+          key={jam.uri}
+          jam={jam}
+          loggedIn={loggedIn}
+          preferredProvider={preferredProvider}
+        />
       ))}
-      <LoadMore endpoint={endpoint} itemsKey={itemsKey} initialCursor={cursor} loggedIn={loggedIn} />
+      <LoadMore
+        endpoint={endpoint}
+        itemsKey={itemsKey}
+        initialCursor={cursor}
+        loggedIn={loggedIn}
+      />
     </div>
   )
 }

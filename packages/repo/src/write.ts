@@ -1,5 +1,10 @@
 import type { Agent } from '@atproto/api'
-import { JAM_NSID, LIKE_NSID, type StrongRef, type JamRecord } from '@onrepeat/lexicons'
+import {
+  JAM_NSID,
+  LIKE_NSID,
+  type StrongRef,
+  type JamRecord,
+} from '@onrepeat/lexicons'
 import { buildJamRecord, buildLikeRecord, type JamInput } from './records'
 
 export interface WriteResult {
@@ -13,7 +18,10 @@ export interface PostJamResult extends WriteResult {
 }
 
 /** Write the user's current jam (a new append-only record) to their repo. */
-export async function postJam(agent: Agent, input: JamInput): Promise<PostJamResult> {
+export async function postJam(
+  agent: Agent,
+  input: JamInput,
+): Promise<PostJamResult> {
   const record = buildJamRecord(input)
   const res = await agent.com.atproto.repo.createRecord({
     repo: agent.assertDid,
@@ -24,7 +32,10 @@ export async function postJam(agent: Agent, input: JamInput): Promise<PostJamRes
 }
 
 /** Like a jam by writing a like record referencing its strongRef. */
-export async function likeJam(agent: Agent, subject: StrongRef): Promise<WriteResult> {
+export async function likeJam(
+  agent: Agent,
+  subject: StrongRef,
+): Promise<WriteResult> {
   const record = buildLikeRecord(subject)
   const res = await agent.com.atproto.repo.createRecord({
     repo: agent.assertDid,
@@ -49,7 +60,10 @@ export interface ReJamInput {
 }
 
 /** Adopt someone else's song as your own current jam, with attribution. */
-export async function reJam(agent: Agent, input: ReJamInput): Promise<PostJamResult> {
+export async function reJam(
+  agent: Agent,
+  input: ReJamInput,
+): Promise<PostJamResult> {
   return postJam(agent, {
     ...input.track,
     via: { uri: input.sourceJam.uri, did: input.sourceJam.did },

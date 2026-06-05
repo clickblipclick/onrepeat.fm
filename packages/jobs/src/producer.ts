@@ -17,15 +17,25 @@ export interface JamForResolve {
  * resolved/self_contained; pending and failed tracks are (re-)enqueued, deduped
  * by singletonKey while a job is still queued.
  */
-export async function enqueueResolveForJam(boss: PgBoss, db: DB, jam: JamForResolve): Promise<void> {
+export async function enqueueResolveForJam(
+  boss: PgBoss,
+  db: DB,
+  jam: JamForResolve,
+): Promise<void> {
   const { record } = jam
   let identity: string
   try {
-    identity = trackIdentity({ isrc: record.isrc, title: record.title, artist: record.artist })
+    identity = trackIdentity({
+      isrc: record.isrc,
+      title: record.title,
+      artist: record.artist,
+    })
   } catch (err) {
     // A record with no usable identity fields can't be resolved; skip without
     // stalling the firehose. (DB/enqueue errors below still propagate to retry.)
-    console.warn(`[jobs] skipping resolve for ${jam.uri}: ${err instanceof Error ? err.message : String(err)}`)
+    console.warn(
+      `[jobs] skipping resolve for ${jam.uri}: ${err instanceof Error ? err.message : String(err)}`,
+    )
     return
   }
 
@@ -41,14 +51,26 @@ export async function enqueueResolveForJam(boss: PgBoss, db: DB, jam: JamForReso
     .onConflict((oc) => oc.column('id').doNothing())
     .execute()
 
-  await db.updateTable('jams').set({ track_id: identity }).where('uri', '=', jam.uri).execute()
+  await db
+    .updateTable('jams')
+    .set({ track_id: identity })
+    .where('uri', '=', jam.uri)
+    .execute()
 
   const track = await db
     .selectFrom('tracks')
     .select('resolution_status')
     .where('id', '=', identity)
     .executeTakeFirst()
-  if (track?.resolution_status === 'resolved' || track?.resolution_status === 'self_contained') return
+  if (
+    track?.resolution_status === 'resolved' ||
+    track?.resolution_status === 'self_contained'
+  )
+    return
 
-  await enqueueResolve(boss, { identity, sourceUrl: record.sourceUrl, provider: record.sourceProvider })
+  await enqueueResolve(boss, {
+    identity,
+    sourceUrl: record.sourceUrl,
+    provider: record.sourceProvider,
+  })
 }

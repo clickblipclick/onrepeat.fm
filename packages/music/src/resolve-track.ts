@@ -41,11 +41,18 @@ function appleId(url: string): string | null {
  * that anchor. Each provider is best-effort: a missing/erroring client skips just
  * that provider — the result always carries at least the source ref. No ISRC.
  */
-export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Promise<ResolutionResult> {
+export async function resolveTrack(
+  input: ResolveInput,
+  deps: ResolveDeps,
+): Promise<ResolutionResult> {
   const providerRefs: ProviderRefs = {}
-  if (input.sourceProvider) providerRefs[input.sourceProvider] = { url: input.sourceUrl }
+  if (input.sourceProvider)
+    providerRefs[input.sourceProvider] = { url: input.sourceUrl }
 
-  let anchor: { title: string; artist: string; durationSec?: number } = { title: input.title, artist: input.artist }
+  let anchor: { title: string; artist: string; durationSec?: number } = {
+    title: input.title,
+    artist: input.artist,
+  }
   let canonicalTitle: string | undefined
   let canonicalArtist: string | undefined
   let artworkUrl: string | undefined
@@ -58,7 +65,9 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
       if (id) apple = await deps.itunes.lookup(id)
       // Source is Apple: lookup is definitive; don't search for a substitute.
     } else {
-      const candidates = await deps.itunes.search(`${input.title} ${input.artist}`)
+      const candidates = await deps.itunes.search(
+        `${input.title} ${input.artist}`,
+      )
       apple =
         candidates.find((c) =>
           isConfidentMatch(
@@ -68,8 +77,13 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
         ) ?? null
     }
     if (apple) {
-      if (input.sourceProvider !== 'applemusic') providerRefs.applemusic = { url: apple.sourceUrl }
-      anchor = { title: apple.title, artist: apple.artist, durationSec: apple.durationSec }
+      if (input.sourceProvider !== 'applemusic')
+        providerRefs.applemusic = { url: apple.sourceUrl }
+      anchor = {
+        title: apple.title,
+        artist: apple.artist,
+        durationSec: apple.durationSec,
+      }
       canonicalTitle = apple.title
       canonicalArtist = apple.artist
       artworkUrl = apple.artworkUrl
@@ -79,7 +93,9 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
   }
 
   // --- YouTube ---
-  const sourceIsYoutube = input.sourceProvider === 'youtube' || input.sourceProvider === 'youtubemusic'
+  const sourceIsYoutube =
+    input.sourceProvider === 'youtube' ||
+    input.sourceProvider === 'youtubemusic'
   if (deps.youtube) {
     try {
       if (sourceIsYoutube) {
@@ -87,20 +103,31 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
         // or overwrite the user's pasted video). Just check the source can embed — if
         // the uploader disabled it, mark the ref so the player falls back to link-out.
         const vid = youtubeVideoId(input.sourceUrl)
-        const ref = input.sourceProvider ? providerRefs[input.sourceProvider] : undefined
+        const ref = input.sourceProvider
+          ? providerRefs[input.sourceProvider]
+          : undefined
         if (vid && ref) {
           const meta = await deps.youtube.lookupVideos([vid])
           if (meta.get(vid)?.embeddable === false) ref.embeddable = false
         }
       } else {
-        const vids = await deps.youtube.searchVideo(`${anchor.title} ${anchor.artist}`)
+        const vids = await deps.youtube.searchVideo(
+          `${anchor.title} ${anchor.artist}`,
+        )
         if (vids.length) {
-          const meta = await deps.youtube.lookupVideos(vids.map((v) => v.videoId))
+          const meta = await deps.youtube.lookupVideos(
+            vids.map((v) => v.videoId),
+          )
           const match = vids.find((v) =>
-            isConfidentMatch(anchor, { title: v.title, artist: v.channelTitle, durationSec: meta.get(v.videoId)?.durationSec }),
+            isConfidentMatch(anchor, {
+              title: v.title,
+              artist: v.channelTitle,
+              durationSec: meta.get(v.videoId)?.durationSec,
+            }),
           )
           // Don't add a cross-link that can't embed — it would be a dead "YouTube" option.
-          if (match && meta.get(match.videoId)?.embeddable !== false) providerRefs.youtube = { url: match.url }
+          if (match && meta.get(match.videoId)?.embeddable !== false)
+            providerRefs.youtube = { url: match.url }
         }
       }
     } catch {
@@ -108,5 +135,10 @@ export async function resolveTrack(input: ResolveInput, deps: ResolveDeps): Prom
     }
   }
 
-  return { title: canonicalTitle, artist: canonicalArtist, artworkUrl, providerRefs }
+  return {
+    title: canonicalTitle,
+    artist: canonicalArtist,
+    artworkUrl,
+    providerRefs,
+  }
 }

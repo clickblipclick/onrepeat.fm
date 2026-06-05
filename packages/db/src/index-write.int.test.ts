@@ -5,7 +5,8 @@ import { createMigrator } from './migrate'
 import { indexJam } from './index-write'
 
 const url =
-  process.env.DATABASE_URL ?? 'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
+  process.env.DATABASE_URL ??
+  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
 
 const db = createDb(url)
 
@@ -39,7 +40,12 @@ describe('indexJam', () => {
   })
 
   it('inserts a jam row retrievable by uri with all mapped columns', async () => {
-    await indexJam(db, { uri: TEST_URI, cid: TEST_CID, did: TEST_DID, record: baseRecord })
+    await indexJam(db, {
+      uri: TEST_URI,
+      cid: TEST_CID,
+      did: TEST_DID,
+      record: baseRecord,
+    })
 
     const row = await db
       .selectFrom('jams')
@@ -64,7 +70,12 @@ describe('indexJam', () => {
 
   it('is idempotent and preserves track_id while updating other columns on re-index', async () => {
     // Insert the initial jam
-    await indexJam(db, { uri: TEST_URI, cid: TEST_CID, did: TEST_DID, record: baseRecord })
+    await indexJam(db, {
+      uri: TEST_URI,
+      cid: TEST_CID,
+      did: TEST_DID,
+      record: baseRecord,
+    })
 
     // Simulate resolver linking the jam to a track
     await db
@@ -75,7 +86,12 @@ describe('indexJam', () => {
 
     // Re-index with changed caption
     const updatedRecord = { ...baseRecord, caption: 'updated caption' }
-    await indexJam(db, { uri: TEST_URI, cid: TEST_CID, did: TEST_DID, record: updatedRecord })
+    await indexJam(db, {
+      uri: TEST_URI,
+      cid: TEST_CID,
+      did: TEST_DID,
+      record: updatedRecord,
+    })
 
     const row = await db
       .selectFrom('jams')
@@ -91,11 +107,45 @@ describe('indexJam', () => {
     const uri = 'at://did:plc:a/fm.onrepeat.jam/art'
     await db.deleteFrom('jams').where('uri', '=', uri).execute()
     try {
-      await indexJam(db, { uri, cid: 'c1', did: 'did:plc:a', record: { $type: JAM_NSID as 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', artworkUrl: 'first.jpg', createdAt: '2026-06-01T00:00:00.000Z' } })
-      let row = await db.selectFrom('jams').select('raw_artwork_url').where('uri', '=', uri).executeTakeFirstOrThrow()
+      await indexJam(db, {
+        uri,
+        cid: 'c1',
+        did: 'did:plc:a',
+        record: {
+          $type: JAM_NSID as 'fm.onrepeat.jam',
+          sourceUrl: 'u',
+          sourceProvider: 'spotify',
+          title: 'T',
+          artist: 'A',
+          artworkUrl: 'first.jpg',
+          createdAt: '2026-06-01T00:00:00.000Z',
+        },
+      })
+      let row = await db
+        .selectFrom('jams')
+        .select('raw_artwork_url')
+        .where('uri', '=', uri)
+        .executeTakeFirstOrThrow()
       expect(row.raw_artwork_url).toBe('first.jpg')
-      await indexJam(db, { uri, cid: 'c2', did: 'did:plc:a', record: { $type: JAM_NSID as 'fm.onrepeat.jam', sourceUrl: 'u', sourceProvider: 'spotify', title: 'T', artist: 'A', artworkUrl: 'second.jpg', createdAt: '2026-06-01T00:00:00.000Z' } })
-      row = await db.selectFrom('jams').select('raw_artwork_url').where('uri', '=', uri).executeTakeFirstOrThrow()
+      await indexJam(db, {
+        uri,
+        cid: 'c2',
+        did: 'did:plc:a',
+        record: {
+          $type: JAM_NSID as 'fm.onrepeat.jam',
+          sourceUrl: 'u',
+          sourceProvider: 'spotify',
+          title: 'T',
+          artist: 'A',
+          artworkUrl: 'second.jpg',
+          createdAt: '2026-06-01T00:00:00.000Z',
+        },
+      })
+      row = await db
+        .selectFrom('jams')
+        .select('raw_artwork_url')
+        .where('uri', '=', uri)
+        .executeTakeFirstOrThrow()
       expect(row.raw_artwork_url).toBe('second.jpg')
     } finally {
       await db.deleteFrom('jams').where('uri', '=', uri).execute()
@@ -142,7 +192,9 @@ describe('indexJam', () => {
         .where('uri', '=', uri)
         .executeTakeFirstOrThrow()
 
-      expect(new Date(row.created_at as unknown as string | Date).toISOString()).toBe(first) // original retained
+      expect(
+        new Date(row.created_at as unknown as string | Date).toISOString(),
+      ).toBe(first) // original retained
       expect(row.cid).toBe('c2') // but cid (mutable) did update
     } finally {
       await db.deleteFrom('jams').where('uri', '=', uri).execute()

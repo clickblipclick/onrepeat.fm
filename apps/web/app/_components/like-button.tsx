@@ -26,7 +26,10 @@ export function LikeButton({
       window.location.href = '/login'
       return
     }
-    const next = { liked: !base.liked, count: base.count + (base.liked ? -1 : 1) }
+    const next = {
+      liked: !base.liked,
+      count: base.count + (base.liked ? -1 : 1),
+    }
     startTransition(async () => {
       setOptimistic(next)
       if (next.liked) {
@@ -50,7 +53,13 @@ export function LikeButton({
   }
 
   return (
-    <button type="button" onClick={toggle} disabled={isPending} className={optimistic.liked ? 'text-accent' : 'hover:text-accent'} aria-pressed={optimistic.liked}>
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={isPending}
+      className={optimistic.liked ? 'text-accent' : 'hover:text-accent'}
+      aria-pressed={optimistic.liked}
+    >
       ♥ {optimistic.count}
     </button>
   )

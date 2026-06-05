@@ -27,9 +27,12 @@ export async function fetchOembed(
   if (!endpoint) return null
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   try {
-    const res = await fetchFn(`${endpoint}?format=json&url=${encodeURIComponent(url)}`, {
-      signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
-    })
+    const res = await fetchFn(
+      `${endpoint}?format=json&url=${encodeURIComponent(url)}`,
+      {
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+      },
+    )
     if (!res.ok) return null
     const j = (await res.json()) as OembedBody
     return { title: j.title, author: j.author_name, thumbnail: j.thumbnail_url }

@@ -1,6 +1,9 @@
 import type { DB } from '@onrepeat/db'
 
-export async function loadCursor(db: DB, service: string): Promise<number | undefined> {
+export async function loadCursor(
+  db: DB,
+  service: string,
+): Promise<number | undefined> {
   const row = await db
     .selectFrom('subscription_state')
     .select('cursor')
@@ -10,7 +13,11 @@ export async function loadCursor(db: DB, service: string): Promise<number | unde
   return row ? Number(row.cursor) : undefined
 }
 
-export async function saveCursor(db: DB, service: string, cursor: number): Promise<void> {
+export async function saveCursor(
+  db: DB,
+  service: string,
+  cursor: number,
+): Promise<void> {
   await db
     .insertInto('subscription_state')
     .values({ service, cursor })
@@ -45,7 +52,9 @@ export function makeThrottledCursorWriter(
       const ts = now()
       if (ts - lastWrite >= intervalMs) {
         lastWrite = ts
-        void write(seq).catch((e) => console.error('[ingester] cursor save failed', e))
+        void write(seq).catch((e) =>
+          console.error('[ingester] cursor save failed', e),
+        )
       }
     },
     async flush() {

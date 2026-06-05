@@ -19,7 +19,14 @@ export default async function ExplorePage() {
         cursor={page.cursor}
         endpoint="/api/latest"
         itemsKey="feed"
-        empty={<>No jams yet. <Link href="/post" className="text-accent">Set yours.</Link></>}
+        empty={
+          <>
+            No jams yet.{' '}
+            <Link href="/post" className="text-accent">
+              Set yours.
+            </Link>
+          </>
+        }
         loggedIn={!!session.did}
         preferredProvider={preferredProvider}
       />

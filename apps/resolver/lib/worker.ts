@@ -17,7 +17,10 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
         await resolveJob(db, deps, job.data)
       } catch (err) {
         if (job.retryCount < job.retryLimit) throw err // not the last attempt → let pg-boss retry
-        console.error(`[resolver] giving up on ${job.data.identity} after ${job.retryCount} retries`, err)
+        console.error(
+          `[resolver] giving up on ${job.data.identity} after ${job.retryCount} retries`,
+          err,
+        )
         try {
           await db
             .updateTable('tracks')
@@ -25,7 +28,10 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
             .where('id', '=', job.data.identity)
             .execute()
         } catch (writeErr) {
-          console.error(`[resolver] failed to record failed-status for ${job.data.identity}`, writeErr)
+          console.error(
+            `[resolver] failed to record failed-status for ${job.data.identity}`,
+            writeErr,
+          )
           throw writeErr
         }
       }
@@ -34,7 +40,11 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
 }
 
 /** Register the worker on a started boss. Single worker, one job at a time. */
-export async function startResolver(boss: PgBoss, db: DB, deps: ResolverDeps): Promise<void> {
+export async function startResolver(
+  boss: PgBoss,
+  db: DB,
+  deps: ResolverDeps,
+): Promise<void> {
   await boss.work<ResolveJob>(
     RESOLVE_QUEUE,
     { includeMetadata: true, localConcurrency: 1, pollingIntervalSeconds: 2 },

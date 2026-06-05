@@ -22,7 +22,9 @@ const db = createDb(databaseUrl)
 export const oauthSessionStore = new KyselySessionStore(db)
 
 // Singleton across hot reloads in dev.
-const globalForOauth = globalThis as unknown as { __onrepeatOAuth?: ReturnType<typeof build> }
+const globalForOauth = globalThis as unknown as {
+  __onrepeatOAuth?: ReturnType<typeof build>
+}
 
 function build() {
   // PROD KEYSET: prod mode requires an ES256 signing keyset. Before deploying with
@@ -42,4 +44,5 @@ function build() {
 }
 
 export const oauthClient = globalForOauth.__onrepeatOAuth ?? build()
-if (process.env.NODE_ENV !== 'production') globalForOauth.__onrepeatOAuth = oauthClient
+if (process.env.NODE_ENV !== 'production')
+  globalForOauth.__onrepeatOAuth = oauthClient

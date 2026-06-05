@@ -1,6 +1,6 @@
 # onrepeat.fm
 
-One song. Seven days. A recreation of *This Is My Jam*, built natively on the [AT Protocol](https://atproto.com): post the one song you're into, it expires after a week, and you follow people to see their current jam. Jam/like records live in each user's own PDS; we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
+One song. Seven days. A recreation of _This Is My Jam_, built natively on the [AT Protocol](https://atproto.com): post the one song you're into, it expires after a week, and you follow people to see their current jam. Jam/like records live in each user's own PDS; we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
 
 ## Stack
 
@@ -25,26 +25,26 @@ Then open **http://127.0.0.1:3000** and sign in with your test Bluesky handle.
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `pnpm setup` | One-time bootstrap (install, env files, migrate) |
-| `pnpm dev` | Run **all** services concurrently (web · ingester · resolver) |
-| `pnpm dev:web` | Just the Next.js app (for UI work — no firehose/resolver) |
-| `pnpm dev:services` | Just the ingester + resolver |
-| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres |
-| `pnpm db:migrate` | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
-| `pnpm test` | Unit tests | 
-| `pnpm test:int` | Integration tests (needs Postgres on :5432) |
-| `pnpm typecheck` | Workspace-wide `tsc --noEmit` |
+| Command                       | What it does                                                  |
+| ----------------------------- | ------------------------------------------------------------- |
+| `pnpm setup`                  | One-time bootstrap (install, env files, migrate)              |
+| `pnpm dev`                    | Run **all** services concurrently (web · ingester · resolver) |
+| `pnpm dev:web`                | Just the Next.js app (for UI work — no firehose/resolver)     |
+| `pnpm dev:services`           | Just the ingester + resolver                                  |
+| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres                              |
+| `pnpm db:migrate`             | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
+| `pnpm test`                   | Unit tests                                                    |
+| `pnpm test:int`               | Integration tests (needs Postgres on :5432)                   |
+| `pnpm typecheck`              | Workspace-wide `tsc --noEmit`                                 |
 
 The three services each auto-load their own `apps/<app>/.env.local`; see the matching `.env.example` for the keys.
 
 ## Services
 
-| App | Role |
-|---|---|
-| `apps/web` | Next.js UI + JSON read API + OAuth login / write actions |
-| `apps/ingester` | Consumes the atproto firehose → indexes `fm.onrepeat.jam` / `like` into Postgres |
+| App             | Role                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `apps/web`      | Next.js UI + JSON read API + OAuth login / write actions                                                        |
+| `apps/ingester` | Consumes the atproto firehose → indexes `fm.onrepeat.jam` / `like` into Postgres                                |
 | `apps/resolver` | pg-boss worker → resolves tracks to cross-platform links via iTunes/Apple + YouTube; Bandcamp jams embed inline |
 
 **Resolver API keys** — cross-resolution uses the iTunes/Apple Search API, which is **keyless and always on** — no credentials required. Bandcamp jams embed inline with no key either. YouTube cross-links are optional: get a free **YouTube Data API v3** key from [Google Cloud Console](https://console.cloud.google.com) and add it to `apps/resolver/.env.local`:
@@ -62,7 +62,7 @@ Packages: `@onrepeat/core` · `lexicons` · `db` · `repo` · `oauth` · `jobs` 
 Host processes (the apps, `tsx`, and the test runner) connect to **whatever is serving `localhost:5432`**.
 
 - If you run **Postgres.app**, it serves `:5432` directly — you don't need `pnpm db:up`.
-- `pnpm db:up` starts a **Docker** Postgres on `:5432` instead. Don't run both: the second one can't bind the port, and the Docker container is a *separate, empty* database from Postgres.app.
+- `pnpm db:up` starts a **Docker** Postgres on `:5432` instead. Don't run both: the second one can't bind the port, and the Docker container is a _separate, empty_ database from Postgres.app.
 
 Pick one. To inspect the app's real data, query the same `:5432` your services use.
 

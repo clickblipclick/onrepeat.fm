@@ -16,7 +16,10 @@ interface YTPlayerOptions {
 interface YTNamespace {
   Player: new (el: HTMLElement, opts: YTPlayerOptions) => YTPlayer
 }
-type YTWindow = Window & { YT?: YTNamespace; onYouTubeIframeAPIReady?: () => void }
+type YTWindow = Window & {
+  YT?: YTNamespace
+  onYouTubeIframeAPIReady?: () => void
+}
 
 let apiPromise: Promise<YTNamespace> | null = null
 

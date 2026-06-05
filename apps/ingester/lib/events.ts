@@ -24,7 +24,11 @@ function isIngestCollection(c: string): c is IngestCollection {
 
 /** Normalize an @atproto/sync Event into an IngestEvent, or null if we ignore it. */
 export function toIngestEvent(evt: Event): IngestEvent | null {
-  if (evt.event !== 'create' && evt.event !== 'update' && evt.event !== 'delete') {
+  if (
+    evt.event !== 'create' &&
+    evt.event !== 'update' &&
+    evt.event !== 'delete'
+  ) {
     return null // identity / account / sync — not indexed
   }
   if (!isIngestCollection(evt.collection)) return null

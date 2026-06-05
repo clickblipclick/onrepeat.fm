@@ -12,16 +12,32 @@ export interface BskyAgentLike {
   app: {
     bsky: {
       graph: {
-        getFollows(params: { actor: string; limit?: number; cursor?: string }): Promise<{
+        getFollows(params: {
+          actor: string
+          limit?: number
+          cursor?: string
+        }): Promise<{
           data: { follows: { did: string }[]; cursor?: string }
         }>
       }
       actor: {
         getProfiles(params: { actors: string[] }): Promise<{
-          data: { profiles: { did: string; handle: string; displayName?: string; avatar?: string }[] }
+          data: {
+            profiles: {
+              did: string
+              handle: string
+              displayName?: string
+              avatar?: string
+            }[]
+          }
         }>
         getProfile(params: { actor: string }): Promise<{
-          data: { did: string; handle: string; displayName?: string; avatar?: string }
+          data: {
+            did: string
+            handle: string
+            displayName?: string
+            avatar?: string
+          }
         }>
       }
     }
@@ -46,16 +62,23 @@ export interface BskyClientOptions {
 const PUBLIC_API = 'https://public.api.bsky.app'
 
 export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
-  const agent: BskyAgentLike = opts.agent ?? new AtpAgent({ service: PUBLIC_API })
+  const agent: BskyAgentLike =
+    opts.agent ?? new AtpAgent({ service: PUBLIC_API })
   const now = opts.now ?? (() => Date.now())
   const followsTtl = opts.followsTtlMs ?? 60_000
   const profileTtl = opts.profileTtlMs ?? 30 * 60_000
 
   const followsCache = new Map<string, { at: number; dids: string[] }>()
-  const profileCache = new Map<string, { at: number; profile: ActorProfile | null }>()
+  const profileCache = new Map<
+    string,
+    { at: number; profile: ActorProfile | null }
+  >()
   // Separate from profileCache: getProfile keys by the raw actor string (handle or DID);
   // getProfiles keys by resolved DID. Cross-population is intentionally deferred (MVP).
-  const actorCache = new Map<string, { at: number; profile: ActorProfile | null }>()
+  const actorCache = new Map<
+    string,
+    { at: number; profile: ActorProfile | null }
+  >()
 
   return {
     async getFollows(viewerDid) {
@@ -68,7 +91,11 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
       let pages = 0
       const MAX_PAGES = 500 // safety cap (~50k follows) against a non-terminating cursor
       do {
-        const res = await agent.app.bsky.graph.getFollows({ actor: viewerDid, limit: 100, cursor })
+        const res = await agent.app.bsky.graph.getFollows({
+          actor: viewerDid,
+          limit: 100,
+          cursor,
+        })
         for (const f of res.data.follows) dids.push(f.did)
         cursor = res.data.cursor
       } while (cursor && ++pages < MAX_PAGES)
@@ -91,7 +118,12 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
         for (const did of batch) {
           const p = found.get(did)
           const profile: ActorProfile | null = p
-            ? { did: p.did, handle: p.handle, displayName: p.displayName, avatar: p.avatar }
+            ? {
+                did: p.did,
+                handle: p.handle,
+                displayName: p.displayName,
+                avatar: p.avatar,
+              }
             : null
           profileCache.set(did, { at: now(), profile })
           result.set(did, profile)
@@ -106,7 +138,12 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
       try {
         const res = await agent.app.bsky.actor.getProfile({ actor })
         const p = res.data
-        const profile: ActorProfile = { did: p.did, handle: p.handle, displayName: p.displayName, avatar: p.avatar }
+        const profile: ActorProfile = {
+          did: p.did,
+          handle: p.handle,
+          displayName: p.displayName,
+          avatar: p.avatar,
+        }
         actorCache.set(actor, { at: now(), profile })
         return profile
       } catch (err) {

@@ -47,7 +47,9 @@ describe('playbackCookieString', () => {
 
   it('round-trips through parseProvider', () => {
     // value segment before the first '; '
-    const value = playbackCookieString('soundcloud', false).split('; ')[0]?.split('=')[1]
+    const value = playbackCookieString('soundcloud', false)
+      .split('; ')[0]
+      ?.split('=')[1]
     expect(parseProvider(decodeURIComponent(value ?? ''))).toBe('soundcloud')
   })
 })

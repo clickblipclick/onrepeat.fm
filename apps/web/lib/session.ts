@@ -44,13 +44,18 @@ export async function getSessionAgent(): Promise<SessionAgentResult> {
     // atproto deletes the stored session when it's unrecoverable (revoked /
     // invalid_grant / invalid). If the row is gone, re-auth is required; if it
     // survived, the failure was transient — keep the session so a retry works.
-    const stored = await oauthSessionStore.get(session.did).catch(() => 'unknown' as const)
+    const stored = await oauthSessionStore
+      .get(session.did)
+      .catch(() => 'unknown' as const)
     if (stored === undefined) {
       console.error('[web] OAuth session expired/invalid; clearing cookie', err)
       session.destroy()
       return { agent: null, reason: 'expired' }
     }
-    console.error('[web] OAuth restore failed transiently; keeping session', err)
+    console.error(
+      '[web] OAuth restore failed transiently; keeping session',
+      err,
+    )
     return { agent: null, reason: 'transient' }
   }
 }

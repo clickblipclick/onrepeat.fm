@@ -6,13 +6,17 @@ export interface RetryOptions {
   sleep?: (ms: number) => Promise<void>
 }
 
-const realSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+const realSleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
  * Run `fn`, retrying on rejection up to `attempts` times with exponential backoff.
  * Re-throws the last error if all attempts fail. Intended for idempotent operations.
  */
-export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions): Promise<T> {
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: RetryOptions,
+): Promise<T> {
   const sleep = opts.sleep ?? realSleep
   let lastErr: unknown
   for (let attempt = 1; attempt <= opts.attempts; attempt++) {

@@ -19,7 +19,10 @@ describe('createIngester', () => {
   })
 
   it('constructs without throwing and exposes start/stop', async () => {
-    const ingester = await createIngester({ db, relay: 'wss://example.invalid' })
+    const ingester = await createIngester({
+      db,
+      relay: 'wss://example.invalid',
+    })
     expect(typeof ingester.start).toBe('function')
     expect(typeof ingester.stop).toBe('function')
   })

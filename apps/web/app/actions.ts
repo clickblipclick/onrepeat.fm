@@ -2,9 +2,19 @@
 
 import { revalidatePath } from 'next/cache'
 import { getSessionAgent } from '../lib/session'
-import { postJam, likeJam, unlikeJam, reJam, type PostJamResult } from '@onrepeat/repo'
+import {
+  postJam,
+  likeJam,
+  unlikeJam,
+  reJam,
+  type PostJamResult,
+} from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
-import { deriveTrack, fetchYoutubeCategory, type TrackCandidate } from '@onrepeat/music'
+import {
+  deriveTrack,
+  fetchYoutubeCategory,
+  type TrackCandidate,
+} from '@onrepeat/music'
 import { db } from '../lib/db'
 import { indexJam } from '@onrepeat/db'
 
@@ -15,12 +25,20 @@ import { indexJam } from '@onrepeat/db'
  */
 async function afterJamWrite(
   label: string,
-  args: { uri: string; cid: string; did: string; record: PostJamResult['record'] },
+  args: {
+    uri: string
+    cid: string
+    did: string
+    record: PostJamResult['record']
+  },
 ): Promise<void> {
   try {
     await indexJam(db, args)
   } catch (e) {
-    console.error(`[web] ${label}: write-through index failed (firehose will backfill)`, e)
+    console.error(
+      `[web] ${label}: write-through index failed (firehose will backfill)`,
+      e,
+    )
   }
   revalidatePath('/')
   revalidatePath('/explore')
@@ -38,7 +56,11 @@ export async function postJamAction(
   formData: FormData,
 ): Promise<PostJamState> {
   const res = await getSessionAgent()
-  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
   const agent = res.agent
 
   const sourceUrl = String(formData.get('sourceUrl') ?? '').trim()
@@ -66,7 +88,9 @@ export async function postJamAction(
   }
 }
 
-export async function deriveTrackAction(url: string): Promise<TrackCandidate | null> {
+export async function deriveTrackAction(
+  url: string,
+): Promise<TrackCandidate | null> {
   const res = await getSessionAgent()
   if (!res.agent) return null
   // When a YouTube Data API key is configured, flag plain youtube.com videos that
@@ -97,9 +121,16 @@ export interface ActionResult {
   likeUri?: string
 }
 
-export async function likeJamAction(subject: { uri: string; cid: string }): Promise<ActionResult> {
+export async function likeJamAction(subject: {
+  uri: string
+  cid: string
+}): Promise<ActionResult> {
   const res = await getSessionAgent()
-  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
   const agent = res.agent
   try {
     const res = await likeJam(agent, subject)
@@ -109,9 +140,16 @@ export async function likeJamAction(subject: { uri: string; cid: string }): Prom
   }
 }
 
-export async function unlikeJamAction(subjectUri: string, likeUri?: string): Promise<ActionResult> {
+export async function unlikeJamAction(
+  subjectUri: string,
+  likeUri?: string,
+): Promise<ActionResult> {
   const res = await getSessionAgent()
-  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
   const agent = res.agent
   try {
     // Prefer the like-uri the client kept from this session; otherwise look up
@@ -146,7 +184,11 @@ export interface ReJamArgs {
 
 export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
   const res = await getSessionAgent()
-  if (!res.agent) return { ok: false, error: res.reason === 'transient' ? 'temporary' : 'session-expired' }
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
   const agent = res.agent
   try {
     const { uri, cid, record } = await reJam(agent, {

@@ -19,7 +19,8 @@ export function providerFromUrl(url: string): string | null {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
   const host = parsed.hostname.toLowerCase()
   // exact host or a dot-anchored subdomain (so "evilspotify.com" does not match "spotify.com")
-  const matches = (domain: string) => host === domain || host.endsWith('.' + domain)
+  const matches = (domain: string) =>
+    host === domain || host.endsWith('.' + domain)
 
   if (host === 'music.youtube.com') return 'youtubemusic'
   if (host === 'youtu.be' || matches('youtube.com')) return 'youtube'

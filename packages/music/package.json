@@ -5,10 +5,14 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*"
   },
-  "devDependencies": { "typescript": "^5.5.0" }
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
 }

@@ -20,12 +20,20 @@ describe('providerTier', () => {
 
 describe('providerFromUrl', () => {
   it('detects providers from known hosts', () => {
-    expect(providerFromUrl('https://open.spotify.com/track/abc')).toBe('spotify')
-    expect(providerFromUrl('https://music.apple.com/us/album/x/1?i=2')).toBe('applemusic')
-    expect(providerFromUrl('https://music.youtube.com/watch?v=x')).toBe('youtubemusic')
+    expect(providerFromUrl('https://open.spotify.com/track/abc')).toBe(
+      'spotify',
+    )
+    expect(providerFromUrl('https://music.apple.com/us/album/x/1?i=2')).toBe(
+      'applemusic',
+    )
+    expect(providerFromUrl('https://music.youtube.com/watch?v=x')).toBe(
+      'youtubemusic',
+    )
     expect(providerFromUrl('https://www.youtube.com/watch?v=x')).toBe('youtube')
     expect(providerFromUrl('https://youtu.be/x')).toBe('youtube')
-    expect(providerFromUrl('https://artist.bandcamp.com/track/x')).toBe('bandcamp')
+    expect(providerFromUrl('https://artist.bandcamp.com/track/x')).toBe(
+      'bandcamp',
+    )
     expect(providerFromUrl('https://soundcloud.com/a/b')).toBe('soundcloud')
   })
 
@@ -44,7 +52,9 @@ describe('providerFromUrl', () => {
   it('still matches legitimate subdomains', () => {
     expect(providerFromUrl('https://listen.tidal.com/track/1')).toBe('tidal')
     expect(providerFromUrl('https://m.soundcloud.com/a/b')).toBe('soundcloud')
-    expect(providerFromUrl('https://geo.music.apple.com/us/album/x/1')).toBe('applemusic')
+    expect(providerFromUrl('https://geo.music.apple.com/us/album/x/1')).toBe(
+      'applemusic',
+    )
   })
 
   it('rejects non-http(s) URL schemes', () => {
