@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Check, LoaderCircle, Repeat2 } from 'lucide-react'
 import { reJamAction, type ReJamArgs } from '../actions'
 
 export function ReJamButton({
@@ -38,9 +39,24 @@ export function ReJamButton({
       type="button"
       onClick={rejam}
       disabled={pending || done}
-      className="hover:text-accent disabled:text-muted"
+      className="inline-flex items-center gap-1 hover:text-accent disabled:text-muted"
     >
-      {done ? '✓ re-jammed' : pending ? '…' : '⟳ re-jam'}
+      {done ? (
+        <>
+          <Check size={16} aria-hidden />
+          re-jammed
+        </>
+      ) : pending ? (
+        <>
+          <LoaderCircle size={16} className="animate-spin" aria-hidden />
+          re-jam
+        </>
+      ) : (
+        <>
+          <Repeat2 size={16} aria-hidden />
+          re-jam
+        </>
+      )}
     </button>
   )
 }

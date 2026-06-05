@@ -1,6 +1,7 @@
 'use client'
 
 import { useOptimistic, useState, useTransition } from 'react'
+import { Heart } from 'lucide-react'
 import { likeJamAction, unlikeJamAction } from '../actions'
 
 export function LikeButton({
@@ -57,10 +58,16 @@ export function LikeButton({
       type="button"
       onClick={toggle}
       disabled={isPending}
-      className={optimistic.liked ? 'text-accent' : 'hover:text-accent'}
+      className={`inline-flex items-center gap-1 ${optimistic.liked ? 'text-accent' : 'hover:text-accent'}`}
       aria-pressed={optimistic.liked}
+      aria-label={optimistic.liked ? 'Unlike' : 'Like'}
     >
-      ♥ {optimistic.count}
+      <Heart
+        size={16}
+        fill={optimistic.liked ? 'currentColor' : 'none'}
+        aria-hidden
+      />
+      {optimistic.count}
     </button>
   )
 }
