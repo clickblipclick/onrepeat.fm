@@ -7,6 +7,7 @@ import {
   likeJam,
   unlikeJam,
   reJam,
+  deleteJam,
   type PostJamResult,
 } from '@onrepeat/repo'
 import { providerFromUrl } from '@onrepeat/core'
@@ -17,7 +18,7 @@ import {
 } from '@onrepeat/music'
 import { db } from '../lib/db'
 import { didFromUri, rkeyFromUri } from '../lib/at-uri'
-import { indexJam } from '@onrepeat/db'
+import { indexJam, removeJam } from '@onrepeat/db'
 
 /**
  * After a jam write succeeds: index it into our Postgres immediately (read-your-writes,
@@ -199,6 +200,38 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
       },
     })
     await afterJamWrite('reJam', { uri, cid, did: agent.assertDid, record })
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export async function deleteJamAction(uri: string): Promise<ActionResult> {
+  const res = await getSessionAgent()
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
+  const agent = res.agent
+
+  // Defensive ownership check on top of the PDS's own-repo constraint:
+  // the at-uri's authority (DID) must be the session DID.
+  if (didFromUri(uri) !== agent.assertDid)
+    return { ok: false, error: 'not-owner' }
+
+  try {
+    await deleteJam(agent, rkeyFromUri(uri))
+    // Write-through index removal for read-your-writes (best-effort: the firehose
+    // delete event reconciles the index idempotently if this fails).
+    try {
+      await removeJam(db, uri)
+    } catch (e) {
+      console.error('[web] deleteJam: write-through removal failed', e)
+    }
+    revalidatePath('/')
+    revalidatePath('/explore')
+    revalidatePath('/profile/[handle]', 'page')
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
