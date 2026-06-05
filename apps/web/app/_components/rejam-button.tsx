@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Check, LoaderCircle, Repeat2 } from 'lucide-react'
 import { reJamAction, type ReJamArgs } from '../actions'
+import { useConfirm } from './ui/confirm'
 
 export function ReJamButton({
   jam,
@@ -13,18 +14,19 @@ export function ReJamButton({
 }) {
   const [done, setDone] = useState(false)
   const [pending, startTransition] = useTransition()
+  const { confirm } = useConfirm()
 
-  function rejam() {
+  async function rejam() {
     if (!loggedIn) {
       window.location.href = '/login'
       return
     }
-    if (
-      !window.confirm(
-        `Re-jam this as your current jam? It'll replace your current jam, crediting @${jam.authorName}.`,
-      )
-    )
-      return
+    const ok = await confirm({
+      title: 'Re-jam this track?',
+      description: `It'll replace your current jam, crediting @${jam.authorName}.`,
+      confirmText: 'Re-jam',
+    })
+    if (!ok) return
     startTransition(async () => {
       const { authorName: _n, ...args } = jam
       const res = await reJamAction(args)

@@ -1,6 +1,7 @@
 import './globals.css'
 import { JetBrains_Mono } from 'next/font/google'
 import { SiteNav } from './_components/site-nav'
+import { UiProviders } from './_components/ui/providers'
 
 const mono = JetBrains_Mono({
   subsets: ['latin'],
@@ -20,8 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="clay" className={mono.variable}>
       <body className="min-h-screen">
-        <SiteNav />
-        <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+        <UiProviders>
+          <SiteNav />
+          <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+        </UiProviders>
       </body>
     </html>
   )
