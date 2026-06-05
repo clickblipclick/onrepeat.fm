@@ -54,6 +54,15 @@ export async function unlikeJam(agent: Agent, rkey: string): Promise<void> {
   })
 }
 
+/** Delete one of the user's own jams (rkey must be known by the caller). */
+export async function deleteJam(agent: Agent, rkey: string): Promise<void> {
+  await agent.com.atproto.repo.deleteRecord({
+    repo: agent.assertDid,
+    collection: JAM_NSID,
+    rkey,
+  })
+}
+
 export interface ReJamInput {
   sourceJam: { uri: string; did: string }
   track: JamInput

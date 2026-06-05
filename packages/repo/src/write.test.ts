@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
-import { postJam, likeJam, unlikeJam, reJam } from './write'
+import { postJam, likeJam, unlikeJam, reJam, deleteJam } from './write'
 
 // A structural fake of the @atproto/api Agent surface we use.
 function fakeAgent(did = 'did:plc:me') {
@@ -99,5 +99,16 @@ describe('reJam', () => {
       uri: 'at://did:plc:src/fm.onrepeat.jam/9',
       did: 'did:plc:src',
     })
+  })
+})
+
+describe('deleteJam', () => {
+  it('deletes a jam by rkey from the user repo', async () => {
+    const { agent, calls } = fakeAgent()
+    await deleteJam(agent, 'rkey1')
+    expect(calls[0]!.op).toBe('delete')
+    expect(calls[0]!.params.repo).toBe('did:plc:me')
+    expect(calls[0]!.params.collection).toBe(JAM_NSID)
+    expect(calls[0]!.params.rkey).toBe('rkey1')
   })
 })
