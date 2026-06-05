@@ -16,6 +16,7 @@ import {
   type TrackCandidate,
 } from '@onrepeat/music'
 import { db } from '../lib/db'
+import { didFromUri, rkeyFromUri } from '../lib/at-uri'
 import { indexJam } from '@onrepeat/db'
 
 /**
@@ -108,10 +109,6 @@ export async function deriveTrackAction(
     console.error('[web] deriveTrackAction failed', err)
     return null
   }
-}
-
-function rkeyFromUri(uri: string): string {
-  return uri.split('/').pop() ?? ''
 }
 
 export interface ActionResult {
