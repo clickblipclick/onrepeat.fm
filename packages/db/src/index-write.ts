@@ -78,3 +78,8 @@ export async function indexJam(
     )
     .execute()
 }
+
+/** Remove a jam row from the index by at-uri. Idempotent (no-op if absent). */
+export async function removeJam(db: DB, uri: string): Promise<void> {
+  await db.deleteFrom('jams').where('uri', '=', uri).execute()
+}

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest'
 import { JAM_NSID } from '@onrepeat/lexicons'
 import { createDb } from './client'
 import { createMigrator } from './migrate'
-import { indexJam } from './index-write'
+import { indexJam, removeJam } from './index-write'
 
 const url =
   process.env.DATABASE_URL ??
@@ -25,18 +25,12 @@ const baseRecord = {
 }
 
 describe('indexJam', () => {
-  beforeAll(async () => {
-    const { error } = await createMigrator(db).migrateToLatest()
-    if (error) throw error
-  })
-
   beforeEach(async () => {
     await db.deleteFrom('jams').where('uri', '=', TEST_URI).execute()
   })
 
   afterAll(async () => {
     await db.deleteFrom('jams').where('uri', '=', TEST_URI).execute()
-    await db.destroy()
   })
 
   it('inserts a jam row retrievable by uri with all mapped columns', async () => {
@@ -200,4 +194,43 @@ describe('indexJam', () => {
       await db.deleteFrom('jams').where('uri', '=', uri).execute()
     }
   })
+})
+
+describe('removeJam', () => {
+  beforeEach(async () => {
+    await db.deleteFrom('jams').where('uri', '=', TEST_URI).execute()
+  })
+
+  afterAll(async () => {
+    await db.deleteFrom('jams').where('uri', '=', TEST_URI).execute()
+  })
+
+  it('deletes an existing jam row by uri', async () => {
+    await indexJam(db, {
+      uri: TEST_URI,
+      cid: TEST_CID,
+      did: TEST_DID,
+      record: baseRecord,
+    })
+    await removeJam(db, TEST_URI)
+    const row = await db
+      .selectFrom('jams')
+      .selectAll()
+      .where('uri', '=', TEST_URI)
+      .executeTakeFirst()
+    expect(row).toBeUndefined()
+  })
+
+  it('is a no-op when the uri is absent', async () => {
+    await expect(removeJam(db, TEST_URI)).resolves.toBeUndefined()
+  })
+})
+
+beforeAll(async () => {
+  const { error } = await createMigrator(db).migrateToLatest()
+  if (error) throw error
+})
+
+afterAll(async () => {
+  await db.destroy()
 })

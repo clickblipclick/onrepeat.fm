@@ -1,5 +1,5 @@
 import type { DB } from '@onrepeat/db'
-import { indexJam, likeRow } from '@onrepeat/db'
+import { indexJam, likeRow, removeJam } from '@onrepeat/db'
 import {
   validateRecord,
   JAM_NSID,
@@ -28,10 +28,11 @@ export async function handleIngestEvent(
     .execute()
 
   if (evt.action === 'delete') {
-    await db
-      .deleteFrom(evt.collection === JAM_NSID ? 'jams' : 'likes')
-      .where('uri', '=', evt.uri)
-      .execute()
+    if (evt.collection === JAM_NSID) {
+      await removeJam(db, evt.uri)
+    } else {
+      await db.deleteFrom('likes').where('uri', '=', evt.uri).execute()
+    }
     return
   }
 
