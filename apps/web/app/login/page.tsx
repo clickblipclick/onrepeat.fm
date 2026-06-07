@@ -1,14 +1,23 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '../../lib/session'
+import { buttonClassName } from '../../lib/button-variants'
+
+const LOGIN_ERRORS: Record<string, string> = {
+  handle: "Couldn't sign in with that handle — double-check it and try again.",
+  auth: "Sign-in didn't complete — please try again.",
+}
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ expired?: string }>
+  searchParams: Promise<{ expired?: string; error?: string }>
 }) {
   const session = await getSession()
   if (session.did) redirect('/')
-  const { expired } = await searchParams
+  const { expired, error } = await searchParams
+  const errorMsg = error
+    ? (LOGIN_ERRORS[error] ?? 'Something went wrong signing in — please try again.')
+    : null
 
   return (
     <div className="mx-auto max-w-sm">
@@ -16,6 +25,11 @@ export default async function LoginPage({
       {expired && (
         <p className="mb-4 rounded border border-accent bg-surface px-3 py-2 text-sm text-accent">
           Your session expired — please sign in again.
+        </p>
+      )}
+      {errorMsg && (
+        <p className="mb-4 rounded border border-red-600 bg-surface px-3 py-2 text-sm text-red-700">
+          {errorMsg}
         </p>
       )}
       <p className="mb-4 text-sm text-muted">
@@ -32,10 +46,7 @@ export default async function LoginPage({
           required
           className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm"
         />
-        <button
-          type="submit"
-          className="rounded bg-accent px-3 py-2 text-sm text-on-accent"
-        >
+        <button type="submit" className={buttonClassName()}>
           Sign in
         </button>
       </form>
