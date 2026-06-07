@@ -216,11 +216,6 @@ export function Player({
               >
                 <span aria-hidden>▶</span>
                 {LABELS[p] ?? p}
-                {p === markedKey && (
-                  <span aria-hidden className="text-accent">
-                    •
-                  </span>
-                )}
               </button>
             ))}
           </div>
