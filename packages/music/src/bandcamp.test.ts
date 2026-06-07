@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   parseBandcampEmbedId,
   parseBandcampArtwork,
+  parseBandcampTitleArtist,
   fetchBandcampEmbed,
 } from './bandcamp'
 
@@ -32,6 +33,41 @@ describe('parseBandcampArtwork', () => {
   })
   it('returns null when absent', () => {
     expect(parseBandcampArtwork('<html></html>')).toBeNull()
+  })
+})
+
+describe('parseBandcampTitleArtist', () => {
+  it('splits the canonical "Title, by Artist" og:title', () => {
+    expect(
+      parseBandcampTitleArtist(
+        '<meta property="og:title" content="Wet Hands, by C418">',
+      ),
+    ).toEqual({ title: 'Wet Hands', artist: 'C418' })
+  })
+  it('falls back to og:site_name when og:title has no ", by"', () => {
+    const h =
+      '<meta property="og:title" content="Wet Hands"><meta property="og:site_name" content="C418">'
+    expect(parseBandcampTitleArtist(h)).toEqual({
+      title: 'Wet Hands',
+      artist: 'C418',
+    })
+  })
+  it('decodes HTML entities in title and artist', () => {
+    expect(
+      parseBandcampTitleArtist(
+        '<meta property="og:title" content="Rock &amp; Roll, by Simon &amp; Garfunkel">',
+      ),
+    ).toEqual({ title: 'Rock & Roll', artist: 'Simon & Garfunkel' })
+  })
+  it('splits on the last ", by " (titles may contain it)', () => {
+    expect(
+      parseBandcampTitleArtist(
+        '<meta property="og:title" content="Stand By Me, by Ben">',
+      ),
+    ).toEqual({ title: 'Stand By Me', artist: 'Ben' })
+  })
+  it('returns null when there is no og:title', () => {
+    expect(parseBandcampTitleArtist('<html></html>')).toBeNull()
   })
 })
 

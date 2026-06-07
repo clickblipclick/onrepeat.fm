@@ -14,10 +14,54 @@ export function parseBandcampEmbedId(html: string): string | null {
 
 /** Pure: pull the cover art URL from a Bandcamp page's og:image meta (either attr order). */
 export function parseBandcampArtwork(html: string): string | null {
+  return metaContent(html, 'og:image')
+}
+
+/** Read a `<meta property|name="key" content="...">` value, tolerating attribute order. */
+function metaContent(html: string, key: string): string | null {
+  const k = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const m =
-    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/.exec(html) ??
-    /<meta[^>]+content="([^"]+)"[^>]+property="og:image"/.exec(html)
+    new RegExp(
+      `<meta[^>]+(?:property|name)="${k}"[^>]+content="([^"]*)"`,
+      'i',
+    ).exec(html) ??
+    new RegExp(
+      `<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="${k}"`,
+      'i',
+    ).exec(html)
   return m ? m[1]! : null
+}
+
+/** Decode the handful of HTML entities Bandcamp emits in its meta tags. */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&#x27;|&apos;/gi, "'")
+    .replace(/&amp;/g, '&')
+}
+
+/** Pure: derive { title, artist } from a Bandcamp page. Its og:title is the canonical
+ *  "Title, by Artist"; when that shape is absent, og:site_name carries the artist.
+ *  Returns null when there's no og:title (caller falls back to manual entry). */
+export function parseBandcampTitleArtist(
+  html: string,
+): { title: string; artist: string } | null {
+  const og = metaContent(html, 'og:title')
+  if (!og) return null
+  // Greedy left side splits on the *last* ", by " — titles can contain " by ".
+  const m = /^(.*),\s+by\s+(.+)$/.exec(og)
+  if (m)
+    return {
+      title: decodeEntities(m[1]!.trim()),
+      artist: decodeEntities(m[2]!.trim()),
+    }
+  const site = metaContent(html, 'og:site_name')
+  return {
+    title: decodeEntities(og.trim()),
+    artist: site ? decodeEntities(site.trim()) : '',
+  }
 }
 
 /** Fetch a Bandcamp track page and extract its embed track id + cover art (one request).

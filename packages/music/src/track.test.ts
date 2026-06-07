@@ -94,6 +94,45 @@ describe('deriveTrack', () => {
     })
   })
 
+  it('bandcamp url → scrapes title/artist/artwork from the page', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return {}
+      },
+      async text() {
+        return '<meta property="og:title" content="Wet Hands, by C418"><meta property="og:image" content="https://f4.bcbits.com/img/a_10.jpg">'
+      },
+    })
+    const r = await deriveTrack('https://c418.bandcamp.com/track/wet-hands', {
+      fetchFn,
+    })
+    expect(r).toMatchObject({
+      title: 'Wet Hands',
+      artist: 'C418',
+      provider: 'bandcamp',
+      artworkUrl: 'https://f4.bcbits.com/img/a_10.jpg',
+      sourceUrl: 'https://c418.bandcamp.com/track/wet-hands',
+    })
+  })
+
+  it('bandcamp url with no og:title → null (manual entry)', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return {}
+      },
+      async text() {
+        return '<html></html>'
+      },
+    })
+    expect(
+      await deriveTrack('https://c418.bandcamp.com/track/x', { fetchFn }),
+    ).toBeNull()
+  })
+
   it('unknown provider → null (manual entry)', async () => {
     expect(await deriveTrack('https://example.com/song')).toBeNull()
   })

@@ -1,6 +1,7 @@
 import { providerFromUrl } from '@onrepeat/core'
 import { lookupTrack as itunesLookup } from './itunes'
 import { fetchOembed } from './oembed'
+import { parseBandcampArtwork, parseBandcampTitleArtist } from './bandcamp'
 import { youtubeVideoId } from './youtube'
 
 /** A normalized track the picker can post: enough to build a jam record. */
@@ -102,6 +103,28 @@ export async function deriveTrack(
   }
 
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+
+  if (provider === 'bandcamp') {
+    // Bandcamp has no oEmbed; scrape the track page's og: meta (same source the
+    // resolver reads for the embed id + cover). No ", by" shape ⇒ manual entry.
+    try {
+      const res = await fetchFn(url, { signal: AbortSignal.timeout(8000) })
+      if (!res.ok) return null
+      const html = await res.text()
+      const ta = parseBandcampTitleArtist(html)
+      if (!ta) return null
+      return {
+        title: ta.title,
+        artist: ta.artist,
+        artworkUrl: parseBandcampArtwork(html) ?? undefined,
+        sourceUrl: url,
+        provider,
+      }
+    } catch {
+      return null
+    }
+  }
+
   const o = await fetchOembed(provider, url, { fetchFn })
   if (!o?.title) return null
   if (provider === 'spotify') {
