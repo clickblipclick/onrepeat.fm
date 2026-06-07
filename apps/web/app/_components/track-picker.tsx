@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
-import { Button } from './ui/button'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = 'w-full rounded border border-border bg-surface px-3 py-2'
@@ -21,6 +20,8 @@ export function TrackPicker() {
   // drives dedup/resolution); an explicit "edit" reveals editable inputs.
   const [editing, setEditing] = useState(false)
   const seq = useRef(0)
+  // Guards auto-derive: the last URL we kicked off, so each link is processed once.
+  const lastDerived = useRef('')
 
   useEffect(() => {
     if (selected || isUrl(query) || query.trim().length < 2) {
@@ -42,19 +43,34 @@ export function TrackPicker() {
     return () => clearTimeout(id)
   }, [query, selected])
 
-  async function deriveFromUrl() {
-    if (busy) return
-    setBusy(true)
-    const c = await deriveTrackAction(query.trim())
-    setBusy(false)
-    if (c) {
-      setSelected(c)
-      setResults([])
-      setEditing(false)
-    } else {
-      setManual(true) // keep the URL; let them type title/artist
-    }
-  }
+  // Auto-process a recognized link the moment it's pasted/typed (debounced) — no extra
+  // click. Each distinct URL is derived once; clearing the field re-arms it. A miss
+  // (unknown provider / failed lookup) drops to manual entry, keeping the URL.
+  useEffect(() => {
+    const url = query.trim()
+    if (
+      selected ||
+      manual ||
+      busy ||
+      !isUrl(url) ||
+      url === lastDerived.current
+    )
+      return
+    const id = setTimeout(async () => {
+      lastDerived.current = url
+      setBusy(true)
+      const c = await deriveTrackAction(url)
+      setBusy(false)
+      if (c) {
+        setSelected(c)
+        setResults([])
+        setEditing(false)
+      } else {
+        setManual(true)
+      }
+    }, 500)
+    return () => clearTimeout(id)
+  }, [query, selected, manual, busy])
 
   if (selected) {
     return (
@@ -121,6 +137,7 @@ export function TrackPicker() {
                 setSelected(null)
                 setQuery('')
                 setEditing(false)
+                lastDerived.current = ''
               }}
               className="underline hover:text-accent"
             >
@@ -135,6 +152,7 @@ export function TrackPicker() {
             setSelected(null)
             setQuery('')
             setEditing(false)
+            lastDerived.current = ''
           }}
           className="mt-2 text-xs text-muted hover:text-accent"
         >
@@ -188,14 +206,9 @@ export function TrackPicker() {
         className={inputCls}
       />
       {isUrl(query) ? (
-        <Button
-          type="button"
-          onClick={deriveFromUrl}
-          loading={busy}
-          className="mt-2"
-        >
-          Use this link
-        </Button>
+        <p className="mt-2 text-sm text-muted" role="status" aria-live="polite">
+          Looking up link…
+        </p>
       ) : results.length > 0 ? (
         <ul className="mt-1 divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
           {results.map((r) => (

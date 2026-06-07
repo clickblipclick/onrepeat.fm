@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useActionState, useEffect } from 'react'
 import { postJamAction, type PostJamState } from './actions'
 import { TrackPicker } from './_components/track-picker'
@@ -32,14 +31,6 @@ export function PostJamForm() {
         Set as my jam
       </Button>
       <div aria-live="polite" aria-atomic="true">
-        {state?.ok && (
-          <p className="text-sm text-accent">
-            ✓ Jam posted —{' '}
-            <Link href="/" className="underline">
-              back to feed
-            </Link>
-          </p>
-        )}
         {state && !state.ok && state.error !== 'session-expired' && (
           <p className="text-sm text-red-700">
             ⚠{' '}
