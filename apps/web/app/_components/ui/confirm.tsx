@@ -62,14 +62,17 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   )
   const alert = useCallback(
     (opts: AlertOptions) =>
-      new Promise<void>((resolve) => setPending({ kind: 'alert', opts, resolve })),
+      new Promise<void>((resolve) =>
+        setPending({ kind: 'alert', opts, resolve }),
+      ),
     [],
   )
 
   // Settle the promise from returnValue whenever the dialog closes (button, Esc, backdrop).
   const handleClose = useCallback(() => {
     setPending((p) => {
-      if (p?.kind === 'confirm') p.resolve(ref.current?.returnValue === 'confirm')
+      if (p?.kind === 'confirm')
+        p.resolve(ref.current?.returnValue === 'confirm')
       else p?.resolve()
       return null
     })
@@ -81,6 +84,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     ref.current.close()
   }
 
+  // Backdrop-click light-dismiss. On browsers with `closedby="any"` (Chrome/Edge/FF)
+  // the platform handles this (plus mobile back/dismiss); this stays as the Safari
+  // fallback. Either path closes with a non-'confirm' returnValue → resolves false.
   const onClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     if (e.target === ref.current) settle('cancel') // backdrop click
   }
@@ -91,6 +97,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       <dialog
         ref={ref}
         role="alertdialog"
+        closedby="any"
         aria-labelledby={titleId}
         aria-describedby={pending?.opts.description ? descId : undefined}
         onClose={handleClose}
@@ -127,7 +134,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                     ? 'danger'
                     : 'primary'
                 }
-                onClick={() => settle(pending.kind === 'confirm' ? 'confirm' : 'ok')}
+                onClick={() =>
+                  settle(pending.kind === 'confirm' ? 'confirm' : 'ok')
+                }
               >
                 {pending.kind === 'confirm'
                   ? (pending.opts.confirmText ?? 'Confirm')
