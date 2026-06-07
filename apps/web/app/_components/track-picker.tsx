@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
+import { Button } from './ui/button'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = 'w-full rounded border border-border bg-surface px-3 py-2'
@@ -187,14 +188,14 @@ export function TrackPicker() {
         className={inputCls}
       />
       {isUrl(query) ? (
-        <button
+        <Button
           type="button"
           onClick={deriveFromUrl}
-          disabled={busy}
-          className="mt-2 rounded bg-accent px-3 py-1.5 text-sm text-on-accent disabled:opacity-60"
+          loading={busy}
+          className="mt-2"
         >
-          {busy ? 'Looking up…' : 'Use this link'}
-        </button>
+          Use this link
+        </Button>
       ) : results.length > 0 ? (
         <ul className="mt-1 divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
           {results.map((r) => (

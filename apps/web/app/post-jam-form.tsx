@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useActionState, useEffect } from 'react'
 import { postJamAction, type PostJamState } from './actions'
 import { TrackPicker } from './_components/track-picker'
+import { Button } from './_components/ui/button'
 
 export function PostJamForm() {
   const [state, action, pending] = useActionState<
@@ -27,13 +28,9 @@ export function PostJamForm() {
         placeholder="why this song (optional)"
         className="w-full rounded border border-border bg-surface px-3 py-2"
       />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-accent px-3 py-2 text-on-accent disabled:opacity-60"
-      >
-        {pending ? 'Posting…' : 'Set as my jam'}
-      </button>
+      <Button type="submit" loading={pending}>
+        Set as my jam
+      </Button>
       <div aria-live="polite" aria-atomic="true">
         {state?.ok && (
           <p className="text-sm text-accent">

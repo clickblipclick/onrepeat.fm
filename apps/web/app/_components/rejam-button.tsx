@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Check, LoaderCircle, Repeat2 } from 'lucide-react'
 import { reJamAction, type ReJamArgs } from '../actions'
 import { useConfirm } from './ui/confirm'
+import { useToast } from './ui/toast'
 
 export function ReJamButton({
   jam,
@@ -15,6 +16,7 @@ export function ReJamButton({
   const [done, setDone] = useState(false)
   const [pending, startTransition] = useTransition()
   const { confirm } = useConfirm()
+  const { toast } = useToast()
 
   async function rejam() {
     if (!loggedIn) {
@@ -33,6 +35,7 @@ export function ReJamButton({
       if (res.ok) setDone(true)
       else if (res.error === 'session-expired')
         window.location.href = '/login?expired=1'
+      else toast({ title: "Couldn't re-jam", variant: 'error' })
     })
   }
 

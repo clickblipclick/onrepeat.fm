@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from 'react'
 import { Heart } from 'lucide-react'
 import { likeJamAction, unlikeJamAction } from '../actions'
+import { useToast } from './ui/toast'
 
 export function LikeButton({
   jamUri,
@@ -21,6 +22,7 @@ export function LikeButton({
   const [likeUri, setLikeUri] = useState<string | undefined>()
   const [optimistic, setOptimistic] = useOptimistic(base)
   const [isPending, startTransition] = useTransition()
+  const { toast } = useToast()
 
   function toggle() {
     if (!loggedIn) {
@@ -40,6 +42,8 @@ export function LikeButton({
           setBase(next)
         } else if (res.error === 'session-expired') {
           window.location.href = '/login?expired=1'
+        } else {
+          toast({ title: "Couldn't update like", variant: 'error' })
         }
       } else {
         const res = await unlikeJamAction(jamUri, likeUri)
@@ -48,6 +52,8 @@ export function LikeButton({
           setBase(next)
         } else if (res.error === 'session-expired') {
           window.location.href = '/login?expired=1'
+        } else {
+          toast({ title: "Couldn't update like", variant: 'error' })
         }
       }
     })

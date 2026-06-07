@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getFollowFeed, getLatest } from '@onrepeat/appview'
+import { buttonClassName } from '../lib/button-variants'
 import { db } from '../lib/db'
 import { hydrate, bsky } from '../lib/appview'
 import { getSession } from '../lib/session'
@@ -22,10 +23,7 @@ export default async function Home() {
             One song. Seven days. Sign in with Bluesky to follow people and set
             your jam.
           </p>
-          <Link
-            href="/login"
-            className="inline-block rounded bg-accent px-3 py-2 text-sm text-on-accent"
-          >
+          <Link href="/login" className={buttonClassName()}>
             Sign in
           </Link>
         </div>
