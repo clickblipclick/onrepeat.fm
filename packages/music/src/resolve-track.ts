@@ -23,6 +23,8 @@ export interface ResolutionResult {
   artist?: string
   artworkUrl?: string
   providerRefs: ProviderRefs
+  /** Per-step trace for observability, e.g. ['apple:matched', 'youtube:no-match']. */
+  notes: string[]
 }
 
 /** Apple Music track URLs carry the song id in the `i` query param. */
@@ -49,6 +51,7 @@ export async function resolveTrack(
   if (input.sourceProvider)
     providerRefs[input.sourceProvider] = { url: input.sourceUrl }
 
+  const notes: string[] = []
   let anchor: { title: string; artist: string; durationSec?: number } = {
     title: input.title,
     artist: input.artist,
@@ -61,9 +64,10 @@ export async function resolveTrack(
   try {
     let apple = null as Awaited<ReturnType<ItunesClient['lookup']>>
     if (input.sourceProvider === 'applemusic') {
+      // Source is Apple: lookup is definitive; don't search for a substitute.
       const id = appleId(input.sourceUrl)
       if (id) apple = await deps.itunes.lookup(id)
-      // Source is Apple: lookup is definitive; don't search for a substitute.
+      notes.push(apple ? 'apple:source' : 'apple:source-miss')
     } else {
       const candidates = await deps.itunes.search(
         `${input.title} ${input.artist}`,
@@ -75,6 +79,7 @@ export async function resolveTrack(
             { title: c.title, artist: c.artist, durationSec: c.durationSec },
           ),
         ) ?? null
+      notes.push(apple ? 'apple:matched' : 'apple:no-match')
     }
     if (apple) {
       if (input.sourceProvider !== 'applemusic')
@@ -90,13 +95,16 @@ export async function resolveTrack(
     }
   } catch {
     // iTunes unavailable for this job — skip Apple, keep going.
+    notes.push('apple:error')
   }
 
   // --- YouTube ---
   const sourceIsYoutube =
     input.sourceProvider === 'youtube' ||
     input.sourceProvider === 'youtubemusic'
-  if (deps.youtube) {
+  if (!deps.youtube) {
+    notes.push('youtube:skipped(no-key)')
+  } else {
     try {
       if (sourceIsYoutube) {
         // Source already covers YouTube; don't cross-link (it would duplicate the ref
@@ -106,15 +114,20 @@ export async function resolveTrack(
         const ref = input.sourceProvider
           ? providerRefs[input.sourceProvider]
           : undefined
-        if (vid && ref) {
-          const meta = await deps.youtube.lookupVideos([vid])
-          if (meta.get(vid)?.embeddable === false) ref.embeddable = false
+        const meta = vid && ref ? await deps.youtube.lookupVideos([vid]) : null
+        if (ref && meta?.get(vid!)?.embeddable === false) {
+          ref.embeddable = false
+          notes.push('youtube:source(not-embeddable)')
+        } else {
+          notes.push('youtube:source')
         }
       } else {
         const vids = await deps.youtube.searchVideo(
           `${anchor.title} ${anchor.artist}`,
         )
-        if (vids.length) {
+        if (!vids.length) {
+          notes.push('youtube:no-results')
+        } else {
           const meta = await deps.youtube.lookupVideos(
             vids.map((v) => v.videoId),
           )
@@ -125,13 +138,19 @@ export async function resolveTrack(
               durationSec: meta.get(v.videoId)?.durationSec,
             }),
           )
-          // Don't add a cross-link that can't embed — it would be a dead "YouTube" option.
-          if (match && meta.get(match.videoId)?.embeddable !== false)
+          if (!match) {
+            notes.push('youtube:no-match')
+          } else if (meta.get(match.videoId)?.embeddable === false) {
+            // Don't add a cross-link that can't embed — it'd be a dead "YouTube" option.
+            notes.push('youtube:not-embeddable')
+          } else {
             providerRefs.youtube = { url: match.url }
+            notes.push('youtube:matched')
+          }
         }
       }
     } catch {
-      // YouTube unavailable/quota — skip.
+      notes.push('youtube:error')
     }
   }
 
@@ -140,5 +159,6 @@ export async function resolveTrack(
     artist: canonicalArtist,
     artworkUrl,
     providerRefs,
+    notes,
   }
 }

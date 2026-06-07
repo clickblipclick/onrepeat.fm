@@ -85,11 +85,20 @@ export async function resolveJob(
 
   // Artwork: prefer iTunes' canonical cover; else keep what we already have; else fetch the
   // source's own cover (Spotify/YouTube/SoundCloud oEmbed) so the track has art without a match.
-  let artworkUrl: string | null | undefined =
-    result.artworkUrl ?? seed?.artwork_url
-  if (!artworkUrl && deps.oembed) {
+  let artworkUrl: string | null | undefined
+  let artSource = 'none'
+  if (result.artworkUrl) {
+    artworkUrl = result.artworkUrl
+    artSource = 'apple'
+  } else if (seed?.artwork_url) {
+    artworkUrl = seed.artwork_url
+    artSource = 'seed'
+  } else if (deps.oembed) {
     const o = await deps.oembed(job.provider, job.sourceUrl)
-    artworkUrl = o?.thumbnail
+    if (o?.thumbnail) {
+      artworkUrl = o.thumbnail
+      artSource = 'oembed'
+    }
   }
   if (artworkUrl) update.artwork_url = artworkUrl
 
@@ -102,6 +111,8 @@ export async function resolveJob(
     'resolved',
     job.identity,
     `[${Object.keys(result.providerRefs).join(', ')}]`,
-    `art=${update.artwork_url ? 'yes' : 'no'}`,
+    `art:${artSource}`,
+    '·',
+    ...result.notes,
   )
 }

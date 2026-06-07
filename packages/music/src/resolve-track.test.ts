@@ -57,6 +57,31 @@ describe('resolveTrack (iTunes-anchored)', () => {
     })
     expect(r.title).toBe('Thinkin Bout You')
     expect(r.artworkUrl).toBe('https://img/a.jpg')
+    expect(r.notes).toEqual(['apple:matched', 'youtube:matched'])
+  })
+
+  it('notes youtube:skipped(no-key) when there is no youtube client', async () => {
+    const r = await resolveTrack(base, { itunes: deps().itunes })
+    expect(r.notes).toContain('apple:matched')
+    expect(r.notes).toContain('youtube:skipped(no-key)')
+  })
+
+  it('notes youtube:no-match when no confident video', async () => {
+    const r = await resolveTrack(
+      base,
+      deps({
+        youtube: {
+          async searchVideo() {
+            return [ytVid]
+          },
+          async lookupVideos() {
+            return new Map([['yt1', { durationSec: 999, embeddable: true }]])
+          },
+        },
+      }),
+    )
+    expect(r.providerRefs.youtube).toBeUndefined()
+    expect(r.notes).toContain('youtube:no-match')
   })
 
   it('apple source: uses lookup (not search), no separate apple cross-link beyond source', async () => {
