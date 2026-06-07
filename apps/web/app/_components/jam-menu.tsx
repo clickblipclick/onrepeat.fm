@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   useFloating,
@@ -11,6 +11,7 @@ import {
   useClick,
   useDismiss,
   useRole,
+  useListNavigation,
   useInteractions,
   FloatingPortal,
   FloatingFocusManager,
@@ -20,8 +21,16 @@ import { deleteJamAction } from '../actions'
 import { useConfirm } from './ui/confirm'
 import { useToast } from './ui/toast'
 
-/** Overflow (⋯) menu shown on a jam the viewer owns. Currently just Delete; the menu
- *  shell is here so future owner-only actions slot in. Positioned with Floating UI and
+interface MenuItem {
+  label: string
+  icon: React.ReactNode
+  onSelect: () => void
+  danger?: boolean
+}
+
+/** Overflow (⋯) menu shown on a jam the viewer owns. Currently just Delete; items are a
+ *  list so more owner-only actions slot in while keeping the role="menu" keyboard contract
+ *  (arrow/Home/End navigation via useListNavigation). Positioned with Floating UI and
  *  rendered in a portal so it escapes the card's `overflow-hidden`. After deleting:
  *  `redirectTo` navigates away (the detail page, whose jam would 404 on refresh);
  *  otherwise the current page refreshes so the card drops out of the list. */
@@ -35,10 +44,12 @@ export function JamMenu({
   className?: string
 }) {
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [pending, startTransition] = useTransition()
   const router = useRouter()
   const { confirm } = useConfirm()
   const { toast } = useToast()
+  const listRef = useRef<Array<HTMLElement | null>>([])
 
   const { refs, floatingStyles, context } = useFloating({
     open,
@@ -50,11 +61,14 @@ export function JamMenu({
   const click = useClick(context)
   const dismiss = useDismiss(context)
   const role = useRole(context, { role: 'menu' })
-  const { getReferenceProps, getFloatingProps } = useInteractions([
-    click,
-    dismiss,
-    role,
-  ])
+  const listNav = useListNavigation(context, {
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
+  })
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
+    [click, dismiss, role, listNav],
+  )
 
   async function del() {
     setOpen(false)
@@ -77,6 +91,15 @@ export function JamMenu({
       }
     })
   }
+
+  const items: MenuItem[] = [
+    {
+      label: 'Delete jam',
+      icon: <Trash2 size={16} aria-hidden />,
+      onSelect: del,
+      danger: true,
+    },
+  ]
 
   return (
     <>
@@ -103,15 +126,22 @@ export function JamMenu({
               {...getFloatingProps()}
               className="z-50 min-w-40 overflow-hidden rounded-md border border-border bg-surface py-1 text-sm shadow-lg"
             >
-              <button
-                type="button"
-                role="menuitem"
-                onClick={del}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-red-700 hover:bg-bg"
-              >
-                <Trash2 size={16} aria-hidden />
-                Delete jam
-              </button>
+              {items.map((item, i) => (
+                <button
+                  key={item.label}
+                  ref={(node) => {
+                    listRef.current[i] = node
+                  }}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={activeIndex === i ? 0 : -1}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left outline-none hover:bg-bg focus:bg-bg ${item.danger ? 'text-red-700' : ''}`}
+                  {...getItemProps({ onClick: item.onSelect })}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
             </div>
           </FloatingFocusManager>
         </FloatingPortal>
