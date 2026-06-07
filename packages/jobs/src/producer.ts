@@ -3,6 +3,7 @@ import type { DB } from '@onrepeat/db'
 import { trackIdentity } from '@onrepeat/core'
 import type { JamRecord } from '@onrepeat/lexicons'
 import { enqueueResolve } from './queue'
+import { resolveLog } from './log'
 
 export interface JamForResolve {
   /** the jam's at-uri (to link jams.track_id) */
@@ -65,12 +66,19 @@ export async function enqueueResolveForJam(
   if (
     track?.resolution_status === 'resolved' ||
     track?.resolution_status === 'self_contained'
-  )
+  ) {
+    resolveLog('skip', identity, `— already ${track.resolution_status}`)
     return
+  }
 
-  await enqueueResolve(boss, {
+  const jobId = await enqueueResolve(boss, {
     identity,
     sourceUrl: record.sourceUrl,
     provider: record.sourceProvider,
   })
+  resolveLog(
+    jobId ? 'enqueued' : 'already-queued',
+    identity,
+    `(${record.sourceProvider})`,
+  )
 }

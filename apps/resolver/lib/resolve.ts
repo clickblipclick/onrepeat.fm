@@ -1,7 +1,7 @@
 import type { Updateable } from 'kysely'
 import type { DB, TracksTable } from '@onrepeat/db'
 import { providerTier } from '@onrepeat/core'
-import type { ResolveJob } from '@onrepeat/jobs'
+import { resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import {
   resolveTrack,
   type ResolveDeps,
@@ -49,6 +49,11 @@ export async function resolveJob(
       .set(update)
       .where('id', '=', job.identity)
       .execute()
+    resolveLog(
+      'resolved',
+      job.identity,
+      `self_contained bandcamp trackId=${entry.trackId ?? 'none'}${artworkUrl ? ' +art' : ''}`,
+    )
     return
   }
 
@@ -93,4 +98,10 @@ export async function resolveJob(
     .set(update)
     .where('id', '=', job.identity)
     .execute()
+  resolveLog(
+    'resolved',
+    job.identity,
+    `[${Object.keys(result.providerRefs).join(', ')}]`,
+    `art=${update.artwork_url ? 'yes' : 'no'}`,
+  )
 }

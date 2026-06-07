@@ -21,14 +21,17 @@ export interface CreateIngesterOpts {
   /** Relay websocket URL, e.g. wss://bsky.network */
   relay: string
   hooks?: IngesterHooks
+  /** Dev: ignore the stored cursor and start at the live head instead of replaying the
+   *  backlog. Prod leaves this off so restarts resume from the persisted cursor. */
+  liveTail?: boolean
 }
 
 export async function createIngester(
   opts: CreateIngesterOpts,
 ): Promise<IngesterRuntime> {
-  const { db, relay, hooks = defaultHooks } = opts
+  const { db, relay, hooks = defaultHooks, liveTail = false } = opts
   const idResolver = new IdResolver()
-  const startCursor = await loadCursor(db, SERVICE)
+  const startCursor = liveTail ? undefined : await loadCursor(db, SERVICE)
 
   const cursorWriter = makeThrottledCursorWriter(
     (seq) => saveCursor(db, SERVICE, seq),

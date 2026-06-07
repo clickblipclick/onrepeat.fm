@@ -25,6 +25,8 @@ async function main(): Promise<void> {
   const ingester = await createIngester({
     db,
     relay,
+    // Dev convenience: tail the live head instead of replaying from a stale cursor.
+    liveTail: process.env.INGESTER_LIVE_TAIL === '1',
     hooks: {
       onJamIndexed: (evt) =>
         enqueueResolveForJam(boss, db, {

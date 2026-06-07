@@ -1,6 +1,6 @@
 import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
 import type { DB } from '@onrepeat/db'
-import { RESOLVE_QUEUE, type ResolveJob } from '@onrepeat/jobs'
+import { RESOLVE_QUEUE, resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import { resolveJob, type ResolverDeps } from './resolve'
 
 type ResolveJobMeta = JobWithMetadata<ResolveJob>
@@ -14,6 +14,12 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
     // is ever raised, restructure so one job's retry doesn't skip the others.
     for (const job of jobs) {
       try {
+        resolveLog(
+          'start',
+          job.data.identity,
+          `(${job.data.provider})`,
+          `attempt ${job.retryCount + 1}/${job.retryLimit + 1}`,
+        )
         await resolveJob(db, deps, job.data)
       } catch (err) {
         if (job.retryCount < job.retryLimit) throw err // not the last attempt → let pg-boss retry
