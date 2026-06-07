@@ -19,6 +19,10 @@
 /* Default theme: Clay */
 :root,
 [data-theme='clay'] {
+  /* All current themes are light. color-scheme keeps native UI (scrollbars, form
+     controls, <dialog> chrome) in sync; it inherits from :root, so a future dark
+     theme just sets `color-scheme: dark` in its own block. */
+  color-scheme: light;
   --bg: #f7f2ec;
   --surface: #fcf8f2;
   --ink: #1a140f;
