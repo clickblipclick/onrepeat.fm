@@ -36,6 +36,7 @@ export function Player({
   sourceUrl,
   artworkUrl,
   lazy = true,
+  priority = false,
   preferredProvider,
 }: {
   sourceProvider: string | null
@@ -43,6 +44,9 @@ export function Player({
   sourceUrl: string
   artworkUrl: string | null
   lazy?: boolean
+  /** Mark the cover as the LCP image (detail hero / first feed card): loads eagerly at
+   *  high priority. Otherwise the cover defers with loading="lazy". */
+  priority?: boolean
   preferredProvider?: string
 }) {
   const def = buildEmbed(
@@ -65,6 +69,11 @@ export function Player({
       : ''
   const isYouTube =
     active.provider === 'youtube' || active.provider === 'youtubemusic'
+  // Cover-image loading hint: the LCP candidate loads eagerly at high priority; all
+  // other covers defer until near the viewport (per optimize-image-priority guidance).
+  const coverLoad = priority
+    ? ({ fetchPriority: 'high' } as const)
+    : ({ loading: 'lazy' } as const)
 
   function choose(p: string) {
     setActive(buildEmbed(p, providerRefs, sourceUrl))
@@ -111,6 +120,7 @@ export function Player({
             src={artworkUrl}
             alt=""
             decoding="async"
+            {...coverLoad}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -133,6 +143,7 @@ export function Player({
           src={artworkUrl}
           alt=""
           decoding="async"
+          {...coverLoad}
           className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'blur-0 scale-100'}`}
         />
       ) : (

@@ -91,6 +91,7 @@ export default async function JamPage({
           providerRefs={jam.providerRefs}
           sourceUrl={jam.sourceUrl}
           artworkUrl={jam.artworkUrl}
+          priority // the jam detail cover is the page hero/LCP image
           preferredProvider={preferredProvider}
         />
       </div>

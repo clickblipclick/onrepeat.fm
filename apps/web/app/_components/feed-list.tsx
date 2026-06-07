@@ -26,12 +26,13 @@ export function FeedList({
   if (jams.length === 0) return <EmptyState>{empty}</EmptyState>
   return (
     <div className="flex flex-col gap-4">
-      {jams.map((jam) => (
+      {jams.map((jam, i) => (
         <JamCard
           key={jam.uri}
           jam={jam}
           loggedIn={loggedIn}
           viewerDid={viewerDid}
+          priority={i === 0} // first card's cover is the LCP candidate
           preferredProvider={preferredProvider}
         />
       ))}

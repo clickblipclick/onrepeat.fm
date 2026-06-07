@@ -48,6 +48,7 @@ export default async function ProfilePage({
           jam={current}
           loggedIn={!!session.did}
           viewerDid={session.did}
+          priority // the profile's current jam is its hero/LCP image
           preferredProvider={preferredProvider}
         />
       ) : (

@@ -21,6 +21,7 @@ export function JamCard({
   actions,
   loggedIn = false,
   viewerDid,
+  priority = false,
   preferredProvider,
 }: {
   jam: HydratedJamView
@@ -29,6 +30,8 @@ export function JamCard({
   loggedIn?: boolean
   /** The signed-in viewer's DID; when it matches the author, the owner menu shows. */
   viewerDid?: string
+  /** Mark this card's cover as the LCP image (e.g. the first card in a feed). */
+  priority?: boolean
   preferredProvider?: string
 }) {
   const jamHref = `/jam/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`
@@ -66,6 +69,7 @@ export function JamCard({
           sourceUrl={jam.sourceUrl}
           artworkUrl={jam.artworkUrl}
           lazy
+          priority={priority}
           preferredProvider={preferredProvider}
         />
       )}
