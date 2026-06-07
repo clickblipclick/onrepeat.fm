@@ -5,7 +5,6 @@ import type { ProviderRefs } from '@onrepeat/db'
 import {
   buildEmbed,
   embeddableProviders,
-  resolvePreferredKey,
   LABELS,
   type Embed,
 } from '../../lib/embed'
@@ -58,12 +57,8 @@ export function Player({
   const platforms = others.length > 0 ? others : [def.provider]
   const [active, setActive] = useState<Embed>(def)
   const [playing, setPlaying] = useState(!lazy)
-  // The saved-default provider (drives the marker). Picking a provider in the
-  // switcher persists it as the default for future jams via a (non-httpOnly) cookie.
-  const [pref, setPref] = useState<string | null>(preferredProvider ?? null)
   const [loaded, setLoaded] = useState(false) // the embed iframe finished loading
   const [failed, setFailed] = useState(false) // YouTube embed errored (region/age/disabled)
-  const markedKey = resolvePreferredKey(pref, providerRefs)
   const ytId =
     active.kind === 'iframe'
       ? (active.src.match(/\/embed\/([^?]+)/)?.[1] ?? '')
@@ -75,7 +70,7 @@ export function Player({
     setActive(buildEmbed(p, providerRefs, sourceUrl))
     const logical = parseProvider(p)
     if (logical) {
-      setPref(logical)
+      // Persist the picked service as the default for future jams (read on next load).
       document.cookie = playbackCookieString(
         logical,
         location.protocol === 'https:',
