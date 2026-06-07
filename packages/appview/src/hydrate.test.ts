@@ -55,6 +55,26 @@ describe('hydrateAuthors', () => {
     expect(out[2]!.author).toEqual({ did: 'did:plc:c' }) // absent from map → DID only
   })
 
+  it('attaches viaAuthor for a re-jam; null when not a re-jam', () => {
+    const profiles = new Map<string, ActorProfile | null>([
+      [
+        'did:plc:o',
+        { did: 'did:plc:o', handle: 'orig.test', displayName: 'Orig' },
+      ],
+    ])
+    const reJam: JamView = {
+      ...jam('at://x/1', 'did:plc:a'),
+      via: { uri: 'at://did:plc:o/fm.onrepeat.jam/9', did: 'did:plc:o' },
+    }
+    const out = hydrateAuthors([reJam, jam('at://x/2', 'did:plc:a')], profiles)
+    expect(out[0]!.viaAuthor).toEqual({
+      did: 'did:plc:o',
+      handle: 'orig.test',
+      displayName: 'Orig',
+    })
+    expect(out[1]!.viaAuthor).toBeNull()
+  })
+
   it('returns an empty array for empty input', () => {
     const profiles = new Map()
     expect(hydrateAuthors([], profiles)).toEqual([])

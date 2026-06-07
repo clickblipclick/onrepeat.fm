@@ -47,6 +47,7 @@ export default async function ProfilePage({
         <JamCard
           jam={current}
           loggedIn={!!session.did}
+          viewerDid={session.did}
           preferredProvider={preferredProvider}
         />
       ) : (

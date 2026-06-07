@@ -28,6 +28,7 @@ export default async function ExplorePage() {
           </>
         }
         loggedIn={!!session.did}
+        viewerDid={session.did}
         preferredProvider={preferredProvider}
       />
     </>

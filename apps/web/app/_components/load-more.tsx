@@ -11,11 +11,13 @@ export function LoadMore({
   itemsKey,
   initialCursor,
   loggedIn,
+  viewerDid,
 }: {
   endpoint: string
   itemsKey: 'feed' | 'jams'
   initialCursor?: string
   loggedIn: boolean
+  viewerDid?: string
 }) {
   const [items, setItems] = useState<HydratedJamView[]>([])
   const [cursor, setCursor] = useState<string | undefined>(initialCursor)
@@ -58,6 +60,7 @@ export function LoadMore({
           key={jam.uri}
           jam={jam}
           loggedIn={loggedIn}
+          viewerDid={viewerDid}
           preferredProvider={preferredProvider}
         />
       ))}

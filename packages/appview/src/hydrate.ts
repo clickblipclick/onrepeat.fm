@@ -8,7 +8,11 @@ export interface Author {
   avatar?: string
 }
 
-export type HydratedJamView = JamView & { author: Author }
+export type HydratedJamView = JamView & {
+  author: Author
+  /** The original author a re-jam was sourced from (`via`); null for original jams. */
+  viaAuthor: Author | null
+}
 
 function authorFor(
   did: string,
@@ -25,10 +29,15 @@ function authorFor(
     : { did }
 }
 
-/** Attach an `author` to each view from a did->profile map; missing/unknown DIDs get a DID-only author. */
+/** Attach an `author` (and `viaAuthor` for re-jams) to each view from a did->profile
+ *  map; missing/unknown DIDs get a DID-only author. */
 export function hydrateAuthors(
   jams: JamView[],
   profiles: Map<string, ActorProfile | null>,
 ): HydratedJamView[] {
-  return jams.map((j) => ({ ...j, author: authorFor(j.authorDid, profiles) }))
+  return jams.map((j) => ({
+    ...j,
+    author: authorFor(j.authorDid, profiles),
+    viaAuthor: j.via ? authorFor(j.via.did, profiles) : null,
+  }))
 }

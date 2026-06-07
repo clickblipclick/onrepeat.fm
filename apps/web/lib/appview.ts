@@ -19,9 +19,13 @@ if (process.env.NODE_ENV !== 'production') globalForBsky.__onrepeatBsky = bsky
  */
 export async function hydrate(jams: JamView[]): Promise<HydratedJamView[]> {
   try {
-    const profiles = await bsky.getProfiles([
-      ...new Set(jams.map((j) => j.authorDid)),
-    ])
+    // Resolve the jam author and, for re-jams, the original (`via`) author in one batch.
+    const dids = new Set<string>()
+    for (const j of jams) {
+      dids.add(j.authorDid)
+      if (j.via) dids.add(j.via.did)
+    }
+    const profiles = await bsky.getProfiles([...dids])
     return hydrateAuthors(jams, profiles)
   } catch (err) {
     console.error(

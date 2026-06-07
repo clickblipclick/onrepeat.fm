@@ -11,6 +11,7 @@ export function FeedList({
   itemsKey,
   empty,
   loggedIn,
+  viewerDid,
   preferredProvider,
 }: {
   jams: HydratedJamView[]
@@ -19,6 +20,7 @@ export function FeedList({
   itemsKey: 'feed' | 'jams'
   empty: React.ReactNode
   loggedIn: boolean
+  viewerDid?: string
   preferredProvider?: string
 }) {
   if (jams.length === 0) return <EmptyState>{empty}</EmptyState>
@@ -29,6 +31,7 @@ export function FeedList({
           key={jam.uri}
           jam={jam}
           loggedIn={loggedIn}
+          viewerDid={viewerDid}
           preferredProvider={preferredProvider}
         />
       ))}
@@ -37,6 +40,7 @@ export function FeedList({
         itemsKey={itemsKey}
         initialCursor={cursor}
         loggedIn={loggedIn}
+        viewerDid={viewerDid}
       />
     </div>
   )

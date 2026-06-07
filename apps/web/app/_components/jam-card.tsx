@@ -5,6 +5,7 @@ import { RelativeTime } from './relative-time'
 import { Player } from './player'
 import { LikeButton } from './like-button'
 import { ReJamButton } from './rejam-button'
+import { JamMenu } from './jam-menu'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''
@@ -19,16 +20,20 @@ export function JamCard({
   player,
   actions,
   loggedIn = false,
+  viewerDid,
   preferredProvider,
 }: {
   jam: HydratedJamView
   player?: React.ReactNode
   actions?: React.ReactNode
   loggedIn?: boolean
+  /** The signed-in viewer's DID; when it matches the author, the owner menu shows. */
+  viewerDid?: string
   preferredProvider?: string
 }) {
   const jamHref = `/jam/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
+  const isOwner = !!viewerDid && viewerDid === jam.authorDid
   return (
     <article className="overflow-hidden rounded-md border border-border bg-surface">
       <div className="surface-grid flex items-center gap-2 border-b border-border px-3 py-2 text-sm">
@@ -40,7 +45,18 @@ export function JamCard({
           <span className="font-bold">{authorName(jam.author)}</span>
         </Link>
         <RelativeTime iso={jam.createdAt} />
-        {jam.via && <span className="text-muted">· re-jam</span>}
+        {jam.via && jam.viaAuthor && (
+          <span className="truncate text-muted">
+            · re-jam from{' '}
+            <Link
+              href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
+              className="hover:text-accent"
+            >
+              {authorName(jam.viaAuthor)}
+            </Link>
+          </span>
+        )}
+        {isOwner && <JamMenu className="ml-auto" jamUri={jam.uri} />}
       </div>
 
       {player ?? (

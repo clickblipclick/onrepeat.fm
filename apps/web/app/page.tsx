@@ -68,6 +68,7 @@ export default async function Home() {
             itemsKey="feed"
             empty={null}
             loggedIn={true}
+            viewerDid={session.did}
             preferredProvider={preferredProvider}
           />
         )}

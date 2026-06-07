@@ -11,7 +11,7 @@ import { RelativeTime } from '../../../_components/relative-time'
 import { isCurrentJam } from '../../../../lib/format'
 import { LikeButton } from '../../../_components/like-button'
 import { ReJamButton } from '../../../_components/rejam-button'
-import { DeleteJamButton } from '../../../_components/delete-jam-button'
+import { JamMenu } from '../../../_components/jam-menu'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -65,6 +65,24 @@ export default async function JamPage({
         {isCurrentJam(jam.createdAt) && (
           <span className="text-muted">· current jam</span>
         )}
+        {jam.via && jam.viaAuthor && (
+          <span className="truncate text-muted">
+            · re-jam from{' '}
+            <Link
+              href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
+              className="hover:text-accent"
+            >
+              {authorName(jam.viaAuthor)}
+            </Link>
+          </span>
+        )}
+        {session.did === jam.authorDid && (
+          <JamMenu
+            className="ml-auto"
+            jamUri={jam.uri}
+            redirectTo={profileHref}
+          />
+        )}
       </div>
 
       <div className="mt-3 overflow-hidden rounded">
@@ -104,12 +122,6 @@ export default async function JamPage({
             authorName: authorName(jam.author),
           }}
         />
-        {session.did === jam.authorDid && (
-          <DeleteJamButton
-            jamUri={jam.uri}
-            profileHandle={jam.author.handle ?? jam.authorDid}
-          />
-        )}
       </div>
 
       {detail.likerDids.length > 0 && (
