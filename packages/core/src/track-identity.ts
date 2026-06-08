@@ -30,10 +30,13 @@ function normalizeIsrc(isrc: string): string {
 
 /** Stable dedup key for a track. */
 export function trackIdentity(input: TrackIdentityInput): string {
-  if (input.isrc && input.isrc.trim())
-    return `isrc:${normalizeIsrc(input.isrc)}`
-  if (input.odesliId && input.odesliId.trim())
-    return `odesli:${input.odesliId.trim()}`
+  // Gate on the NORMALIZED value, not a raw trim: a punctuation-only ISRC like "---"
+  // trims non-empty but normalizes to "", which would collapse to the shared key "isrc:"
+  // and shadow the title/artist fallback. Same for a normalized-empty Odesli id.
+  const isrc = input.isrc ? normalizeIsrc(input.isrc) : ''
+  if (isrc) return `isrc:${isrc}`
+  const odesli = input.odesliId?.trim() ?? ''
+  if (odesli) return `odesli:${odesli}`
   const title = normalizeText(input.title ?? '')
   const artist = normalizeText(input.artist ?? '')
   if (!title && !artist) {

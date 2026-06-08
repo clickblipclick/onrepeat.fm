@@ -89,6 +89,14 @@ describe('trackIdentity', () => {
     ).toBe('ta:b|a')
   })
 
+  it('ignores a punctuation-only ISRC that normalizes to empty (falls back to title|artist)', () => {
+    // '---' passes a naive trim check but normalizes to '' — must not collapse to the
+    // shared key 'isrc:' (which would merge unrelated tracks and shadow title/artist).
+    expect(
+      trackIdentity({ isrc: '---', title: 'Real Title', artist: 'Real Artist' }),
+    ).toBe('ta:real artist|real title')
+  })
+
   it('accepts a title-only or artist-only fallback', () => {
     expect(trackIdentity({ title: 'Solo Title' })).toBe('ta:|solo title')
     expect(trackIdentity({ artist: 'Solo Artist' })).toBe('ta:solo artist|')
