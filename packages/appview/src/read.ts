@@ -239,20 +239,33 @@ export interface JamDetail {
   reJams: JamView[]
 }
 
+const JAM_LIKERS_LIMIT = 50
+const JAM_REJAMS_LIMIT = 50
+
 /** A single jam + its likers (DIDs) + the re-jams that adopted it, newest-first. Null if not found. */
 export async function getJam(
   db: DB,
-  params: { uri: string; viewerDid?: string },
+  params: {
+    uri: string
+    viewerDid?: string
+    likersLimit?: number
+    reJamsLimit?: number
+  },
 ): Promise<JamDetail | null> {
   const [jam] = await loadJamsByUris(db, [params.uri], params.viewerDid)
   if (!jam) return null
-  // Separate from loadLikeInfo (which returns only count + likedByYou aggregates): we need the
-  // full liker DID list for the detail view to hydrate into profiles. MVP: unbounded — for a
-  // viral jam this could be thousands; a future route handler should cap/paginate before sending.
+  const likersLimit = params.likersLimit ?? JAM_LIKERS_LIMIT
+  const reJamsLimit = params.reJamsLimit ?? JAM_REJAMS_LIMIT
+  // Bounded: the true total is jam.likeCount (from loadLikeInfo); here we hydrate at most
+  // `likersLimit` liker DIDs (most recent first) so a viral jam can't fan out into an
+  // unbounded sequence of getProfiles calls. Same cap on re-jams.
   const likers = await db
     .selectFrom('likes')
     .select('author_did')
     .where('subject_uri', '=', params.uri)
+    .orderBy('created_at', 'desc')
+    .orderBy('uri', 'desc')
+    .limit(likersLimit)
     .execute()
   const reJamRows = await db
     .selectFrom('jams')
@@ -260,6 +273,7 @@ export async function getJam(
     .where('via_uri', '=', params.uri)
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
+    .limit(reJamsLimit)
     .execute()
   const reJams = await loadJamsByUris(
     db,

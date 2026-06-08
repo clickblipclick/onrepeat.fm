@@ -98,6 +98,40 @@ describe('getJam', () => {
     ])
   })
 
+  it('caps likers and re-jams to the requested limits while reporting the true like count', async () => {
+    const subject = 'at://did:plc:a/fm.onrepeat.jam/cap'
+    await insertJam(subject, 'did:plc:a', '2026-05-30T00:00:00.000Z')
+    for (let i = 0; i < 3; i++) {
+      await insertJam(
+        `at://did:plc:r${i}/fm.onrepeat.jam/1`,
+        `did:plc:r${i}`,
+        `2026-05-30T0${i + 1}:00:00.000Z`,
+        subject,
+        'did:plc:a',
+      )
+    }
+    await db
+      .insertInto('likes')
+      .values(
+        [0, 1, 2].map((i) => ({
+          uri: `at://did:plc:l${i}/fm.onrepeat.like/1`,
+          author_did: `did:plc:l${i}`,
+          subject_uri: subject,
+          created_at: `2026-05-30T0${i + 1}:00:00.000Z`,
+        })),
+      )
+      .execute()
+
+    const res = await getJam(db, {
+      uri: subject,
+      likersLimit: 2,
+      reJamsLimit: 2,
+    })
+    expect(res!.jam.likeCount).toBe(3) // true total, not capped
+    expect(res!.likerDids).toHaveLength(2) // capped
+    expect(res!.reJams).toHaveLength(2) // capped
+  })
+
   it('returns null for an unknown jam', async () => {
     expect(
       await getJam(db, { uri: 'at://did:plc:none/fm.onrepeat.jam/x' }),
