@@ -186,4 +186,38 @@ describe('createYoutubeClient', () => {
     const c = createYoutubeClient({ apiKey: 'k', fetchFn })
     expect((await c.lookupVideos([])).size).toBe(0)
   })
+
+  it('lookupVideos chunks >50 ids into batches of ≤50 and merges results', async () => {
+    const calls: string[] = []
+    const c = createYoutubeClient({
+      apiKey: 'k',
+      fetchFn: async (u: string) => {
+        calls.push(u)
+        const ids = (new URL(u).searchParams.get('id') ?? '')
+          .split(',')
+          .filter(Boolean)
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return {
+              items: ids.map((id) => ({
+                id,
+                contentDetails: { duration: 'PT1M' },
+                status: { embeddable: true },
+              })),
+            }
+          },
+        }
+      },
+    })
+    const ids = Array.from({ length: 51 }, (_, i) => `v${i}`)
+    const m = await c.lookupVideos(ids)
+    expect(m.size).toBe(51)
+    expect(calls.length).toBe(2) // 50 + 1, not one over-long request
+    for (const u of calls) {
+      const got = new URL(u).searchParams.get('id')!.split(',')
+      expect(got.length).toBeLessThanOrEqual(50)
+    }
+  })
 })

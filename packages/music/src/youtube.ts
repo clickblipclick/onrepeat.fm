@@ -130,23 +130,27 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
     async lookupVideos(ids) {
       const map = new Map<string, YoutubeVideoMeta>()
       if (ids.length === 0) return map
-      const body = (await get(
-        `/videos?part=contentDetails,status&id=${ids.map(encodeURIComponent).join(',')}`,
-      )) as {
-        items?: {
-          id?: string
-          contentDetails?: { duration?: string }
-          status?: { embeddable?: boolean }
-        }[]
-      }
-      for (const it of body.items ?? []) {
-        if (!it.id) continue
-        map.set(it.id, {
-          durationSec: it.contentDetails?.duration
-            ? parseIso8601Duration(it.contentDetails.duration)
-            : undefined,
-          embeddable: it.status?.embeddable,
-        })
+      // videos.list caps `id` at 50 per request — chunk and merge.
+      for (let i = 0; i < ids.length; i += 50) {
+        const chunk = ids.slice(i, i + 50)
+        const body = (await get(
+          `/videos?part=contentDetails,status&id=${chunk.map(encodeURIComponent).join(',')}`,
+        )) as {
+          items?: {
+            id?: string
+            contentDetails?: { duration?: string }
+            status?: { embeddable?: boolean }
+          }[]
+        }
+        for (const it of body.items ?? []) {
+          if (!it.id) continue
+          map.set(it.id, {
+            durationSec: it.contentDetails?.duration
+              ? parseIso8601Duration(it.contentDetails.duration)
+              : undefined,
+            embeddable: it.status?.embeddable,
+          })
+        }
       }
       return map
     },
