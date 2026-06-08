@@ -22,26 +22,27 @@ export function createBoss(
   return boss
 }
 
-/** Idempotently create the resolve queue with retry/backoff config. */
+/** Idempotently create the resolve queue and apply its retry/backoff config. */
 export async function createResolveQueue(boss: PgBoss): Promise<void> {
-  // policy 'short' enables singletonKey dedup (≤1 queued job per identity).
-  // Options are Omit<Queue,'name'> — do NOT pass `name` here.
-  try {
-    await boss.createQueue(RESOLVE_QUEUE, {
-      policy: 'short',
-      retryLimit: 5,
-      retryDelay: 10, // seconds; with backoff → 10, 20, 40, 80, 160s
-      retryBackoff: true,
-      retryDelayMax: 600,
-    })
-  } catch (err) {
-    // Tolerate a concurrent create (ingester + resolver may start together):
-    // if the queue now exists the race resolved fine; otherwise rethrow.
-    if (!(await boss.getQueue(RESOLVE_QUEUE))) throw err
+  // policy 'short' dedups by singletonKey only while a prior job is still in the 'created'
+  // state — once it's active or retrying, a re-enqueue is allowed (harmless: resolveJob is
+  // idempotent). Options are Omit<Queue,'name'> — do NOT pass `name` here.
+  const retry = {
+    retryLimit: 5,
+    retryDelay: 10, // seconds; with backoff → 10, 20, 40, 80, 160s
+    retryBackoff: true,
+    retryDelayMax: 600,
   }
+  // createQueue is INSERT ... ON CONFLICT DO NOTHING, so on an existing queue it's a no-op
+  // and config edits here wouldn't apply on redeploy. updateQueue applies the retry config
+  // to the existing row (policy is immutable post-create, so it's only set at create time).
+  // Both are concurrency-safe if the ingester + resolver start together.
+  await boss.createQueue(RESOLVE_QUEUE, { policy: 'short', ...retry })
+  await boss.updateQueue(RESOLVE_QUEUE, retry)
 }
 
-/** Enqueue a resolve job; dedups by identity (returns null if a job for it is already queued). */
+/** Enqueue a resolve job; dedups by identity (returns null if a job for it is still queued
+ *  in the 'created' state — a job already active/retrying does not block a re-enqueue). */
 export function enqueueResolve(
   boss: PgBoss,
   job: ResolveJob,

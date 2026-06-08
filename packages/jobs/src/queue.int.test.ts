@@ -34,4 +34,13 @@ describe('resolve queue', () => {
     expect(first).toBeTypeOf('string') // job id
     expect(second).toBeNull() // deduped while the first is still queued
   })
+
+  it('reapplies retry config to an already-existing queue (not create-once)', async () => {
+    // Simulate a queue created with stale config (createQueue alone is ON CONFLICT DO
+    // NOTHING, so config edits wouldn't otherwise apply on redeploy).
+    await boss.updateQueue(RESOLVE_QUEUE, { retryLimit: 1 })
+    expect((await boss.getQueue(RESOLVE_QUEUE))?.retryLimit).toBe(1)
+    await createResolveQueue(boss)
+    expect((await boss.getQueue(RESOLVE_QUEUE))?.retryLimit).toBe(5)
+  })
 })
