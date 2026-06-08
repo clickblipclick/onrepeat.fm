@@ -198,12 +198,11 @@ export function Player({
                   title={active.kind === 'iframe' ? active.title : 'player'}
                   onLoad={() => setLoaded(true)}
                   className="block h-full w-full"
-                  // Sandbox the third-party player: scripts + same-origin (its own origin,
-                  // not ours — these are cross-origin) so it functions, popups for login /
-                  // "open in app", presentation for fullscreen/cast. clipboard-write dropped
-                  // (not needed). encrypted-media for DRM streams; autoplay since user-gated.
-                  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
-                  allow="autoplay; encrypted-media; fullscreen"
+                  // No `sandbox` here: it broke the Bandcamp/Spotify/Apple/SoundCloud players
+                  // (their EmbeddedPlayers need capabilities a sandbox strips). These are a
+                  // fixed allowlist of reputable services, so the defense-in-depth wasn't worth
+                  // breaking playback.
+                  allow="autoplay; encrypted-media; clipboard-write; fullscreen"
                 />
               )}
             </div>
