@@ -1,11 +1,11 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getActorJams } from '@onrepeat/appview'
 import { db } from '../../../lib/db'
 import { hydrate, bsky } from '../../../lib/appview'
 import { getSession } from '../../../lib/session'
 import { readPreferredProvider } from '../../../lib/playback-preference.server'
-import { JamCard, rkeyOf } from '../../_components/jam-card'
+import { JamCard } from '../../_components/jam-card'
+import { ArchiveGrid } from '../../_components/archive-grid'
 import { Avatar } from '../../_components/avatar'
 import { isCurrentJam } from '../../../lib/format'
 
@@ -60,33 +60,12 @@ export default async function ProfilePage({
       {archive.length > 0 && (
         <>
           <h2 className="mt-6 mb-2 text-xs text-muted uppercase">Archive</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {archive.map((jam) => (
-              <Link
-                key={jam.uri}
-                href={`/jam/${encodeURIComponent(profile.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`}
-                className="block aspect-square overflow-hidden rounded border border-border"
-                title={`${jam.title} — ${jam.artist}`}
-              >
-                {jam.artworkUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={jam.artworkUrl}
-                    alt={`${jam.title} by ${jam.artist}`}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="accent-grid block h-full w-full" />
-                )}
-              </Link>
-            ))}
-          </div>
-          {page.cursor && (
-            <p className="mt-2 text-xs text-muted">
-              Showing the most recent 100 jams.
-            </p>
-          )}
+          <ArchiveGrid
+            did={profile.did}
+            handle={profile.handle ?? profile.did}
+            initial={archive}
+            initialCursor={page.cursor}
+          />
         </>
       )}
     </>
