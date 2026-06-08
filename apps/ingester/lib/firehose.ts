@@ -16,6 +16,10 @@ import { defaultHooks, type IngesterHooks } from './hooks'
 
 const SERVICE = 'firehose'
 const CURSOR_INTERVAL_MS = 5000
+// Cap concurrent in-flight handlers. MemoryRunner defaults to Infinity, so a backlog replay
+// (resume from a stale cursor) could open unbounded concurrent DB writes and balloon the
+// in-flight set. Keep this ≤ the DB pool size (createDb defaults to pg's max 10).
+const DEFAULT_CONCURRENCY = 8
 
 export interface IngesterRuntime {
   start(): Promise<void>
@@ -33,6 +37,8 @@ export interface CreateIngesterOpts {
   /** Last-resort handler when an event can't even be dead-lettered (e.g. DB down). Default:
    *  log and exit(1) so the process restarts and resumes from the persisted cursor. */
   onFatal?: (err: Error) => void
+  /** Max concurrent in-flight event handlers. Keep ≤ the DB pool size. Default 8. */
+  concurrency?: number
 }
 
 export async function createIngester(
@@ -61,6 +67,7 @@ export async function createIngester(
   // so the persisted seq is gapless even with per-DID concurrency.
   const runner = new MemoryRunner({
     startCursor,
+    concurrency: opts.concurrency ?? DEFAULT_CONCURRENCY,
     setCursor: async (seq) => cursorWriter.record(seq),
   })
 
