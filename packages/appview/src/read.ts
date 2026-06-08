@@ -35,6 +35,14 @@ interface PageParams {
 const DEFAULT_LIMIT = 30
 const MAX_LIMIT = 100
 
+// Render created_at to a full-microsecond ISO string for the cursor. node-postgres maps
+// timestamptz to a millisecond-precision JS Date, so building the cursor from the read-back
+// Date would lose microseconds — and the keyset boundary (which compares against the raw
+// timestamptz column) would then skip/duplicate rows that share a millisecond but differ in
+// microseconds. Formatting in SQL keeps the cursor exact, so it round-trips losslessly via
+// `::timestamptz` in the boundary below.
+const CURSOR_TS = sql<string>`to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
+
 function clampLimit(limit?: number): number {
   if (!limit || limit < 1) return DEFAULT_LIMIT
   return Math.min(limit, MAX_LIMIT)
@@ -157,12 +165,13 @@ export async function getLatest(
     : undefined
   let q = db
     .selectFrom('jams')
-    .select(['uri', 'created_at'])
+    .select('uri')
+    .select(CURSOR_TS.as('cursor_ts'))
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
   if (cur) {
-    const cursorDate = new Date(cur.createdAt)
+    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
     q = q.where((eb) =>
       eb.or([
         eb('created_at', '<', cursorDate),
@@ -179,7 +188,7 @@ export async function getLatest(
     params.viewerDid,
   )
   const cursorItems = pageRows.map((r) => ({
-    createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
+    createdAt: r.cursor_ts,
     uri: r.uri,
   }))
   return { jams, cursor: buildCursor(cursorItems, hasMore) }
@@ -194,13 +203,14 @@ export async function getActorJams(
   const cur = params.cursor ? decodeCursor(params.cursor) : undefined
   let q = db
     .selectFrom('jams')
-    .select(['uri', 'created_at'])
+    .select('uri')
+    .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', '=', params.did)
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
   if (cur) {
-    const cursorDate = new Date(cur.createdAt)
+    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
     q = q.where((eb) =>
       eb.or([
         eb('created_at', '<', cursorDate),
@@ -217,7 +227,7 @@ export async function getActorJams(
     params.viewerDid,
   )
   const cursorItems = pageRows.map((r) => ({
-    createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
+    createdAt: r.cursor_ts,
     uri: r.uri,
   }))
   return { jams, cursor: buildCursor(cursorItems, hasMore) }
@@ -281,20 +291,20 @@ export async function getFollowFeed(
   const currentRows = await db
     .selectFrom('jams')
     .distinctOn('author_did')
-    .select(['uri', 'created_at'])
+    .select('uri')
+    .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', 'in', authorDids)
     .where('created_at', '>', sql<Date>`now() - interval '7 days'`)
     .orderBy('author_did')
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .execute()
-  // newest-first across authors, then cursor + limit (in memory; set is <= #follows)
+  // newest-first across authors, then cursor + limit (in memory; set is <= #follows).
+  // cursor_ts is a microsecond ISO string, so lexicographic compare == chronological.
   const sorted = currentRows
     .map((r) => ({
       uri: r.uri,
-      createdAt: new Date(
-        r.created_at as unknown as string | Date,
-      ).toISOString(),
+      createdAt: r.cursor_ts,
     }))
     .sort((a, b) =>
       a.createdAt < b.createdAt

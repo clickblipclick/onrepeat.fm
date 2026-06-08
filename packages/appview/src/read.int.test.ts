@@ -139,6 +139,32 @@ describe('getLatest', () => {
     expect(new Set(allUris).size).toBe(3) // no overlap
   })
 
+  it('paginates correctly across timestamps that differ only in sub-millisecond precision', async () => {
+    // Same millisecond, different microseconds — node-postgres truncates timestamptz to a
+    // millisecond JS Date, so a ms-precision cursor would skip the second row at the boundary.
+    await insertJam({
+      uri: 'at://did:plc:a/fm.onrepeat.jam/hi',
+      did: 'did:plc:a',
+      createdAt: '2026-05-30T00:00:00.000789Z',
+    })
+    await insertJam({
+      uri: 'at://did:plc:a/fm.onrepeat.jam/lo',
+      did: 'did:plc:a',
+      createdAt: '2026-05-30T00:00:00.000456Z',
+    })
+    const first = await getLatest(db, { limit: 1 })
+    expect(first.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:a/fm.onrepeat.jam/hi', // newer microsecond first
+    ])
+    expect(first.cursor).toBeTruthy()
+    const second = await getLatest(db, { limit: 1, cursor: first.cursor })
+    expect(second.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:a/fm.onrepeat.jam/lo', // not skipped
+    ])
+    const all = [...first.jams, ...second.jams].map((j) => j.uri)
+    expect(new Set(all).size).toBe(2) // no skip, no duplicate
+  })
+
   it('artworkUrl falls back to the jam raw_artwork_url, and a resolved track overrides it', async () => {
     await db
       .insertInto('tracks')
