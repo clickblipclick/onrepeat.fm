@@ -176,6 +176,33 @@ describe('resolveJob (v2)', () => {
     })
   })
 
+  it('throws (for pg-boss retry) and leaves the row pending when iTunes errors transiently — never persists "resolved"', async () => {
+    await seedPending('ta:a|c')
+    const flakyDeps: ResolverDeps = {
+      itunes: {
+        async search() {
+          throw new Error('itunes 429')
+        },
+        async lookup() {
+          throw new Error('itunes 429')
+        },
+      },
+    }
+    await expect(
+      resolveJob(db, flakyDeps, {
+        identity: 'ta:a|c',
+        sourceUrl: 'https://open.spotify.com/track/sp1',
+        provider: 'spotify',
+      }),
+    ).rejects.toThrow()
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'ta:a|c')
+      .executeTakeFirst()
+    expect(t?.resolution_status).toBe('pending') // not falsely 'resolved'
+  })
+
   it('apple-only when no youtube client; still resolved', async () => {
     await seedPending('ta:o|t')
     await resolveJob(

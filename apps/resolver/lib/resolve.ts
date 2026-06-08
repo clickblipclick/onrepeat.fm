@@ -75,6 +75,16 @@ export async function resolveJob(
     deps,
   )
 
+  if (result.transient) {
+    // The iTunes anchor errored transiently (rate limit / 5xx / network). Throwing leaves
+    // the row 'pending' and lets pg-boss retry with backoff; the worker only marks 'failed'
+    // after the final attempt — so a rate-limited resolution is never persisted as 'resolved'
+    // with its cross-links silently missing.
+    throw new Error(
+      `resolve: transient upstream failure for ${job.identity} [${result.notes.join(', ')}]`,
+    )
+  }
+
   const update: Updateable<TracksTable> = {
     provider_refs: JSON.stringify(result.providerRefs),
     resolution_status: 'resolved',

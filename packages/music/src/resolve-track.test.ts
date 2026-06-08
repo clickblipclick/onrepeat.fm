@@ -182,6 +182,46 @@ describe('resolveTrack (iTunes-anchored)', () => {
     expect(r.providerRefs).toEqual({ spotify: { url: base.sourceUrl } })
   })
 
+  it('flags transient when the iTunes anchor call throws (so the resolver retries instead of persisting "resolved")', async () => {
+    const r = await resolveTrack(base, {
+      itunes: {
+        async search() {
+          throw new Error('itunes 429')
+        },
+        async lookup() {
+          throw new Error('itunes 429')
+        },
+      },
+    })
+    expect(r.transient).toBe(true)
+    expect(r.notes).toContain('apple:error')
+  })
+
+  it('does NOT flag transient on a clean iTunes no-match', async () => {
+    const r = await resolveTrack(
+      base,
+      deps({
+        itunes: {
+          async search() {
+            return [
+              {
+                ...apple,
+                title: 'Totally Different',
+                artist: 'Nobody',
+                durationSec: 99,
+              },
+            ]
+          },
+          async lookup() {
+            return null
+          },
+        },
+      }),
+    )
+    expect(r.transient).toBeFalsy()
+    expect(r.notes).toContain('apple:no-match')
+  })
+
   it('youtubemusic source: keeps the source ref, adds no duplicate youtube cross-link', async () => {
     let searched = false
     const r = await resolveTrack(

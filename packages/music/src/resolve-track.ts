@@ -25,6 +25,12 @@ export interface ResolutionResult {
   providerRefs: ProviderRefs
   /** Per-step trace for observability, e.g. ['apple:matched', 'youtube:no-match']. */
   notes: string[]
+  /**
+   * The iTunes anchor call threw (rate limit / 5xx / network / timeout) rather than
+   * cleanly returning no match. The result is therefore incomplete by accident, not by
+   * fact — callers should retry instead of persisting it as a final "resolved" state.
+   */
+  transient?: boolean
 }
 
 /** Apple Music track URLs carry the song id in the `i` query param. */
@@ -52,6 +58,7 @@ export async function resolveTrack(
     providerRefs[input.sourceProvider] = { url: input.sourceUrl }
 
   const notes: string[] = []
+  let transient = false
   let anchor: { title: string; artist: string; durationSec?: number } = {
     title: input.title,
     artist: input.artist,
@@ -94,8 +101,10 @@ export async function resolveTrack(
       artworkUrl = apple.artworkUrl
     }
   } catch {
-    // iTunes unavailable for this job — skip Apple, keep going.
+    // iTunes errored (rate limit / 5xx / network) — this is the resolution anchor, so the
+    // result is unreliable. Mark transient so the caller retries rather than persisting it.
     notes.push('apple:error')
+    transient = true
   }
 
   // --- YouTube ---
@@ -160,5 +169,6 @@ export async function resolveTrack(
     artworkUrl,
     providerRefs,
     notes,
+    transient,
   }
 }
