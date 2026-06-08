@@ -24,10 +24,29 @@ describe('trackIdentity', () => {
     expect(a).toBe(b)
   })
 
-  it('strips diacritics in the title|artist fallback', () => {
+  it('strips combining diacritics but keeps non-decomposable letters (matches @onrepeat/music normalizeTokens)', () => {
+    // ï → NFKD → i + combining diaeresis (stripped) → "naive". ø has no canonical
+    // decomposition and is a letter, so it's kept — consistent with normalizeTokens,
+    // which uses the same \p{L}\p{N} class.
     expect(trackIdentity({ title: 'Naïve', artist: 'Sigø' })).toBe(
-      'ta:sig|naive',
+      'ta:sigø|naive',
     )
+  })
+
+  it('preserves non-Latin scripts (CJK / Cyrillic) instead of collapsing to an empty key', () => {
+    expect(trackIdentity({ title: '夜に駆ける', artist: 'YOASOBI' })).toBe(
+      'ta:yoasobi|夜に駆ける',
+    )
+    expect(trackIdentity({ title: 'Кукла', artist: 'Аукцыон' })).toBe(
+      'ta:аукцыон|кукла',
+    )
+  })
+
+  it('gives distinct non-Latin tracks distinct identities (no collision)', () => {
+    const a = trackIdentity({ title: '夜に駆ける', artist: 'YOASOBI' })
+    const b = trackIdentity({ title: '群青', artist: 'YOASOBI' })
+    expect(a).not.toBe(b)
+    expect(a).not.toBe('ta:yoasobi|')
   })
 
   it('collapses (parentheticals), [brackets], and feat tails so decorations dedupe', () => {

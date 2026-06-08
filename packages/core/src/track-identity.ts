@@ -15,7 +15,10 @@ function normalizeText(s: string): string {
       // "Bohemian Rhapsody (Official Video Remastered)" dedupes apart from "Bohemian Rhapsody".
       .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ') // (parentheticals) / [brackets]
       .replace(/\b(feat|ft|featuring)\b.*$/g, ' ') // featured-artist tails
-      .replace(/[^a-z0-9]+/g, ' ')
+      // Keep letters/digits of ANY script (Unicode-aware) so non-Latin titles
+      // (CJK, Cyrillic, Greek, …) aren't collapsed to an empty key. Matches the
+      // \p{L}\p{N} class @onrepeat/music's normalizeTokens uses.
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim()
       .replace(/\s+/g, ' ')
   )
