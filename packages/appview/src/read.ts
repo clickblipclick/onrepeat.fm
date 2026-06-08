@@ -288,8 +288,9 @@ export async function getJam(
 /**
  * Follow-feed: the current jam (latest <7 days) of each followed DID — plus the viewer's
  * own current jam (home feeds conventionally include your own posts without a self-follow) —
- * newest-first. One current jam per author via DISTINCT ON, then ordered/paginated in memory
- * (bounded by the follow count). `followedDids` is supplied by the caller (from bsky).
+ * newest-first. One current jam per author via DISTINCT ON (inner), then ordered + keyset-
+ * paginated + LIMITed in SQL (outer) so only one page of rows comes back, not every followed
+ * author's jam. `followedDids` is supplied by the caller (from bsky).
  */
 export async function getFollowFeed(
   db: DB,
@@ -308,12 +309,12 @@ export async function getFollowFeed(
   // Otherwise an author's "current jam" could expire or be replaced by a newer post between
   // pages, shifting the ordering and silently dropping/duplicating authors at boundaries.
   const snap = cur?.snap ?? new Date().toISOString()
-  // MVP: DISTINCT ON yields one current jam per author (≤ ~10k follows typical),
-  // sorted + paginated in memory. If follows scale to 50k+, push ORDER BY + LIMIT into SQL.
-  const currentRows = await db
+  // Inner: one current jam per author. DISTINCT ON requires author_did first in ORDER BY,
+  // which is why the newest-first feed ordering can't live here — it goes in the outer query.
+  const current = db
     .selectFrom('jams')
     .distinctOn('author_did')
-    .select('uri')
+    .select(['uri', 'created_at'])
     .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', 'in', authorDids)
     .where('created_at', '<=', sql<Date>`${snap}::timestamptz`)
@@ -325,36 +326,34 @@ export async function getFollowFeed(
     .orderBy('author_did')
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
-    .execute()
-  // newest-first across authors, then cursor + limit (in memory; set is <= #follows).
-  // cursor_ts is a microsecond ISO string, so lexicographic compare == chronological.
-  const sorted = currentRows
-    .map((r) => ({
-      uri: r.uri,
-      createdAt: r.cursor_ts,
-    }))
-    .sort((a, b) =>
-      a.createdAt < b.createdAt
-        ? 1
-        : a.createdAt > b.createdAt
-          ? -1
-          : a.uri < b.uri
-            ? 1
-            : -1,
+  // Outer: order the per-author set newest-first and apply the keyset cursor + LIMIT in SQL,
+  // so the DB returns only one page instead of every followed author's current jam.
+  let q = db
+    .selectFrom(current.as('cur'))
+    .select(['uri', 'cursor_ts'])
+    .orderBy('created_at', 'desc')
+    .orderBy('uri', 'desc')
+    .limit(limit + 1)
+  if (cur) {
+    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
+    q = q.where((eb) =>
+      eb.or([
+        eb('created_at', '<', cursorDate),
+        eb.and([eb('created_at', '=', cursorDate), eb('uri', '<', cur.uri)]),
+      ]),
     )
-  const afterCursor = cur
-    ? sorted.filter(
-        (r) =>
-          r.createdAt < cur.createdAt ||
-          (r.createdAt === cur.createdAt && r.uri < cur.uri),
-      )
-    : sorted
-  const pageIds = afterCursor.slice(0, limit)
-  const hasMore = afterCursor.length > limit
+  }
+  const idRows = await q.execute()
+  const hasMore = idRows.length > limit
+  const pageRows = idRows.slice(0, limit)
   const jams = await loadJamsByUris(
     db,
-    pageIds.map((r) => r.uri),
+    pageRows.map((r) => r.uri),
     params.viewerDid,
   )
-  return { jams, cursor: buildCursor(pageIds, hasMore, snap) }
+  const cursorItems = pageRows.map((r) => ({
+    createdAt: r.cursor_ts,
+    uri: r.uri,
+  }))
+  return { jams, cursor: buildCursor(cursorItems, hasMore, snap) }
 }
