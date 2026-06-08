@@ -9,9 +9,15 @@ export interface ResolveJob {
   provider: string
 }
 
-/** Build a PgBoss instance with the mandatory error handler. Caller must call start(). */
-export function createBoss(connectionString: string): PgBoss {
-  const boss = new PgBoss(connectionString)
+/** Build a PgBoss instance with the mandatory error handler. Caller must call start().
+ *  Pass `{ supervise: false, schedule: false }` for a producer-only client (e.g. the web
+ *  app enqueuing on write) so it doesn't run queue maintenance/cron — that stays owned by
+ *  the ingester/resolver. */
+export function createBoss(
+  connectionString: string,
+  options: { supervise?: boolean; schedule?: boolean } = {},
+): PgBoss {
+  const boss = new PgBoss({ connectionString, ...options })
   boss.on('error', (err) => console.error('[jobs] pg-boss error', err))
   return boss
 }

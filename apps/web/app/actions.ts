@@ -18,13 +18,17 @@ import {
   type TrackCandidate,
 } from '@onrepeat/music'
 import { db } from '../lib/db'
+import { getBoss } from '../lib/jobs'
 import { didFromUri, rkeyFromUri } from '../lib/at-uri'
 import { indexJam, removeJam } from '@onrepeat/db'
+import { enqueueResolveForJam } from '@onrepeat/jobs'
 
 /**
- * After a jam write succeeds: index it into our Postgres immediately (read-your-writes,
- * best-effort — the ingester backfills idempotently off the firehose if this fails) and
- * refresh the views that show the user's current jam. `label` identifies the caller in logs.
+ * After a jam write succeeds: index it into our Postgres and enqueue its resolve job
+ * immediately (read-your-writes), then refresh the views that show the user's current jam.
+ * Both steps are best-effort — the ingester re-does them idempotently off the firehose if
+ * this fails — but doing them here means the author's own jam resolves right away instead
+ * of waiting on the relay round-trip. `label` identifies the caller in logs.
  */
 async function afterJamWrite(
   label: string,
@@ -37,9 +41,13 @@ async function afterJamWrite(
 ): Promise<void> {
   try {
     await indexJam(db, args)
+    // enqueueResolveForJam upserts the track, links jams.track_id, and enqueues the
+    // resolve job (deduped by singletonKey, so the firehose re-enqueue is a harmless no-op).
+    const boss = await getBoss()
+    await enqueueResolveForJam(boss, db, { uri: args.uri, record: args.record })
   } catch (e) {
     console.error(
-      `[web] ${label}: write-through index failed (firehose will backfill)`,
+      `[web] ${label}: write-through index/enqueue failed (firehose will backfill)`,
       e,
     )
   }

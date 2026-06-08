@@ -16,6 +16,7 @@
     "@onrepeat/appview": "workspace:*",
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
+    "@onrepeat/jobs": "workspace:^",
     "@onrepeat/music": "workspace:*",
     "@onrepeat/oauth": "workspace:*",
     "@onrepeat/repo": "workspace:*",
