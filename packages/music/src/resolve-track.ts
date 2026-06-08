@@ -158,8 +158,13 @@ export async function resolveTrack(
           }
         }
       }
-    } catch {
-      notes.push('youtube:error')
+    } catch (err) {
+      // Distinguish quota exhaustion (daily, not worth retrying) from a transient error.
+      notes.push(
+        err instanceof Error && err.message.includes('quota')
+          ? 'youtube:quota'
+          : 'youtube:error',
+      )
     }
   }
 

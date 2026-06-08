@@ -197,6 +197,24 @@ describe('resolveTrack (iTunes-anchored)', () => {
     expect(r.notes).toContain('apple:error')
   })
 
+  it('notes youtube:quota distinctly when the YouTube client reports quota exhaustion', async () => {
+    const r = await resolveTrack(
+      base,
+      deps({
+        youtube: {
+          async searchVideo() {
+            throw new Error('youtube quota')
+          },
+          async lookupVideos() {
+            return new Map()
+          },
+        },
+      }),
+    )
+    expect(r.notes).toContain('youtube:quota')
+    expect(r.notes).not.toContain('youtube:error')
+  })
+
   it('does NOT flag transient on a clean iTunes no-match', async () => {
     const r = await resolveTrack(
       base,

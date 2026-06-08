@@ -196,4 +196,37 @@ describe('itunes durationSec + client', () => {
     ])
     expect(maxActive).toBe(1) // limiter ran them one at a time
   })
+
+  it('the client retries a transient 503 then succeeds', async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      return calls < 2
+        ? {
+            ok: false,
+            status: 503,
+            async json() {
+              return {}
+            },
+          }
+        : {
+            ok: true,
+            status: 200,
+            async json() {
+              return body
+            },
+          }
+    }
+    const client = createItunesClient({
+      fetchFn,
+      retry: {
+        attempts: 3,
+        baseDelayMs: 1,
+        sleep: async () => {},
+        jitter: () => 0,
+      },
+    })
+    expect((await client.search('x y'))[0]?.durationSec).toBe(214)
+    expect(calls).toBe(2)
+  })
 })

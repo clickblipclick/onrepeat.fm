@@ -220,4 +220,46 @@ describe('createYoutubeClient', () => {
       expect(got.length).toBeLessThanOrEqual(50)
     }
   })
+
+  it('throws "youtube quota" on a 403 so callers can distinguish quota exhaustion', async () => {
+    const c = createYoutubeClient({
+      apiKey: 'k',
+      retry: { attempts: 1 },
+      fetchFn: async () => ({
+        ok: false,
+        status: 403,
+        async json() {
+          return {}
+        },
+      }),
+    })
+    await expect(c.searchVideo('a b')).rejects.toThrow('youtube quota')
+  })
+
+  it('retries a transient 503 then succeeds', async () => {
+    let calls = 0
+    const c = createYoutubeClient({
+      apiKey: 'k',
+      retry: {
+        attempts: 3,
+        baseDelayMs: 1,
+        sleep: async () => {},
+        jitter: () => 0,
+      },
+      fetchFn: async (u: string) => {
+        calls++
+        if (calls < 2)
+          return {
+            ok: false,
+            status: 503,
+            async json() {
+              return {}
+            },
+          }
+        return fetchFn(u)
+      },
+    })
+    expect((await c.searchVideo('a b'))[0]?.videoId).toBe('v1')
+    expect(calls).toBe(2)
+  })
 })

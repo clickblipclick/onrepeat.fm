@@ -1,4 +1,5 @@
 import { createRateLimiter, type RateLimiter } from './rate-limit'
+import { fetchWithRetry, type RetryOptions } from './http'
 
 export interface YoutubeVideo {
   videoId: string
@@ -102,11 +103,14 @@ export interface YoutubeClientOptions {
   timeoutMs?: number
   /** Client-only: minimum gap between API calls (ms) to avoid bursting the quota. */
   minIntervalMs?: number
+  /** Retry policy for transient (429/5xx/network) failures. Default: 3 attempts. */
+  retry?: RetryOptions
 }
 
 export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
+  const retry: RetryOptions = opts.retry ?? { attempts: 3, baseDelayMs: 500 }
   const limit: RateLimiter = opts.minIntervalMs
     ? createRateLimiter({ minIntervalMs: opts.minIntervalMs })
     : (fn) => fn()
@@ -114,12 +118,15 @@ export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
   async function get(path: string): Promise<unknown> {
     return limit(async () => {
       const sep = path.includes('?') ? '&' : '?'
-      const res = await fetchFn(
-        `${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`,
-        {
-          signal: AbortSignal.timeout(timeoutMs),
-        },
+      const url = `${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`
+      const res = await fetchWithRetry(
+        () => fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) }),
+        retry,
       )
+      // A 403 from the Data API is almost always quota exhaustion (search.list costs 100
+      // units against a ~10k/day default ≈ ~100 cross-resolves/day). Surface it distinctly
+      // and don't retry — backing off won't restore the daily quota.
+      if (res.status === 403) throw new Error('youtube quota')
       if (!res.ok) throw new Error(`youtube ${res.status}`)
       return res.json()
     })

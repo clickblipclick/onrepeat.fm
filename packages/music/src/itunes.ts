@@ -1,8 +1,11 @@
 import { providerFromUrl } from '@onrepeat/core'
 import type { TrackCandidate } from './track'
 import { createRateLimiter, type RateLimiter } from './rate-limit'
+import { fetchWithRetry, type RetryOptions } from './http'
 
 const passthrough: RateLimiter = (fn) => fn()
+/** Standalone calls don't retry by default (keeps interactive web search snappy). */
+const noRetry: RetryOptions = { attempts: 1 }
 
 interface ItunesResult {
   trackName?: string
@@ -55,6 +58,8 @@ export interface SearchOptions {
    * iTunes' ~20 req/min limit during backfill. Ignored by the standalone functions.
    */
   minIntervalMs?: number
+  /** Retry policy for transient (429/5xx/network) failures. Default: no retry. */
+  retry?: RetryOptions
 }
 
 const ENDPOINT = 'https://itunes.apple.com/search'
@@ -70,7 +75,10 @@ export async function searchTracks(
   const limit = opts.limit ?? 6
   const timeoutMs = opts.timeoutMs ?? 8000
   const url = `${ENDPOINT}?term=${encodeURIComponent(term)}&entity=song&media=music&limit=${limit}`
-  const res = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) })
+  const res = await fetchWithRetry(
+    () => fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) }),
+    opts.retry ?? noRetry,
+  )
   if (!res.ok) throw new Error(`itunes ${res.status}`)
   let body: ItunesBody
   try {
@@ -90,11 +98,12 @@ export async function lookupTrack(
 ): Promise<TrackCandidate | null> {
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
-  const res = await fetchFn(
-    `${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`,
-    {
-      signal: AbortSignal.timeout(timeoutMs),
-    },
+  const res = await fetchWithRetry(
+    () =>
+      fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
+        signal: AbortSignal.timeout(timeoutMs),
+      }),
+    opts.retry ?? noRetry,
   )
   if (!res.ok) return null
   let body: ItunesBody
@@ -116,8 +125,11 @@ export function createItunesClient(opts: SearchOptions = {}): ItunesClient {
   const limit = opts.minIntervalMs
     ? createRateLimiter({ minIntervalMs: opts.minIntervalMs })
     : passthrough
+  // The client (resolver/backfill) retries transient failures by default; callers can
+  // override via opts.retry. Standalone searchTracks/lookupTrack stay no-retry.
+  const o: SearchOptions = { retry: { attempts: 3, baseDelayMs: 500 }, ...opts }
   return {
-    search: (query) => limit(() => searchTracks(query, opts)),
-    lookup: (id) => limit(() => lookupTrack(id, opts)),
+    search: (query) => limit(() => searchTracks(query, o)),
+    lookup: (id) => limit(() => lookupTrack(id, o)),
   }
 }

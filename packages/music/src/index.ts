@@ -1,5 +1,6 @@
 export * from './track'
 export * from './rate-limit'
+export * from './http'
 export * from './itunes'
 export * from './match'
 export * from './youtube'
