@@ -1,5 +1,8 @@
 import { providerFromUrl } from '@onrepeat/core'
 import type { TrackCandidate } from './track'
+import { createRateLimiter, type RateLimiter } from './rate-limit'
+
+const passthrough: RateLimiter = (fn) => fn()
 
 interface ItunesResult {
   trackName?: string
@@ -47,6 +50,11 @@ export interface SearchOptions {
   fetchFn?: FetchLike
   limit?: number
   timeoutMs?: number
+  /**
+   * Client-only: minimum gap between requests (ms). Set by the resolver to stay under
+   * iTunes' ~20 req/min limit during backfill. Ignored by the standalone functions.
+   */
+  minIntervalMs?: number
 }
 
 const ENDPOINT = 'https://itunes.apple.com/search'
@@ -105,8 +113,11 @@ export interface ItunesClient {
 }
 
 export function createItunesClient(opts: SearchOptions = {}): ItunesClient {
+  const limit = opts.minIntervalMs
+    ? createRateLimiter({ minIntervalMs: opts.minIntervalMs })
+    : passthrough
   return {
-    search: (query) => searchTracks(query, opts),
-    lookup: (id) => lookupTrack(id, opts),
+    search: (query) => limit(() => searchTracks(query, opts)),
+    lookup: (id) => limit(() => lookupTrack(id, opts)),
   }
 }

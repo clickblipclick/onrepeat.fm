@@ -1,3 +1,5 @@
+import { createRateLimiter, type RateLimiter } from './rate-limit'
+
 export interface YoutubeVideo {
   videoId: string
   url: string
@@ -98,22 +100,29 @@ export interface YoutubeClientOptions {
   apiKey: string
   fetchFn?: FetchLike
   timeoutMs?: number
+  /** Client-only: minimum gap between API calls (ms) to avoid bursting the quota. */
+  minIntervalMs?: number
 }
 
 export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
+  const limit: RateLimiter = opts.minIntervalMs
+    ? createRateLimiter({ minIntervalMs: opts.minIntervalMs })
+    : (fn) => fn()
 
   async function get(path: string): Promise<unknown> {
-    const sep = path.includes('?') ? '&' : '?'
-    const res = await fetchFn(
-      `${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`,
-      {
-        signal: AbortSignal.timeout(timeoutMs),
-      },
-    )
-    if (!res.ok) throw new Error(`youtube ${res.status}`)
-    return res.json()
+    return limit(async () => {
+      const sep = path.includes('?') ? '&' : '?'
+      const res = await fetchFn(
+        `${API}${path}${sep}key=${encodeURIComponent(opts.apiKey)}`,
+        {
+          signal: AbortSignal.timeout(timeoutMs),
+        },
+      )
+      if (!res.ok) throw new Error(`youtube ${res.status}`)
+      return res.json()
+    })
   }
 
   return {

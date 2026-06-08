@@ -171,4 +171,29 @@ describe('itunes durationSec + client', () => {
     )
     expect((await client.lookup('2'))?.durationSec).toBe(214)
   })
+
+  it('with minIntervalMs, the client serializes calls (no overlapping requests)', async () => {
+    let active = 0
+    let maxActive = 0
+    const fetchFn = async () => {
+      active++
+      maxActive = Math.max(maxActive, active)
+      await new Promise((r) => setTimeout(r, 5))
+      active--
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return { results: [] }
+        },
+      }
+    }
+    const client = createItunesClient({ fetchFn, minIntervalMs: 1 })
+    await Promise.all([
+      client.search('aa'),
+      client.search('bb'),
+      client.lookup('1'),
+    ])
+    expect(maxActive).toBe(1) // limiter ran them one at a time
+  })
 })

@@ -34,12 +34,18 @@ async function main(): Promise<void> {
   // Built only for the worker path. iTunes is keyless (always on); YouTube needs a
   // key (optional — absent → Apple-only cross-resolution); Bandcamp embeds via scrape.
   const deps: ResolverDeps = {
-    itunes: createItunesClient(),
+    // Pace external calls: backfill drains the whole queue through this single worker,
+    // so client-side throttling keeps it under iTunes' ~20 req/min (≥3s apart) and stops
+    // YouTube quota bursts. Interactive web track-search uses the standalone fns (unpaced).
+    itunes: createItunesClient({ minIntervalMs: 3000 }),
     bandcamp: (url) => fetchBandcampEmbed(url),
     oembed: (provider, url) => fetchOembed(provider, url),
   }
   if (process.env.YOUTUBE_API_KEY) {
-    deps.youtube = createYoutubeClient({ apiKey: process.env.YOUTUBE_API_KEY })
+    deps.youtube = createYoutubeClient({
+      apiKey: process.env.YOUTUBE_API_KEY,
+      minIntervalMs: 250,
+    })
   } else {
     console.warn(
       '[resolver] YOUTUBE_API_KEY not set — YouTube cross-links disabled',
