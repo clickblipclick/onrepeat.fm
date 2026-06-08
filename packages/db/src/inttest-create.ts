@@ -4,19 +4,15 @@
 // per-file guard/redirect lives in inttest-setup.ts. Never targets the dev/app DB.
 import { sql } from 'kysely'
 import { createDb } from './client'
+import { assertInttestUrl } from './inttest-guard'
 
 const DEFAULT_INTTEST_DB =
   'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest'
 
 async function main(): Promise<void> {
   const url = process.env.DATABASE_URL_INTTEST ?? DEFAULT_INTTEST_DB
+  const name = assertInttestUrl(url) // safe, local, opted-in *_inttest DB or throws
   const u = new URL(url)
-  const name = u.pathname.replace(/^\//, '')
-  if (!name || name === 'onrepeat_test' || !/^[a-zA-Z0-9_]+$/.test(name)) {
-    throw new Error(
-      `[inttest] refusing to use '${name || url}' as the integration database.`,
-    )
-  }
 
   // Connect to the maintenance 'postgres' database to create the int DB if missing.
   u.pathname = '/postgres'
