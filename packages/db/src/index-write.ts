@@ -83,3 +83,39 @@ export async function indexJam(
 export async function removeJam(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('jams').where('uri', '=', uri).execute()
 }
+
+/** A firehose event that couldn't be indexed, for the dead-letter store. */
+export interface FailedEventInput {
+  seq: number
+  did: string
+  collection: string
+  action: string
+  uri: string
+  cid: string | null
+  /** Decoded record value; undefined on delete (stored as null). */
+  record: unknown
+}
+
+/**
+ * Persist a firehose event that exhausted ingest retries, so it can be inspected/replayed
+ * instead of being silently lost when @atproto/sync advances the cursor past it.
+ */
+export async function recordFailedEvent(
+  db: DB,
+  evt: FailedEventInput,
+  error: string,
+): Promise<void> {
+  await db
+    .insertInto('failed_events')
+    .values({
+      seq: evt.seq,
+      did: evt.did,
+      collection: evt.collection,
+      action: evt.action,
+      uri: evt.uri,
+      cid: evt.cid,
+      record: evt.record === undefined ? null : JSON.stringify(evt.record),
+      error,
+    })
+    .execute()
+}

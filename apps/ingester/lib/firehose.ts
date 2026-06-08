@@ -5,11 +5,12 @@ import {
   type Event,
 } from '@atproto/sync'
 import { IdResolver, MemoryCache } from '@atproto/identity'
-import type { DB } from '@onrepeat/db'
+import { type DB, recordFailedEvent } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
 import { toIngestEvent } from './events'
 import { handleIngestEvent } from './indexer'
 import { withRetry } from './retry'
+import { runWithDeadLetter } from './dead-letter'
 import { loadCursor, saveCursor, makeThrottledCursorWriter } from './cursor'
 import { defaultHooks, type IngesterHooks } from './hooks'
 
@@ -29,12 +30,21 @@ export interface CreateIngesterOpts {
   /** Dev: ignore the stored cursor and start at the live head instead of replaying the
    *  backlog. Prod leaves this off so restarts resume from the persisted cursor. */
   liveTail?: boolean
+  /** Last-resort handler when an event can't even be dead-lettered (e.g. DB down). Default:
+   *  log and exit(1) so the process restarts and resumes from the persisted cursor. */
+  onFatal?: (err: Error) => void
 }
 
 export async function createIngester(
   opts: CreateIngesterOpts,
 ): Promise<IngesterRuntime> {
   const { db, relay, hooks = defaultHooks, liveTail = false } = opts
+  const onFatal =
+    opts.onFatal ??
+    ((err: Error) => {
+      console.error('[ingester] FATAL', err)
+      process.exit(1)
+    })
   // Cache DID resolutions: every relevant commit triggers a DID lookup to verify the
   // commit signature (parseCommitAuthenticated). Without a cache that's a network
   // round-trip per jam/like event, coupling stream throughput to PLC latency. Defaults
@@ -68,14 +78,31 @@ export async function createIngester(
     handleEvent: async (evt: Event) => {
       const ingestEvt = toIngestEvent(evt)
       if (!ingestEvt) return
-      // @atproto/sync swallows handler errors and advances the cursor regardless, so a
-      // transient DB failure would silently skip this event. Our writes are idempotent,
-      // so retry a few times first. If all attempts fail (sustained outage) the event is
-      // skipped and logged via onError — recover by re-running from an earlier cursor.
-      await withRetry(() => handleIngestEvent(db, ingestEvt, hooks), {
-        attempts: 5,
-        baseDelayMs: 100,
-        label: `${ingestEvt.action} ${ingestEvt.uri}`,
+      const label = `${ingestEvt.action} ${ingestEvt.uri}`
+      // @atproto/sync advances the cursor as soon as this returns — even on a thrown error —
+      // so a failed event would otherwise vanish. Retry transient failures first (writes are
+      // idempotent); if they're exhausted, dead-letter the event for replay; if even that
+      // fails (DB down), escalate via onFatal rather than silently skip it.
+      await runWithDeadLetter({
+        label,
+        run: () =>
+          withRetry(() => handleIngestEvent(db, ingestEvt, hooks), {
+            attempts: 5,
+            baseDelayMs: 100,
+            label,
+          }),
+        deadLetter: async (err) => {
+          await recordFailedEvent(
+            db,
+            ingestEvt,
+            err instanceof Error ? err.message : String(err),
+          )
+          console.error(
+            `[ingester] dead-lettered ${label} (seq ${ingestEvt.seq}) after retries`,
+            err,
+          )
+        },
+        onFatal,
       })
     },
     onError: (err: Error) => {

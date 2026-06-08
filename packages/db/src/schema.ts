@@ -83,6 +83,21 @@ export interface OauthSessionTable {
   updated_at: Generated<Timestamp>
 }
 
+export interface FailedEventsTable {
+  id: Generated<string> // bigserial
+  // bigint: comes back as a string from pg, accepts number | string on write
+  seq: ColumnType<string, number | string, number | string>
+  did: string
+  collection: string
+  action: string
+  uri: string
+  cid: string | null
+  // jsonb: decoded record on read (null for deletes), JSON string on write
+  record: ColumnType<unknown, string | null, string | null>
+  error: string
+  failed_at: Generated<Timestamp>
+}
+
 export interface Database {
   actors: ActorsTable
   tracks: TracksTable
@@ -91,4 +106,5 @@ export interface Database {
   subscription_state: SubscriptionStateTable
   oauth_state: OauthStateTable
   oauth_session: OauthSessionTable
+  failed_events: FailedEventsTable
 }
