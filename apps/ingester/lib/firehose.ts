@@ -4,7 +4,7 @@ import {
   FirehoseValidationError,
   type Event,
 } from '@atproto/sync'
-import { IdResolver } from '@atproto/identity'
+import { IdResolver, MemoryCache } from '@atproto/identity'
 import type { DB } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
 import { toIngestEvent } from './events'
@@ -35,7 +35,11 @@ export async function createIngester(
   opts: CreateIngesterOpts,
 ): Promise<IngesterRuntime> {
   const { db, relay, hooks = defaultHooks, liveTail = false } = opts
-  const idResolver = new IdResolver()
+  // Cache DID resolutions: every relevant commit triggers a DID lookup to verify the
+  // commit signature (parseCommitAuthenticated). Without a cache that's a network
+  // round-trip per jam/like event, coupling stream throughput to PLC latency. Defaults
+  // to 1h stale / 24h max TTL.
+  const idResolver = new IdResolver({ didCache: new MemoryCache() })
   const startCursor = liveTail ? undefined : await loadCursor(db, SERVICE)
 
   const cursorWriter = makeThrottledCursorWriter(
