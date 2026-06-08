@@ -10,6 +10,8 @@ interface YTPlayerOptions {
   width: string
   height: string
   videoId: string
+  /** Embed origin; youtube-nocookie defers tracking cookies until playback. */
+  host?: string
   playerVars?: Record<string, number>
   events?: { onReady?: () => void; onError?: (e: { data: number }) => void }
 }
@@ -68,6 +70,8 @@ export function YouTubeEmbed({
           width: '100%',
           height: '100%',
           videoId,
+          // Privacy-enhanced mode: no tracking cookies set until the user actually plays.
+          host: 'https://www.youtube-nocookie.com',
           playerVars: { playsinline: 1, rel: 0 },
           events: {
             onReady: () => onReady?.(),
