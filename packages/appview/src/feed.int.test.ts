@@ -193,11 +193,13 @@ describe('getActorJams + getFollowFeed', () => {
     expect(first.jams.map((j) => j.uri)).toEqual([
       'at://did:plc:c/fm.onrepeat.jam/cur',
     ])
-    // Mid-pagination, b (not yet shown) posts a brand-new jam, newer than the cursor.
+    // Mid-pagination, b (not yet shown) posts a brand-new jam. Use a clearly-future
+    // timestamp so it's strictly after page 1's (millisecond-precision) snapshot — a bare
+    // new Date() can collide with the snapshot's millisecond and flake.
     await insertJam(
       'at://did:plc:b/fm.onrepeat.jam/new',
       'did:plc:b',
-      new Date().toISOString(),
+      new Date(Date.now() + 60_000).toISOString(),
     )
     // The snapshot pinned in the cursor keeps the window stable, so b is still walked
     // via its original current jam — not skipped because its representative jumped ahead.
