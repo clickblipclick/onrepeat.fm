@@ -93,7 +93,11 @@ describe('trackIdentity', () => {
     // '---' passes a naive trim check but normalizes to '' — must not collapse to the
     // shared key 'isrc:' (which would merge unrelated tracks and shadow title/artist).
     expect(
-      trackIdentity({ isrc: '---', title: 'Real Title', artist: 'Real Artist' }),
+      trackIdentity({
+        isrc: '---',
+        title: 'Real Title',
+        artist: 'Real Artist',
+      }),
     ).toBe('ta:real artist|real title')
   })
 
