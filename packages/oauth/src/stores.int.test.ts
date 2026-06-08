@@ -32,6 +32,22 @@ describe('Kysely OAuth stores', () => {
     expect(await store.get('k1')).toBeUndefined()
   })
 
+  it('state store: deleteExpiredState prunes rows past the TTL, keeps fresh ones', async () => {
+    const store = new KyselyStateStore(db)
+    await store.set('stale', { a: 1 } as any)
+    // Run cleanup as if it were 2h from now → the just-written row is past the 1h TTL.
+    const deleted = await store.deleteExpiredState(
+      new Date(Date.now() + 2 * 60 * 60 * 1000),
+    )
+    expect(deleted).toBeGreaterThanOrEqual(1)
+    expect(await store.get('stale')).toBeUndefined()
+    // A fresh row survives a cleanup run at the current time.
+    await store.set('fresh', { a: 2 } as any)
+    expect(await store.deleteExpiredState(new Date())).toBe(0)
+    expect(await store.get('fresh')).toEqual({ a: 2 })
+    await store.del('fresh')
+  })
+
   it('session store: set/get/del round-trip keyed by did', async () => {
     const store = new KyselySessionStore(db)
     expect(await store.get('did:plc:x')).toBeUndefined()

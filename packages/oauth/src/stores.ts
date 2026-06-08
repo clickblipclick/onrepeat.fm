@@ -1,3 +1,4 @@
+import { sql, type SqlBool } from 'kysely'
 import type {
   NodeSavedState,
   NodeSavedStateStore,
@@ -5,6 +6,10 @@ import type {
   NodeSavedSessionStore,
 } from '@atproto/oauth-client-node'
 import type { DB } from '@onrepeat/db'
+
+/** Authorization-request state is single-use and short-lived; flows complete in minutes.
+ *  Anything older than this was abandoned and is safe to prune. */
+const STATE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 /** Stores short-lived OAuth authorization-request state, keyed by an opaque token. */
 export class KyselyStateStore implements NodeSavedStateStore {
@@ -26,10 +31,24 @@ export class KyselyStateStore implements NodeSavedStateStore {
       .values({ key, state })
       .onConflict((oc) => oc.column('key').doUpdateSet({ state }))
       .execute()
+    // Opportunistically prune abandoned flows so the table can't grow unbounded — each
+    // stale row holds a freshly-minted DPoP private key. Best-effort: never fail a login
+    // because cleanup hiccuped. Login starts are low-volume, so a sweep per set is cheap.
+    void this.deleteExpiredState().catch(() => {})
   }
 
   async del(key: string): Promise<void> {
     await this.db.deleteFrom('oauth_state').where('key', '=', key).execute()
+  }
+
+  /** Delete authorization-request state past the TTL. Returns the row count removed. */
+  async deleteExpiredState(now: Date = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - STATE_TTL_MS)
+    const res = await this.db
+      .deleteFrom('oauth_state')
+      .where(sql<SqlBool>`created_at < ${cutoff}`)
+      .executeTakeFirst()
+    return Number(res.numDeletedRows ?? 0n)
   }
 }
 
