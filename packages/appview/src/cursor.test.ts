@@ -29,4 +29,17 @@ describe('cursor', () => {
       uri,
     })
   })
+
+  it('round-trips an optional snapshot timestamp', () => {
+    const c = encodeCursor({
+      createdAt: '2026-05-30T00:00:00.000Z',
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      snap: '2026-05-30T00:05:00.000Z',
+    })
+    expect(decodeCursor(c)).toEqual({
+      createdAt: '2026-05-30T00:00:00.000Z',
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      snap: '2026-05-30T00:05:00.000Z',
+    })
+  })
 })

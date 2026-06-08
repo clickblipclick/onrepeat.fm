@@ -143,15 +143,17 @@ export async function loadJamsByUris(
     .filter((v): v is JamView => v !== undefined)
 }
 
-/** Build the next-page cursor from the last item, if there are more rows. */
+/** Build the next-page cursor from the last item, if there are more rows. `snap` pins a
+ *  feed's time window across pages (follow feed); omitted for the keyset feeds. */
 function buildCursor(
   items: { createdAt: string; uri: string }[],
   hasMore: boolean,
+  snap?: string,
 ): string | undefined {
   if (!hasMore || items.length === 0) return undefined
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const last = items[items.length - 1]!
-  return encodeCursor({ createdAt: last.createdAt, uri: last.uri })
+  return encodeCursor({ createdAt: last.createdAt, uri: last.uri, snap })
 }
 
 /** Explore/Latest — network-wide recent jams, newest-first. */
@@ -300,6 +302,12 @@ export async function getFollowFeed(
     ? Array.from(new Set([...params.followedDids, params.viewerDid]))
     : params.followedDids
   if (authorDids.length === 0) return { jams: [] }
+  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
+  // Pin the 7-day window to a snapshot taken on the first page and carried in the cursor, so
+  // every page sees the SAME window (`> snap-7d` and `<= snap`) instead of a moving now().
+  // Otherwise an author's "current jam" could expire or be replaced by a newer post between
+  // pages, shifting the ordering and silently dropping/duplicating authors at boundaries.
+  const snap = cur?.snap ?? new Date().toISOString()
   // MVP: DISTINCT ON yields one current jam per author (≤ ~10k follows typical),
   // sorted + paginated in memory. If follows scale to 50k+, push ORDER BY + LIMIT into SQL.
   const currentRows = await db
@@ -308,7 +316,12 @@ export async function getFollowFeed(
     .select('uri')
     .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', 'in', authorDids)
-    .where('created_at', '>', sql<Date>`now() - interval '7 days'`)
+    .where('created_at', '<=', sql<Date>`${snap}::timestamptz`)
+    .where(
+      'created_at',
+      '>',
+      sql<Date>`${snap}::timestamptz - interval '7 days'`,
+    )
     .orderBy('author_did')
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
@@ -329,7 +342,6 @@ export async function getFollowFeed(
             ? 1
             : -1,
     )
-  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
   const afterCursor = cur
     ? sorted.filter(
         (r) =>
@@ -344,5 +356,5 @@ export async function getFollowFeed(
     pageIds.map((r) => r.uri),
     params.viewerDid,
   )
-  return { jams, cursor: buildCursor(pageIds, hasMore) }
+  return { jams, cursor: buildCursor(pageIds, hasMore, snap) }
 }

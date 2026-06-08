@@ -172,6 +172,53 @@ describe('getActorJams + getFollowFeed', () => {
     ).toBe(true)
   })
 
+  it('getFollowFeed pagination is stable when an author posts again mid-paging', async () => {
+    const followed = ['did:plc:a', 'did:plc:b', 'did:plc:c']
+    await insertJam(
+      'at://did:plc:a/fm.onrepeat.jam/cur',
+      'did:plc:a',
+      new Date(Date.now() - 3 * 60_000).toISOString(),
+    )
+    await insertJam(
+      'at://did:plc:b/fm.onrepeat.jam/cur',
+      'did:plc:b',
+      new Date(Date.now() - 2 * 60_000).toISOString(),
+    )
+    await insertJam(
+      'at://did:plc:c/fm.onrepeat.jam/cur',
+      'did:plc:c',
+      new Date(Date.now() - 1 * 60_000).toISOString(),
+    )
+    const first = await getFollowFeed(db, { followedDids: followed, limit: 1 })
+    expect(first.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:c/fm.onrepeat.jam/cur',
+    ])
+    // Mid-pagination, b (not yet shown) posts a brand-new jam, newer than the cursor.
+    await insertJam(
+      'at://did:plc:b/fm.onrepeat.jam/new',
+      'did:plc:b',
+      new Date().toISOString(),
+    )
+    // The snapshot pinned in the cursor keeps the window stable, so b is still walked
+    // via its original current jam — not skipped because its representative jumped ahead.
+    const second = await getFollowFeed(db, {
+      followedDids: followed,
+      limit: 1,
+      cursor: first.cursor,
+    })
+    expect(second.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:b/fm.onrepeat.jam/cur',
+    ])
+    const third = await getFollowFeed(db, {
+      followedDids: followed,
+      limit: 1,
+      cursor: second.cursor,
+    })
+    expect(third.jams.map((j) => j.uri)).toEqual([
+      'at://did:plc:a/fm.onrepeat.jam/cur',
+    ])
+  })
+
   it('getFollowFeed orders current jams newest-first across authors and paginates', async () => {
     await insertJam(
       'at://did:plc:a/fm.onrepeat.jam/cur',
