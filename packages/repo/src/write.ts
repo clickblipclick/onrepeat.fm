@@ -7,9 +7,60 @@ import {
 } from '@onrepeat/lexicons'
 import { buildJamRecord, buildLikeRecord, type JamInput } from './records'
 
+/** Why a repo write failed, so callers can react (re-auth vs back off vs surface). */
+export type WriteErrorKind =
+  | 'auth' // expired/invalid session (401/403) — re-login
+  | 'rate-limit' // 429 — back off and retry later
+  | 'conflict' // optimistic-concurrency swap failure (409)
+  | 'transient' // 5xx or network/timeout — safe to retry
+  | 'unknown' // anything else (e.g. 4xx bad request)
+
+/** Normalized error for all repo writes; wraps the underlying XRPC/network error. */
+export class RepoWriteError extends Error {
+  constructor(
+    readonly kind: WriteErrorKind,
+    readonly status: number | undefined,
+    readonly cause: unknown,
+  ) {
+    super(
+      `repo write failed (${kind}${status !== undefined ? ` ${status}` : ''})`,
+    )
+    this.name = 'RepoWriteError'
+  }
+}
+
+function classifyWriteError(err: unknown): RepoWriteError {
+  const status =
+    typeof (err as { status?: unknown })?.status === 'number'
+      ? (err as { status: number }).status
+      : undefined
+  let kind: WriteErrorKind
+  if (status === 401 || status === 403) kind = 'auth'
+  else if (status === 429) kind = 'rate-limit'
+  else if (status === 409) kind = 'conflict'
+  else if (status === undefined || status >= 500) kind = 'transient'
+  else kind = 'unknown'
+  return new RepoWriteError(kind, status, err)
+}
+
+/** Run a write, normalizing any failure into a RepoWriteError. */
+async function tryWrite<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (err) {
+    throw classifyWriteError(err)
+  }
+}
+
 export interface WriteResult {
   uri: string
   cid: string
+  /**
+   * Server-side lexicon validation outcome. The PDS doesn't know fm.onrepeat.* lexicons,
+   * so this is 'unknown' (validation is enforced locally in buildXRecord); surfaced for
+   * observability. See https://atproto.com/specs/repository.
+   */
+  validationStatus?: 'valid' | 'unknown'
 }
 
 export interface PostJamResult extends WriteResult {
@@ -23,12 +74,22 @@ export async function postJam(
   input: JamInput,
 ): Promise<PostJamResult> {
   const record = buildJamRecord(input)
-  const res = await agent.com.atproto.repo.createRecord({
-    repo: agent.assertDid,
-    collection: JAM_NSID,
-    record: record as unknown as Record<string, unknown>,
-  })
-  return { uri: res.data.uri, cid: res.data.cid, record }
+  const res = await tryWrite(() =>
+    agent.com.atproto.repo.createRecord({
+      repo: agent.assertDid,
+      collection: JAM_NSID,
+      record: record as unknown as Record<string, unknown>,
+    }),
+  )
+  return {
+    uri: res.data.uri,
+    cid: res.data.cid,
+    validationStatus: res.data.validationStatus as
+      | 'valid'
+      | 'unknown'
+      | undefined,
+    record,
+  }
 }
 
 /** Like a jam by writing a like record referencing its strongRef. */
@@ -37,30 +98,43 @@ export async function likeJam(
   subject: StrongRef,
 ): Promise<WriteResult> {
   const record = buildLikeRecord(subject)
-  const res = await agent.com.atproto.repo.createRecord({
-    repo: agent.assertDid,
-    collection: LIKE_NSID,
-    record: record as unknown as Record<string, unknown>,
-  })
-  return { uri: res.data.uri, cid: res.data.cid }
+  const res = await tryWrite(() =>
+    agent.com.atproto.repo.createRecord({
+      repo: agent.assertDid,
+      collection: LIKE_NSID,
+      record: record as unknown as Record<string, unknown>,
+    }),
+  )
+  return {
+    uri: res.data.uri,
+    cid: res.data.cid,
+    validationStatus: res.data.validationStatus as
+      | 'valid'
+      | 'unknown'
+      | undefined,
+  }
 }
 
 /** Un-like by deleting the like record (rkey must be known by the caller). */
 export async function unlikeJam(agent: Agent, rkey: string): Promise<void> {
-  await agent.com.atproto.repo.deleteRecord({
-    repo: agent.assertDid,
-    collection: LIKE_NSID,
-    rkey,
-  })
+  await tryWrite(() =>
+    agent.com.atproto.repo.deleteRecord({
+      repo: agent.assertDid,
+      collection: LIKE_NSID,
+      rkey,
+    }),
+  )
 }
 
 /** Delete one of the user's own jams (rkey must be known by the caller). */
 export async function deleteJam(agent: Agent, rkey: string): Promise<void> {
-  await agent.com.atproto.repo.deleteRecord({
-    repo: agent.assertDid,
-    collection: JAM_NSID,
-    rkey,
-  })
+  await tryWrite(() =>
+    agent.com.atproto.repo.deleteRecord({
+      repo: agent.assertDid,
+      collection: JAM_NSID,
+      rkey,
+    }),
+  )
 }
 
 export interface ReJamInput {

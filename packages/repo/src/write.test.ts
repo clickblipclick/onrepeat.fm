@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
-import { postJam, likeJam, unlikeJam, reJam, deleteJam } from './write'
+import {
+  postJam,
+  likeJam,
+  unlikeJam,
+  reJam,
+  deleteJam,
+  RepoWriteError,
+} from './write'
 
 // A structural fake of the @atproto/api Agent surface we use.
 function fakeAgent(did = 'did:plc:me') {
@@ -110,5 +117,84 @@ describe('deleteJam', () => {
     expect(calls[0]!.params.repo).toBe('did:plc:me')
     expect(calls[0]!.params.collection).toBe(JAM_NSID)
     expect(calls[0]!.params.rkey).toBe('rkey1')
+  })
+})
+
+function throwingAgent(err: unknown) {
+  return {
+    assertDid: 'did:plc:me',
+    com: {
+      atproto: {
+        repo: {
+          async createRecord() {
+            throw err
+          },
+          async deleteRecord() {
+            throw err
+          },
+        },
+      },
+    },
+  } as any
+}
+
+describe('write error classification', () => {
+  it('classifies a 401 as auth', async () => {
+    const err = Object.assign(new Error('ExpiredToken'), { status: 401 })
+    await expect(postJam(throwingAgent(err), baseJam)).rejects.toMatchObject({
+      name: 'RepoWriteError',
+      kind: 'auth',
+      status: 401,
+    })
+  })
+
+  it('classifies a 429 as rate-limit', async () => {
+    const err = Object.assign(new Error('RateLimitExceeded'), { status: 429 })
+    const subject = {
+      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+    }
+    await expect(likeJam(throwingAgent(err), subject)).rejects.toMatchObject({
+      kind: 'rate-limit',
+    })
+  })
+
+  it('classifies a 5xx as transient and preserves the cause', async () => {
+    const err = Object.assign(new Error('boom'), { status: 502 })
+    const caught = await postJam(throwingAgent(err), baseJam).catch((e) => e)
+    expect(caught).toBeInstanceOf(RepoWriteError)
+    expect(caught.kind).toBe('transient')
+    expect(caught.cause).toBe(err)
+  })
+
+  it('classifies a network error with no status as transient', async () => {
+    await expect(
+      deleteJam(throwingAgent(new Error('fetch failed')), 'rkey1'),
+    ).rejects.toMatchObject({ kind: 'transient' })
+  })
+})
+
+describe('validationStatus', () => {
+  it('surfaces validationStatus from createRecord', async () => {
+    const agent = {
+      assertDid: 'did:plc:me',
+      com: {
+        atproto: {
+          repo: {
+            async createRecord(p: any) {
+              return {
+                data: {
+                  uri: `at://did:plc:me/${p.collection}/1`,
+                  cid: 'c',
+                  validationStatus: 'unknown',
+                },
+              }
+            },
+          },
+        },
+      },
+    } as any
+    const res = await postJam(agent, baseJam)
+    expect(res.validationStatus).toBe('unknown')
   })
 })
