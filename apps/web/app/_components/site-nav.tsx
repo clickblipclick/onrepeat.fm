@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getSession } from '../../lib/session'
 import { bsky } from '../../lib/appview'
-import { Avatar } from './avatar'
+import { UserMenu } from './user-menu'
 
 export async function SiteNav() {
   const session = await getSession()
@@ -45,21 +45,11 @@ export async function SiteNav() {
               >
                 + set your jam
               </Link>
-              <Link
-                href={`/profile/${encodeURIComponent(profileActor)}`}
-                aria-label="your profile"
-                className="block"
-              >
-                <Avatar
-                  author={{ did: session.did, avatar: profileAvatar }}
-                  size={24}
-                />
-              </Link>
-              <form action="/logout" method="post">
-                <button type="submit" className="text-muted hover:text-accent">
-                  sign out
-                </button>
-              </form>
+              <UserMenu
+                did={session.did}
+                avatar={profileAvatar}
+                profileActor={profileActor}
+              />
             </>
           ) : (
             <Link
