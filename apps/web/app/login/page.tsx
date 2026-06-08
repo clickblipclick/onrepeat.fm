@@ -16,7 +16,8 @@ export default async function LoginPage({
   if (session.did) redirect('/')
   const { expired, error } = await searchParams
   const errorMsg = error
-    ? (LOGIN_ERRORS[error] ?? 'Something went wrong signing in — please try again.')
+    ? (LOGIN_ERRORS[error] ??
+      'Something went wrong signing in — please try again.')
     : null
 
   return (
