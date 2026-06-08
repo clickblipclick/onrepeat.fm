@@ -1,4 +1,9 @@
-import { Firehose, MemoryRunner, type Event } from '@atproto/sync'
+import {
+  Firehose,
+  MemoryRunner,
+  FirehoseValidationError,
+  type Event,
+} from '@atproto/sync'
 import { IdResolver } from '@atproto/identity'
 import type { DB } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
@@ -69,7 +74,22 @@ export async function createIngester(
         label: `${ingestEvt.action} ${ingestEvt.uri}`,
       })
     },
-    onError: (err: Error) => console.error('[ingester] firehose error', err),
+    onError: (err: Error) => {
+      // A malformed upstream event (e.g. a PDS emitting a CID where a rev/TID is
+      // expected) fails lexicon validation. @atproto/sync skips it and the stream keeps
+      // running, so log a concise warning instead of dumping the full multi-KB event
+      // (which embeds the raw `blocks` bytes). Frequent ones would hint at protocol skew.
+      if (err instanceof FirehoseValidationError) {
+        const v = err.value as { repo?: string; seq?: number } | undefined
+        const reason =
+          err.cause instanceof Error ? err.cause.message : err.cause
+        console.warn(
+          `[ingester] skipped invalid firehose event (repo=${v?.repo ?? '?'} seq=${v?.seq ?? '?'}): ${reason}`,
+        )
+        return
+      }
+      console.error('[ingester] firehose error', err)
+    },
   })
 
   return {
