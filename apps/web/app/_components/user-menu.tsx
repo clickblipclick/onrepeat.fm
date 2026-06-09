@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, LogOut } from 'lucide-react'
+import { User, Settings, LogOut } from 'lucide-react'
 import { Avatar } from './avatar'
 import { Menu } from './ui/menu'
 
@@ -30,6 +30,11 @@ export function UserMenu({
             icon: <User size={16} aria-hidden />,
             onSelect: () =>
               router.push(`/profile/${encodeURIComponent(profileActor)}`),
+          },
+          {
+            label: 'Settings',
+            icon: <Settings size={16} aria-hidden />,
+            onSelect: () => router.push('/settings'),
           },
           {
             label: 'Sign out',

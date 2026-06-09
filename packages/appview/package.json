@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@atproto/api": "^0.20.7",
+    "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
     "kysely": "^0.27.0"
   },

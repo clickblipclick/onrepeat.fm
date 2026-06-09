@@ -8,6 +8,8 @@ export interface ActorsTable {
   display_name: string | null
   avatar: string | null
   last_seen: Timestamp | null
+  /** Chosen profile color-theme slug; null → deterministic default (see @onrepeat/core). */
+  color_theme: string | null
 }
 
 export interface ProviderRefs {

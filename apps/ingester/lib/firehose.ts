@@ -6,7 +6,7 @@ import {
 } from '@atproto/sync'
 import { IdResolver, MemoryCache } from '@atproto/identity'
 import { type DB, recordFailedEvent } from '@onrepeat/db'
-import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 import { toIngestEvent } from './events'
 import { handleIngestEvent } from './indexer'
 import { withRetry } from './retry'
@@ -78,7 +78,7 @@ export async function createIngester(
     // are set. MemoryRunner already seeds its cursor from startCursor, so runner alone
     // resumes correctly (and advances as events complete).
     runner,
-    filterCollections: [JAM_NSID, LIKE_NSID],
+    filterCollections: [JAM_NSID, LIKE_NSID, PROFILE_NSID],
     excludeIdentity: true,
     excludeAccount: true,
     excludeSync: true,

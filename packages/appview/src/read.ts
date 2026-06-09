@@ -48,6 +48,23 @@ function clampLimit(limit?: number): number {
   return Math.min(limit, MAX_LIMIT)
 }
 
+/** Stored color-theme slug per DID (null when unset). Batched; empty-safe. Unknown
+ *  DIDs are simply absent from the map — callers resolve absent/null to a default. */
+export async function loadActorThemes(
+  db: DB,
+  dids: string[],
+): Promise<Map<string, string | null>> {
+  const m = new Map<string, string | null>()
+  if (dids.length === 0) return m
+  const rows = await db
+    .selectFrom('actors')
+    .select(['did', 'color_theme'])
+    .where('did', 'in', dids)
+    .execute()
+  for (const r of rows) m.set(r.did, r.color_theme)
+  return m
+}
+
 /** Like count + likedByYou for a set of jam uris (batched; empty-safe). */
 async function loadLikeInfo(
   db: DB,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Event } from '@atproto/sync'
-import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 import { toIngestEvent } from './events'
 
 // Structural fake — toIngestEvent only reads these fields and calls .toString()
@@ -60,6 +60,20 @@ describe('toIngestEvent', () => {
     expect(evt?.cid).toBeNull()
     expect(evt?.record).toBeUndefined()
     expect(evt?.collection).toBe(LIKE_NSID)
+  })
+
+  it('normalizes a profile create (so themes index off the firehose)', () => {
+    const record = { $type: PROFILE_NSID, colorTheme: 'plum' }
+    const evt = toIngestEvent(
+      fakeCommit({
+        event: 'create',
+        collection: PROFILE_NSID,
+        rkey: 'self',
+        record,
+      }),
+    )
+    expect(evt?.collection).toBe(PROFILE_NSID)
+    expect(evt?.record).toEqual(record)
   })
 
   it('ignores collections we do not index', () => {

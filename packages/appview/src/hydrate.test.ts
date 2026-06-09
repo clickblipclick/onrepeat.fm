@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { defaultThemeForDid } from '@onrepeat/core'
 import { hydrateAuthors } from './hydrate'
 import type { JamView } from './read'
 import type { ActorProfile } from './bsky'
@@ -50,9 +51,16 @@ describe('hydrateAuthors', () => {
       handle: 'a.test',
       displayName: 'Ay',
       avatar: 'av.jpg',
+      theme: defaultThemeForDid('did:plc:a'), // no themes map → deterministic default
     })
-    expect(out[1]!.author).toEqual({ did: 'did:plc:b' }) // negative-cached → DID only
-    expect(out[2]!.author).toEqual({ did: 'did:plc:c' }) // absent from map → DID only
+    expect(out[1]!.author).toEqual({
+      did: 'did:plc:b',
+      theme: defaultThemeForDid('did:plc:b'),
+    }) // negative-cached → DID only
+    expect(out[2]!.author).toEqual({
+      did: 'did:plc:c',
+      theme: defaultThemeForDid('did:plc:c'),
+    }) // absent from map → DID only
   })
 
   it('attaches viaAuthor for a re-jam; null when not a re-jam', () => {
@@ -71,8 +79,30 @@ describe('hydrateAuthors', () => {
       did: 'did:plc:o',
       handle: 'orig.test',
       displayName: 'Orig',
+      theme: defaultThemeForDid('did:plc:o'),
     })
     expect(out[1]!.viaAuthor).toBeNull()
+  })
+
+  it('uses a stored theme when present and falls back to the DID default otherwise', () => {
+    const profiles = new Map<string, ActorProfile | null>()
+    const themes = new Map<string, string | null>([
+      ['did:plc:a', 'plum'], // explicit choice
+      ['did:plc:b', null], // seen but unset
+      ['did:plc:c', 'bogus'], // junk/unknown slug
+    ])
+    const out = hydrateAuthors(
+      [
+        jam('at://x/1', 'did:plc:a'),
+        jam('at://x/2', 'did:plc:b'),
+        jam('at://x/3', 'did:plc:c'),
+      ],
+      profiles,
+      themes,
+    )
+    expect(out[0]!.author.theme).toBe('plum')
+    expect(out[1]!.author.theme).toBe(defaultThemeForDid('did:plc:b'))
+    expect(out[2]!.author.theme).toBe(defaultThemeForDid('did:plc:c'))
   })
 
   it('returns an empty array for empty input', () => {

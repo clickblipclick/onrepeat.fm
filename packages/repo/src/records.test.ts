@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { validateRecord, JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
-import { buildJamRecord, buildLikeRecord } from './records'
+import {
+  validateRecord,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
+import { buildJamRecord, buildLikeRecord, buildProfileRecord } from './records'
 
 const baseJam = {
   sourceUrl: 'https://open.spotify.com/track/abc',
@@ -53,5 +58,27 @@ describe('buildLikeRecord', () => {
     })
     expect(r.$type).toBe(LIKE_NSID)
     expect(validateRecord(LIKE_NSID, r).success).toBe(true)
+  })
+})
+
+describe('buildProfileRecord', () => {
+  it('builds a valid profile with $type, colorTheme, and a createdAt default', () => {
+    const r = buildProfileRecord({ colorTheme: 'plum' })
+    expect(r.$type).toBe(PROFILE_NSID)
+    expect(r.colorTheme).toBe('plum')
+    expect(typeof r.createdAt).toBe('string')
+    expect(validateRecord(PROFILE_NSID, r).success).toBe(true)
+  })
+
+  it('omits colorTheme when not provided (still valid)', () => {
+    const r = buildProfileRecord({})
+    expect('colorTheme' in r).toBe(false)
+    expect(validateRecord(PROFILE_NSID, r).success).toBe(true)
+  })
+
+  it('throws when the built record would be invalid (colorTheme too long)', () => {
+    expect(() => buildProfileRecord({ colorTheme: 'x'.repeat(65) })).toThrow(
+      /invalid profile/i,
+    )
   })
 })

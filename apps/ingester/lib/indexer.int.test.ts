@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
-import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 import { handleIngestEvent } from './indexer'
 import type { IngestEvent } from './events'
 
@@ -43,6 +43,23 @@ function likeEvent(over: Partial<IngestEvent> = {}): IngestEvent {
         uri: 'at://did:plc:other/fm.onrepeat.jam/1',
         cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
       },
+      createdAt: '2026-05-30T00:00:00.000Z',
+    },
+    seq: 1,
+    ...over,
+  }
+}
+
+function profileEvent(over: Partial<IngestEvent> = {}): IngestEvent {
+  return {
+    action: 'create',
+    uri: 'at://did:plc:author/fm.onrepeat.profile/self',
+    cid: 'bafyprofile1',
+    did: 'did:plc:author',
+    collection: PROFILE_NSID,
+    record: {
+      $type: PROFILE_NSID,
+      colorTheme: 'plum',
       createdAt: '2026-05-30T00:00:00.000Z',
     },
     seq: 1,
@@ -184,6 +201,46 @@ describe('handleIngestEvent', () => {
     ) // update
     await handleIngestEvent(db, likeEvent(), hooks) // like → must not fire
     expect(seen).toEqual(['create', 'update'])
+  })
+
+  it('indexes a profile theme onto the actor (create + update), clears on delete', async () => {
+    await handleIngestEvent(db, profileEvent())
+    let actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.color_theme).toBe('plum')
+
+    await handleIngestEvent(
+      db,
+      profileEvent({
+        action: 'update',
+        cid: 'bafyprofile2',
+        record: {
+          $type: PROFILE_NSID,
+          colorTheme: 'teal',
+          createdAt: '2026-05-30T00:00:00.000Z',
+        },
+      }),
+    )
+    actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.color_theme).toBe('teal')
+
+    await handleIngestEvent(
+      db,
+      profileEvent({ action: 'delete', cid: null, record: undefined }),
+    )
+    actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.color_theme).toBeNull()
   })
 
   it('preserves resolver-owned track_id across an update', async () => {

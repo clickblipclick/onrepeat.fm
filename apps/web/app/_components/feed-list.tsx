@@ -25,7 +25,7 @@ export function FeedList({
 }) {
   if (jams.length === 0) return <EmptyState>{empty}</EmptyState>
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       {jams.map((jam, i) => (
         <JamCard
           key={jam.uri}

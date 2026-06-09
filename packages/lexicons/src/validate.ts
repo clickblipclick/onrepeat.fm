@@ -1,8 +1,13 @@
 import { Lexicons } from '@atproto/lexicon'
 import jamDoc from '../../../lexicons/fm/onrepeat/jam.json'
 import likeDoc from '../../../lexicons/fm/onrepeat/like.json'
+import profileDoc from '../../../lexicons/fm/onrepeat/profile.json'
 
-export const lexicons = new Lexicons([jamDoc as any, likeDoc as any])
+export const lexicons = new Lexicons([
+  jamDoc as any,
+  likeDoc as any,
+  profileDoc as any,
+])
 
 export type ValidationOutcome =
   | { success: true }

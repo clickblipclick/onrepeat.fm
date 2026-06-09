@@ -84,6 +84,23 @@ export async function removeJam(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('jams').where('uri', '=', uri).execute()
 }
 
+/**
+ * Set (or clear, with null) an actor's denormalized color theme. Upserts by DID so it
+ * works whether or not the actor row already exists, and touches ONLY color_theme —
+ * last_seen and the bsky-mirrored profile fields are left untouched.
+ */
+export async function setActorTheme(
+  db: DB,
+  did: string,
+  theme: string | null,
+): Promise<void> {
+  await db
+    .insertInto('actors')
+    .values({ did, color_theme: theme })
+    .onConflict((oc) => oc.column('did').doUpdateSet({ color_theme: theme }))
+    .execute()
+}
+
 /** A firehose event that couldn't be indexed, for the dead-letter store. */
 export interface FailedEventInput {
   seq: number

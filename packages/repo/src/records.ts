@@ -2,8 +2,10 @@ import {
   validateRecord,
   JAM_NSID,
   LIKE_NSID,
+  PROFILE_NSID,
   type JamRecord,
   type LikeRecord,
+  type ProfileRecord,
   type StrongRef,
 } from '@onrepeat/lexicons'
 
@@ -50,5 +52,20 @@ export function buildLikeRecord(
   }
   const result = validateRecord(LIKE_NSID, record)
   if (!result.success) throw new Error(`invalid like: ${result.error}`)
+  return record
+}
+
+export function buildProfileRecord(input: {
+  colorTheme?: string
+  createdAt?: string
+}): ProfileRecord {
+  const record: ProfileRecord = {
+    $type: PROFILE_NSID,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  }
+  if (input.colorTheme) record.colorTheme = input.colorTheme
+
+  const result = validateRecord(PROFILE_NSID, record)
+  if (!result.success) throw new Error(`invalid profile: ${result.error}`)
   return record
 }

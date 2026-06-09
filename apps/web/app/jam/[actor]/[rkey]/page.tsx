@@ -52,7 +52,10 @@ export default async function JamPage({
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
 
   return (
-    <article className="rounded-md border border-border bg-surface p-4">
+    <article
+      data-theme={jam.author.theme}
+      className="dot-grid rounded-md border-2 border-ink bg-surface p-4 shadow-[4px_4px_0_0_var(--accent)]"
+    >
       <div className="flex items-center gap-2 text-sm">
         <Link
           href={profileHref}
@@ -85,7 +88,7 @@ export default async function JamPage({
         )}
       </div>
 
-      <div className="mt-3 overflow-hidden rounded">
+      <div className="mt-3 overflow-hidden rounded border border-ink">
         <Player
           sourceProvider={jam.sourceProvider}
           providerRefs={jam.providerRefs}

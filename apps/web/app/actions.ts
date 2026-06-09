@@ -9,9 +9,11 @@ import {
   unlikeJam,
   reJam,
   deleteJam,
+  putProfile,
+  RepoWriteError,
   type PostJamResult,
 } from '@onrepeat/repo'
-import { providerFromUrl } from '@onrepeat/core'
+import { providerFromUrl, isThemeName } from '@onrepeat/core'
 import {
   deriveTrack,
   fetchYoutubeCategory,
@@ -20,7 +22,7 @@ import {
 import { db } from '../lib/db'
 import { getBoss } from '../lib/jobs'
 import { didFromUri, rkeyFromUri } from '../lib/at-uri'
-import { indexJam, removeJam } from '@onrepeat/db'
+import { indexJam, removeJam, setActorTheme } from '@onrepeat/db'
 import { enqueueResolveForJam } from '@onrepeat/jobs'
 
 /**
@@ -215,6 +217,55 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
   }
+}
+
+export interface SaveThemeState {
+  ok: boolean
+  error?: string
+}
+
+/** Persist the user's chosen profile color theme: write the fm.onrepeat.profile record,
+ *  then write-through the denormalized index copy and refresh the themed views. */
+export async function saveThemeAction(
+  _prevState: SaveThemeState | null,
+  formData: FormData,
+): Promise<SaveThemeState> {
+  const theme = String(formData.get('theme') ?? '')
+  if (!isThemeName(theme)) return { ok: false, error: 'invalid-theme' }
+
+  const res = await getSessionAgent()
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
+  const agent = res.agent
+
+  try {
+    await putProfile(agent, { colorTheme: theme })
+  } catch (err) {
+    // Sessions created before the profile scope was added can't write it until the
+    // user re-consents — surface that as a re-login, like the post form does.
+    if (err instanceof RepoWriteError && err.kind === 'auth')
+      return { ok: false, error: 'session-expired' }
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+
+  // Write-through the denormalized copy for read-your-writes (the firehose re-applies
+  // it idempotently if this fails).
+  try {
+    await setActorTheme(db, agent.assertDid, theme)
+  } catch (e) {
+    console.error(
+      '[web] saveTheme: write-through failed (firehose will backfill)',
+      e,
+    )
+  }
+  // A theme change is app-wide: it re-colors the viewer's chrome on every page AND their
+  // post cards wherever they appear (feeds, profiles, jam pages, the settings preview).
+  // revalidatePath('/', 'layout') invalidates all of it in one call.
+  revalidatePath('/', 'layout')
+  return { ok: true }
 }
 
 export async function deleteJamAction(uri: string): Promise<ActionResult> {

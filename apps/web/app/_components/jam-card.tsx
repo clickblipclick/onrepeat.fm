@@ -38,8 +38,14 @@ export function JamCard({
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
   const isOwner = !!viewerDid && viewerDid === jam.authorDid
   return (
-    <article className="overflow-hidden rounded-md border border-border bg-surface">
-      <div className="surface-grid flex items-center gap-2 border-b border-border px-3 py-2 text-sm">
+    // Scope the card to its author's theme — the CSS-variable cascade (globals.css)
+    // re-colors everything inside. The thick ink border + offset accent shadow + framed
+    // artwork give the card weight and make the author's theme pop (riso-print feel).
+    <article
+      data-theme={jam.author.theme}
+      className="dot-grid overflow-hidden rounded-md border-2 border-ink bg-surface shadow-[4px_4px_0_0_var(--accent)] transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]"
+    >
+      <div className="surface-grid flex items-center gap-2 border-b-2 border-ink px-3 py-2 text-sm">
         <Link
           href={profileHref}
           className="flex items-center gap-2 hover:text-accent"
@@ -62,19 +68,25 @@ export function JamCard({
         {isOwner && <JamMenu className="ml-auto" jamUri={jam.uri} />}
       </div>
 
-      {player ?? (
-        <Player
-          sourceProvider={jam.sourceProvider}
-          providerRefs={jam.providerRefs}
-          sourceUrl={jam.sourceUrl}
-          artworkUrl={jam.artworkUrl}
-          lazy
-          priority={priority}
-          preferredProvider={preferredProvider}
-        />
-      )}
+      {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
+          framed object rather than a flush block. */}
+      <div className="p-3">
+        <div className="overflow-hidden rounded border border-ink">
+          {player ?? (
+            <Player
+              sourceProvider={jam.sourceProvider}
+              providerRefs={jam.providerRefs}
+              sourceUrl={jam.sourceUrl}
+              artworkUrl={jam.artworkUrl}
+              lazy
+              priority={priority}
+              preferredProvider={preferredProvider}
+            />
+          )}
+        </div>
+      </div>
 
-      <div className="px-3 py-3">
+      <div className="px-3 pb-3">
         <Link href={jamHref} className="hover:text-accent">
           <div className="font-bold">{jam.title}</div>
           <div className="text-sm text-muted">{jam.artist}</div>

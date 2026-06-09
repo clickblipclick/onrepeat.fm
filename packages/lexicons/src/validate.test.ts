@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateRecord } from './validate'
-import { JAM_NSID, LIKE_NSID } from './types'
+import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from './types'
 
 const validJam = {
   $type: JAM_NSID,
@@ -52,5 +52,24 @@ describe('validateRecord (like)', () => {
   it('rejects a like with no subject', () => {
     const like = { $type: LIKE_NSID, createdAt: '2026-05-29T12:00:00.000Z' }
     expect(validateRecord(LIKE_NSID, like).success).toBe(false)
+  })
+})
+
+describe('validateRecord (profile)', () => {
+  const base = { $type: PROFILE_NSID, createdAt: '2026-05-29T12:00:00.000Z' }
+
+  it('accepts a profile with a colorTheme', () => {
+    expect(
+      validateRecord(PROFILE_NSID, { ...base, colorTheme: 'plum' }).success,
+    ).toBe(true)
+  })
+
+  it('accepts a profile with no colorTheme (optional)', () => {
+    expect(validateRecord(PROFILE_NSID, base).success).toBe(true)
+  })
+
+  it('rejects a colorTheme longer than 64 chars', () => {
+    const r = { ...base, colorTheme: 'x'.repeat(65) }
+    expect(validateRecord(PROFILE_NSID, r).success).toBe(false)
   })
 })

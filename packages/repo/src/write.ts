@@ -2,10 +2,16 @@ import type { Agent } from '@atproto/api'
 import {
   JAM_NSID,
   LIKE_NSID,
+  PROFILE_NSID,
   type StrongRef,
   type JamRecord,
 } from '@onrepeat/lexicons'
-import { buildJamRecord, buildLikeRecord, type JamInput } from './records'
+import {
+  buildJamRecord,
+  buildLikeRecord,
+  buildProfileRecord,
+  type JamInput,
+} from './records'
 
 /** Why a repo write failed, so callers can react (re-auth vs back off vs surface). */
 export type WriteErrorKind =
@@ -102,6 +108,34 @@ export async function likeJam(
     agent.com.atproto.repo.createRecord({
       repo: agent.assertDid,
       collection: LIKE_NSID,
+      record: record as unknown as Record<string, unknown>,
+    }),
+  )
+  return {
+    uri: res.data.uri,
+    cid: res.data.cid,
+    validationStatus: res.data.validationStatus as
+      | 'valid'
+      | 'unknown'
+      | undefined,
+  }
+}
+
+/**
+ * Upsert the user's onrepeat profile (single `self` record) with their chosen theme.
+ * Uses putRecord (not createRecord) so a theme change overwrites in place; last-write-wins
+ * across devices (no swap CID), which is fine for a personal preference.
+ */
+export async function putProfile(
+  agent: Agent,
+  input: { colorTheme?: string },
+): Promise<WriteResult> {
+  const record = buildProfileRecord(input)
+  const res = await tryWrite(() =>
+    agent.com.atproto.repo.putRecord({
+      repo: agent.assertDid,
+      collection: PROFILE_NSID,
+      rkey: 'self',
       record: record as unknown as Record<string, unknown>,
     }),
   )

@@ -16,6 +16,13 @@ export interface JamRecord {
   createdAt: string
 }
 
+export interface ProfileRecord {
+  $type?: 'fm.onrepeat.profile'
+  /** Slug of the chosen color theme; unknown values fall back to a default. */
+  colorTheme?: string
+  createdAt: string
+}
+
 export interface StrongRef {
   uri: string
   cid: string
@@ -29,3 +36,4 @@ export interface LikeRecord {
 
 export const JAM_NSID = 'fm.onrepeat.jam'
 export const LIKE_NSID = 'fm.onrepeat.like'
+export const PROFILE_NSID = 'fm.onrepeat.profile'

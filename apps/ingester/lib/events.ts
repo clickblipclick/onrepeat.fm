@@ -1,7 +1,10 @@
 import type { Event } from '@atproto/sync'
-import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 
-export type IngestCollection = typeof JAM_NSID | typeof LIKE_NSID
+export type IngestCollection =
+  | typeof JAM_NSID
+  | typeof LIKE_NSID
+  | typeof PROFILE_NSID
 
 export interface IngestEvent {
   action: 'create' | 'update' | 'delete'
@@ -19,7 +22,7 @@ export interface IngestEvent {
 }
 
 function isIngestCollection(c: string): c is IngestCollection {
-  return c === JAM_NSID || c === LIKE_NSID
+  return c === JAM_NSID || c === LIKE_NSID || c === PROFILE_NSID
 }
 
 /** Normalize an @atproto/sync Event into an IngestEvent, or null if we ignore it. */

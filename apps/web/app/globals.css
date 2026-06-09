@@ -16,13 +16,32 @@
     monospace;
 }
 
-/* Default theme: Clay */
+/* Themes. The neutral `mono` palette is the default (:root) — it dresses the app chrome
+   and most pages. The six color themes (slugs mirror @onrepeat/core's THEMES) are applied
+   only where a person's identity shows: their profile page and each of their jam cards,
+   via `data-theme` on that subtree. Light is the base; dark counterparts live in the
+   prefers-color-scheme block below.
+
+   Light/dark currently follows the system setting (color-scheme + the media query).
+   To add a manual toggle later: set `[data-mode='light'|'dark']` on <html> from a
+   no-flash inline script, gate the media query with `:root:not([data-mode])`, and
+   mirror the dark blocks under `[data-mode='dark'] [data-theme='<slug>']`. */
+
+/* Default: Mono — a near-black/near-white neutral for the app chrome (no color identity). */
 :root,
-[data-theme='clay'] {
-  /* All current themes are light. color-scheme keeps native UI (scrollbars, form
-     controls, <dialog> chrome) in sync; it inherits from :root, so a future dark
-     theme just sets `color-scheme: dark` in its own block. */
+[data-theme='mono'] {
+  /* color-scheme keeps native UI (scrollbars, form controls, <dialog> chrome) in
+     sync with the palette; it inherits from :root. */
   color-scheme: light;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --ink: #18181a;
+  --muted: #6b6b70;
+  --border: #e6e6e5;
+  --accent: #1a1a1c;
+  --on-accent: #ffffff;
+}
+[data-theme='clay'] {
   --bg: #f7f2ec;
   --surface: #fcf8f2;
   --ink: #1a140f;
@@ -49,12 +68,120 @@
   --accent: #2b5bd7;
   --on-accent: #ffffff;
 }
+[data-theme='marigold'] {
+  --bg: #f9f4e8;
+  --surface: #fdfaf0;
+  --ink: #1c1710;
+  --muted: #6f6450;
+  --border: #e8dfc9;
+  --accent: #9c670a;
+  --on-accent: #ffffff;
+}
+[data-theme='plum'] {
+  --bg: #f6f3f7;
+  --surface: #fcf9fc;
+  --ink: #18141a;
+  --muted: #695f6e;
+  --border: #e4dde6;
+  --accent: #7c4aa6;
+  --on-accent: #ffffff;
+}
+[data-theme='teal'] {
+  --bg: #eef4f3;
+  --surface: #f8fbfa;
+  --ink: #121a19;
+  --muted: #5c6a68;
+  --border: #d6e2df;
+  --accent: #0f766e;
+  --on-accent: #ffffff;
+}
+
+/* Dark counterparts. Strategy: a bright, legible accent on a deep tinted ground,
+   paired with a dark --on-accent so accent-as-text (text-accent) and accent-as-button
+   (bg-accent/text-on-accent) both keep contrast. */
+@media (prefers-color-scheme: dark) {
+  :root,
+  [data-theme='mono'] {
+    color-scheme: dark;
+    --bg: #0d0d0f;
+    --surface: #18181b;
+    --ink: #f3f3f4;
+    --muted: #9b9ba1;
+    --border: #2a2a2e;
+    --accent: #f3f3f4;
+    --on-accent: #161617;
+  }
+  [data-theme='clay'] {
+    color-scheme: dark;
+    --bg: #18120d;
+    --surface: #211a13;
+    --ink: #f1e7da;
+    --muted: #ab9880;
+    --border: #352a1e;
+    --accent: #e7895a;
+    --on-accent: #1c1209;
+  }
+  [data-theme='court-green'] {
+    color-scheme: dark;
+    --bg: #0f140f;
+    --surface: #18201a;
+    --ink: #e7efe4;
+    --muted: #93a394;
+    --border: #283a2c;
+    --accent: #4caa72;
+    --on-accent: #0b160e;
+  }
+  [data-theme='ink-cobalt'] {
+    color-scheme: dark;
+    --bg: #0f1216;
+    --surface: #181c22;
+    --ink: #e6eaf1;
+    --muted: #8e97a6;
+    --border: #2a313c;
+    --accent: #6f9bff;
+    --on-accent: #0c1018;
+  }
+  [data-theme='marigold'] {
+    color-scheme: dark;
+    --bg: #16130b;
+    --surface: #1f1a10;
+    --ink: #f1e9d6;
+    --muted: #a99a7d;
+    --border: #342d1c;
+    --accent: #e2ad3a;
+    --on-accent: #1a1408;
+  }
+  [data-theme='plum'] {
+    color-scheme: dark;
+    --bg: #16121a;
+    --surface: #1f1a24;
+    --ink: #efe7f2;
+    --muted: #a294ab;
+    --border: #332a3b;
+    --accent: #b582e6;
+    --on-accent: #170f1f;
+  }
+  [data-theme='teal'] {
+    color-scheme: dark;
+    --bg: #0d1413;
+    --surface: #15201e;
+    --ink: #e2efec;
+    --muted: #8ba39e;
+    --border: #243a36;
+    --accent: #2bb3a3;
+    --on-accent: #07201d;
+  }
+}
 
 body {
   background-color: var(--bg);
   color: var(--ink);
   font-family: var(--font-mono);
-  /* faint dot pattern on the page (non-text surface) */
+}
+
+/* Faint dot texture for card surfaces — themed via var(--ink), so each card's dots
+   match its own theme. (Page/profile backgrounds are left flat.) */
+.dot-grid {
   background-image: radial-gradient(
     color-mix(in srgb, var(--ink) 7%, transparent) 1px,
     transparent 1px

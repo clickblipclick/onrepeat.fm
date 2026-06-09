@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getActorJams } from '@onrepeat/appview'
+import { getActorJams, loadActorThemes } from '@onrepeat/appview'
+import { resolveTheme } from '@onrepeat/core'
 import { db } from '../../../lib/db'
 import { hydrate, bsky } from '../../../lib/appview'
 import { getSession } from '../../../lib/session'
@@ -30,8 +31,15 @@ export default async function ProfilePage({
   const current = jams[0] && isCurrentJam(jams[0].createdAt) ? jams[0] : null
   const archive = current ? jams.slice(1) : jams
 
+  // The profile page wears its owner's color theme (the rest of the app chrome is neutral).
+  const themes = await loadActorThemes(db, [profile.did])
+  const ownerTheme = resolveTheme(themes.get(profile.did), profile.did)
+
   return (
-    <>
+    <div data-theme={ownerTheme}>
+      {/* Full-bleed backdrop so the whole page wears the owner's theme (the app chrome is
+          otherwise neutral). Fixed + -z-10 sits behind the content and the neutral nav. */}
+      <div className="fixed inset-0 -z-10 bg-bg" aria-hidden />
       <div className="flex items-center gap-3">
         <Avatar author={profile} size={52} />
         <div>
@@ -68,6 +76,6 @@ export default async function ProfilePage({
           />
         </>
       )}
-    </>
+    </div>
   )
 }

@@ -1,10 +1,12 @@
 import type { DB } from '@onrepeat/db'
-import { indexJam, likeRow, removeJam } from '@onrepeat/db'
+import { indexJam, likeRow, removeJam, setActorTheme } from '@onrepeat/db'
 import {
   validateRecord,
   JAM_NSID,
+  PROFILE_NSID,
   type JamRecord,
   type LikeRecord,
+  type ProfileRecord,
 } from '@onrepeat/lexicons'
 import type { IngestEvent } from './events'
 import { defaultHooks, type IngesterHooks } from './hooks'
@@ -30,6 +32,9 @@ export async function handleIngestEvent(
   if (evt.action === 'delete') {
     if (evt.collection === JAM_NSID) {
       await removeJam(db, evt.uri)
+    } else if (evt.collection === PROFILE_NSID) {
+      // Profile gone → fall back to the deterministic default on read.
+      await setActorTheme(db, evt.did, null)
     } else {
       await db.deleteFrom('likes').where('uri', '=', evt.uri).execute()
     }
@@ -59,6 +64,9 @@ export async function handleIngestEvent(
       record: evt.record as JamRecord,
     })
     await hooks.onJamIndexed(evt)
+  } else if (evt.collection === PROFILE_NSID) {
+    const record = evt.record as ProfileRecord
+    await setActorTheme(db, evt.did, record.colorTheme ?? null)
   } else {
     const row = likeRow(evt.uri, evt.did, evt.record as LikeRecord)
     await db

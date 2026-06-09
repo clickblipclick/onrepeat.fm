@@ -18,8 +18,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // No data-theme on the chrome: it uses the neutral `mono` default (globals.css :root).
+  // Color themes apply only on profile pages and individual jam cards.
   return (
-    <html lang="en" data-theme="clay" className={mono.variable}>
+    <html lang="en" className={mono.variable}>
       <body className="min-h-screen">
         <UiProviders>
           <SiteNav />
