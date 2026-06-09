@@ -8,10 +8,7 @@ import { readPreferredProvider } from '../../../../lib/playback-preference.serve
 import { Player } from '../../../_components/player'
 import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
-import { isCurrentJam } from '../../../../lib/format'
-import { LikeButton } from '../../../_components/like-button'
-import { ReJamButton } from '../../../_components/rejam-button'
-import { JamMenu } from '../../../_components/jam-menu'
+import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
 import { cardPattern } from '../../../../lib/card-pattern'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
@@ -53,118 +50,76 @@ export default async function JamPage({
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
 
   return (
+    // Mirrors the feed/profile JamCard chrome (shared via jam-parts) for visual
+    // consistency, minus the hover lift — the whole card isn't a link here, you're
+    // already on the post — and plus the detail-only "liked by" / "re-jams" sections.
     <article
       data-theme={jam.author.theme}
-      className={`${cardPattern(jam.authorDid)} rounded-md border-2 border-accent bg-surface p-4 shadow-[4px_4px_0_0_var(--accent)]`}
+      className={`${cardPattern(jam.authorDid)} overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)]`}
     >
-      <div className="flex items-center gap-2 text-sm">
-        <Link
-          href={profileHref}
-          className="flex items-center gap-2 hover:text-accent"
-        >
-          <Avatar author={jam.author} />
-          <span className="font-bold">{authorName(jam.author)}</span>
-        </Link>
-        <RelativeTime iso={jam.createdAt} />
-        {isCurrentJam(jam.createdAt) && (
-          <span className="text-muted">· current jam</span>
-        )}
-        {jam.via && jam.viaAuthor && (
-          <span className="truncate text-muted">
-            · re-jam from{' '}
-            <Link
-              href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
-              className="hover:text-accent"
-            >
-              {authorName(jam.viaAuthor)}
-            </Link>
-          </span>
-        )}
-        {session.did === jam.authorDid && (
-          <JamMenu
-            className="ml-auto text-muted hover:bg-bg hover:text-accent"
-            jamUri={jam.uri}
-            redirectTo={profileHref}
+      <JamHeader
+        jam={jam}
+        viewerDid={session.did}
+        showCurrentJam
+        redirectTo={profileHref}
+      />
+
+      <div className="p-4">
+        <div className="overflow-hidden rounded">
+          <Player
+            sourceProvider={jam.sourceProvider}
+            providerRefs={jam.providerRefs}
+            sourceUrl={jam.sourceUrl}
+            artworkUrl={jam.artworkUrl}
+            priority // the jam detail cover is the page hero/LCP image
+            preferredProvider={preferredProvider}
           />
+        </div>
+      </div>
+
+      <div className="px-4 pb-4">
+        <JamBody jam={jam} />
+        <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
+          <JamActions jam={jam} loggedIn={!!session.did} />
+        </div>
+
+        {detail.likerDids.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs text-muted uppercase">Liked by</div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {detail.likerDids.slice(0, 12).map((d) => {
+                const p = likerProfiles.get(d)
+                return <Avatar key={d} author={p ?? { did: d }} size={22} />
+              })}
+              {detail.likerDids.length > 12 && (
+                <span className="self-center text-xs text-muted">
+                  +{detail.likerDids.length - 12}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {reJams.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs text-muted uppercase">
+              Re-jams ({reJams.length})
+            </div>
+            <div className="mt-1 flex flex-col gap-1.5">
+              {reJams.map((rj) => (
+                <Link
+                  key={rj.uri}
+                  href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
+                  className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
+                >
+                  <b>{authorName(rj.author)}</b> re-jammed ·{' '}
+                  <RelativeTime iso={rj.createdAt} />
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-
-      <div className="mt-3 overflow-hidden rounded">
-        <Player
-          sourceProvider={jam.sourceProvider}
-          providerRefs={jam.providerRefs}
-          sourceUrl={jam.sourceUrl}
-          artworkUrl={jam.artworkUrl}
-          priority // the jam detail cover is the page hero/LCP image
-          preferredProvider={preferredProvider}
-        />
-      </div>
-
-      <div className="mt-3">
-        <div className="font-bold">{jam.title}</div>
-        <div className="text-sm text-muted">{jam.artist}</div>
-        {jam.caption && <p className="mt-2 text-sm">{jam.caption}</p>}
-      </div>
-
-      <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm text-muted">
-        <LikeButton
-          jamUri={jam.uri}
-          jamCid={jam.cid}
-          initialCount={jam.likeCount}
-          initialLiked={jam.likedByYou}
-          loggedIn={!!session.did}
-        />
-        <ReJamButton
-          loggedIn={!!session.did}
-          jam={{
-            uri: jam.uri,
-            did: jam.authorDid,
-            sourceUrl: jam.sourceUrl,
-            sourceProvider: jam.sourceProvider,
-            title: jam.title,
-            artist: jam.artist,
-            artworkUrl: jam.artworkUrl,
-            authorName: authorName(jam.author),
-          }}
-        />
-      </div>
-
-      {detail.likerDids.length > 0 && (
-        <div className="mt-4">
-          <div className="text-xs text-muted uppercase">Liked by</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {detail.likerDids.slice(0, 12).map((d) => {
-              const p = likerProfiles.get(d)
-              return <Avatar key={d} author={p ?? { did: d }} size={22} />
-            })}
-            {detail.likerDids.length > 12 && (
-              <span className="self-center text-xs text-muted">
-                +{detail.likerDids.length - 12}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {reJams.length > 0 && (
-        <div className="mt-4">
-          <div className="text-xs text-muted uppercase">
-            Re-jams ({reJams.length})
-          </div>
-          <div className="mt-1 flex flex-col gap-1.5">
-            {reJams.map((rj) => (
-              <Link
-                key={rj.uri}
-                href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
-                className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
-              >
-                <b>{authorName(rj.author)}</b> re-jammed ·{' '}
-                <RelativeTime iso={rj.createdAt} />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </article>
   )
 }
