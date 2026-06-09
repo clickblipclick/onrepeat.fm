@@ -1,6 +1,6 @@
 # onrepeat.fm
 
-One song. Seven days. A recreation of _This Is My Jam_, built natively on the [AT Protocol](https://atproto.com): post the one song you're into, it expires after a week, and you follow people to see their current jam. Jam/like records live in each user's own PDS; we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
+One song. Seven days. Post the single track you're into right now — it expires after a week — and follow people to see what they're currently playing. Built natively on the [AT Protocol](https://atproto.com): jam/like records live in each user's own PDS, and we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
 
 ## Stack
 
@@ -23,6 +23,15 @@ Then open **http://127.0.0.1:3000** and sign in with your test Bluesky handle.
 
 > Use the loopback IP `127.0.0.1`, not `localhost` — atproto's loopback OAuth requires it.
 
+**Empty feeds?** Seed the local index with sample jams from real public Bluesky accounts so the feeds, profiles, and themes have something to show:
+
+```bash
+pnpm seed         # add sample data
+pnpm seed:clean   # revert it
+```
+
+This writes local index rows only — nothing is pushed to anyone's PDS, and your own data is left untouched.
+
 ## Commands
 
 | Command                       | What it does                                                  |
@@ -33,6 +42,7 @@ Then open **http://127.0.0.1:3000** and sign in with your test Bluesky handle.
 | `pnpm dev:services`           | Just the ingester + resolver                                  |
 | `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres                              |
 | `pnpm db:migrate`             | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
+| `pnpm seed` / `pnpm seed:clean` | Add / remove sample dev data (local index only)             |
 | `pnpm test`                   | Unit tests                                                    |
 | `pnpm test:int`               | Integration tests (needs Postgres on :5432)                   |
 | `pnpm typecheck`              | Workspace-wide `tsc --noEmit`                                 |

@@ -18,7 +18,9 @@
     "typecheck": "pnpm -r exec tsc --noEmit",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:migrate": "pnpm --filter @onrepeat/db run migrate"
+    "db:migrate": "pnpm --filter @onrepeat/db run migrate",
+    "seed": "pnpm --filter @onrepeat/db exec tsx ../../scripts/seed-dev.ts",
+    "seed:clean": "pnpm --filter @onrepeat/db exec tsx ../../scripts/seed-dev.ts --clean"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
