@@ -64,7 +64,7 @@ export function LikeButton({
       type="button"
       onClick={toggle}
       disabled={isPending}
-      className={`inline-flex items-center gap-1 ${optimistic.liked ? 'text-accent' : 'hover:text-accent'}`}
+      className={`inline-flex cursor-pointer items-center gap-1 ${optimistic.liked ? 'text-accent' : 'hover:text-accent'}`}
       aria-pressed={optimistic.liked}
       aria-label={optimistic.liked ? 'Unlike' : 'Like'}
     >

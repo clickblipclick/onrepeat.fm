@@ -179,14 +179,121 @@ body {
   font-family: var(--font-mono);
 }
 
-/* Faint dot texture for card surfaces — themed via var(--ink), so each card's dots
-   match its own theme. (Page/profile backgrounds are left flat.) */
-.dot-grid {
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--ink) 7%, transparent) 1px,
-    transparent 1px
+/* Card-surface textures (`.pat-*`). One is assigned per card (by author) as a subtle
+   signature. Every color is a low-percentage color-mix of the theme's own --ink / --accent
+   over --surface, so the texture is a whisper that (a) tracks the card's theme + light/dark
+   automatically and (b) keeps full contrast for the --ink body text. background-color is
+   pinned to --surface so the tiles never reveal anything behind the card. */
+.pat-rings {
+  --s: 34px;
+  --c1: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  --c2: color-mix(in srgb, var(--ink) 5%, var(--surface));
+  --_g:
+    #0000 24%, var(--c2) 26% 34%, var(--c1) 36% 44%, var(--c2) 46% 54%,
+    var(--c1) 56% 64%, var(--c2) 66% 74%, #0000 76%;
+  background:
+    radial-gradient(100% 100% at 100% 0, var(--_g)),
+    radial-gradient(100% 100% at 0 100%, var(--_g)),
+    radial-gradient(var(--c2) 14%, var(--c1) 16%) calc(var(--s) / 2)
+      calc(var(--s) / 2);
+  background-size: var(--s) var(--s);
+  background-color: var(--surface);
+}
+.pat-diagonal {
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--accent) 8%, transparent) 0 1px,
+    transparent 1px 13px
   );
-  background-size: 15px 15px;
+}
+.pat-scales {
+  --s: 50px;
+  --c1: var(--surface);
+  --c2: color-mix(in srgb, var(--ink) 6%, var(--surface));
+  --_g:
+    var(--c1) 0% 5%, var(--c2) 6% 15%, var(--c1) 16% 25%, var(--c2) 26% 35%,
+    var(--c1) 36% 45%, var(--c2) 46% 55%, var(--c1) 56% 65%, var(--c2) 66% 75%,
+    var(--c1) 76% 85%, var(--c2) 86% 95%, #0000 96%;
+  background:
+    radial-gradient(50% 50% at 100% 0, var(--_g)),
+    radial-gradient(50% 50% at 0 100%, var(--_g)),
+    radial-gradient(50% 50%, var(--_g)),
+    radial-gradient(50% 50%, var(--_g)) calc(var(--s) / 2) calc(var(--s) / 2);
+  background-size: var(--s) var(--s);
+  background-color: var(--surface);
+}
+.pat-iso {
+  --s: 34px;
+  --c1: color-mix(in srgb, var(--ink) 2%, var(--surface));
+  --c2: color-mix(in srgb, var(--ink) 1%, var(--surface));
+  --c3: var(--surface);
+  background:
+    repeating-conic-gradient(from 30deg, #0000 0 120deg, var(--c3) 0 50%)
+      calc(var(--s) / 2) calc(var(--s) * tan(30deg) / 2),
+    repeating-conic-gradient(
+      from 30deg,
+      var(--c1) 0 60deg,
+      var(--c2) 0 120deg,
+      var(--c3) 0 50%
+    );
+  background-size: var(--s) calc(var(--s) * tan(30deg));
+  background-color: var(--surface);
+}
+.pat-zigzag {
+  --s: 38px;
+  --c1: color-mix(in srgb, var(--accent) 3%, var(--surface));
+  --_g: var(--c1) 90deg, #0000 90.5deg;
+  background:
+    conic-gradient(from -45deg, var(--_g)),
+    conic-gradient(from 135deg, var(--_g)) calc(var(--s) / 2) 0;
+  background-size: var(--s) var(--s);
+  background-color: var(--surface);
+}
+.pat-arcs {
+  --s: 4px;
+  --c1: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  --c2: color-mix(in srgb, var(--ink) 2%, var(--surface));
+  --g: radial-gradient(
+    30% 50% at 30% 100%,
+    #0000 66%,
+    var(--c1) 67% 98%,
+    #0000
+  );
+  background:
+    var(--g),
+    var(--g) calc(5 * var(--s)) calc(3 * var(--s)),
+    repeating-linear-gradient(90deg, var(--c1) 0 10%, var(--c2) 0 50%);
+  background-size: calc(10 * var(--s)) calc(6 * var(--s));
+  background-color: var(--surface);
+}
+.pat-pinwheel {
+  --s: 48px;
+  --c1: color-mix(in srgb, var(--ink) 7%, var(--surface));
+  --c2: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  --_g: var(--c1) 90deg, var(--c2) 0 135deg, #0000 0;
+  background:
+    conic-gradient(
+      from -45deg at calc(100% / 3) calc(100% / 3),
+      var(--c1) 90deg,
+      #0000 0
+    ),
+    conic-gradient(
+      from -135deg at calc(100% / 3) calc(2 * 100% / 3),
+      var(--_g)
+    ),
+    conic-gradient(
+      from 135deg at calc(2 * 100% / 3) calc(2 * 100% / 3),
+      var(--_g)
+    ),
+    conic-gradient(
+      from 45deg at calc(2 * 100% / 3) calc(100% / 3),
+      var(--_g),
+      var(--c1) 0 225deg,
+      var(--c2) 0
+    );
+  background-size: var(--s) var(--s);
+  background-color: var(--surface);
 }
 
 /* subtle line-grid for non-text surfaces (card author band, placeholder art) */

@@ -25,7 +25,7 @@ export async function SiteNav() {
   }
 
   return (
-    <header className="border-b-2 border-ink bg-surface">
+    <header className="border-b border-ink/10">
       <nav className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 text-sm">
         <Link href="/" className="font-bold">
           onrepeat<span className="text-accent">.fm</span>

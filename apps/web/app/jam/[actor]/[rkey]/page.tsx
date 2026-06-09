@@ -12,6 +12,7 @@ import { isCurrentJam } from '../../../../lib/format'
 import { LikeButton } from '../../../_components/like-button'
 import { ReJamButton } from '../../../_components/rejam-button'
 import { JamMenu } from '../../../_components/jam-menu'
+import { cardPattern } from '../../../../lib/card-pattern'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -54,7 +55,7 @@ export default async function JamPage({
   return (
     <article
       data-theme={jam.author.theme}
-      className="dot-grid rounded-md border-2 border-ink bg-surface p-4 shadow-[4px_4px_0_0_var(--accent)]"
+      className={`${cardPattern(jam.authorDid)} rounded-md border-2 border-accent bg-surface p-4 shadow-[4px_4px_0_0_var(--accent)]`}
     >
       <div className="flex items-center gap-2 text-sm">
         <Link
@@ -81,14 +82,14 @@ export default async function JamPage({
         )}
         {session.did === jam.authorDid && (
           <JamMenu
-            className="ml-auto"
+            className="ml-auto text-muted hover:bg-bg hover:text-accent"
             jamUri={jam.uri}
             redirectTo={profileHref}
           />
         )}
       </div>
 
-      <div className="mt-3 overflow-hidden rounded border border-ink">
+      <div className="mt-3 overflow-hidden rounded">
         <Player
           sourceProvider={jam.sourceProvider}
           providerRefs={jam.providerRefs}

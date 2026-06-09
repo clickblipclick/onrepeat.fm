@@ -6,6 +6,7 @@ import { Player } from './player'
 import { LikeButton } from './like-button'
 import { ReJamButton } from './rejam-button'
 import { JamMenu } from './jam-menu'
+import { cardPattern } from '../../lib/card-pattern'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''
@@ -37,41 +38,47 @@ export function JamCard({
   const jamHref = `/jam/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
   const isOwner = !!viewerDid && viewerDid === jam.authorDid
+  const pattern = cardPattern(jam.authorDid)
   return (
     // Scope the card to its author's theme — the CSS-variable cascade (globals.css)
     // re-colors everything inside. The thick ink border + offset accent shadow + framed
     // artwork give the card weight and make the author's theme pop (riso-print feel).
     <article
       data-theme={jam.author.theme}
-      className="dot-grid overflow-hidden rounded-md border-2 border-ink bg-surface shadow-[4px_4px_0_0_var(--accent)] transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]"
+      className={`${pattern} overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)] transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]`}
     >
-      <div className="surface-grid flex items-center gap-2 border-b-2 border-ink px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 border-b-2 border-accent bg-accent px-2 py-2 text-sm text-on-accent">
         <Link
           href={profileHref}
-          className="flex items-center gap-2 hover:text-accent"
+          className="flex items-center gap-2 hover:underline"
         >
           <Avatar author={jam.author} />
           <span className="font-bold">{authorName(jam.author)}</span>
         </Link>
-        <RelativeTime iso={jam.createdAt} />
+        <RelativeTime iso={jam.createdAt} className="text-on-accent/80" />
         {jam.via && jam.viaAuthor && (
-          <span className="truncate text-muted">
+          <span className="truncate text-on-accent/80">
             · re-jam from{' '}
             <Link
               href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
-              className="hover:text-accent"
+              className="hover:underline"
             >
               {authorName(jam.viaAuthor)}
             </Link>
           </span>
         )}
-        {isOwner && <JamMenu className="ml-auto" jamUri={jam.uri} />}
+        {isOwner && (
+          <JamMenu
+            className="ml-auto text-on-accent hover:bg-black/10"
+            jamUri={jam.uri}
+          />
+        )}
       </div>
 
       {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
           framed object rather than a flush block. */}
-      <div className="p-3">
-        <div className="overflow-hidden rounded border border-ink">
+      <div className="p-4">
+        <div className="overflow-hidden rounded">
           {player ?? (
             <Player
               sourceProvider={jam.sourceProvider}
@@ -86,7 +93,7 @@ export function JamCard({
         </div>
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="px-4 pb-4">
         <Link href={jamHref} className="hover:text-accent">
           <div className="font-bold">{jam.title}</div>
           <div className="text-sm text-muted">{jam.artist}</div>

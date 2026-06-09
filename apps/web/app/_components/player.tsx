@@ -222,7 +222,7 @@ export function Player({
                 type="button"
                 onClick={() => launch(p)}
                 aria-label={`Play on ${LABELS[p] ?? p}`}
-                className="flex items-center gap-1 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition hover:bg-black/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-white motion-safe:hover:scale-105"
+                className="flex cursor-pointer items-center gap-1 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition hover:bg-black/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <span aria-hidden>▶</span>
                 {LABELS[p] ?? p}

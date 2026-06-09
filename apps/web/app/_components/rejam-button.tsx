@@ -44,7 +44,7 @@ export function ReJamButton({
       type="button"
       onClick={rejam}
       disabled={pending || done}
-      className="inline-flex items-center gap-1 hover:text-accent disabled:text-muted"
+      className="inline-flex cursor-pointer items-center gap-1 hover:text-accent disabled:text-muted"
     >
       {done ? (
         <>

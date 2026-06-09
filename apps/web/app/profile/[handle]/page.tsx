@@ -8,6 +8,7 @@ import { readPreferredProvider } from '../../../lib/playback-preference.server'
 import { JamCard } from '../../_components/jam-card'
 import { ArchiveGrid } from '../../_components/archive-grid'
 import { Avatar } from '../../_components/avatar'
+import { HtmlTheme } from '../../_components/html-theme'
 import { isCurrentJam } from '../../../lib/format'
 
 export default async function ProfilePage({
@@ -31,15 +32,16 @@ export default async function ProfilePage({
   const current = jams[0] && isCurrentJam(jams[0].createdAt) ? jams[0] : null
   const archive = current ? jams.slice(1) : jams
 
-  // The profile page wears its owner's color theme (the rest of the app chrome is neutral).
+  // The profile page wears its owner's color theme across the whole shell (the rest of
+  // the app is neutral mono).
   const themes = await loadActorThemes(db, [profile.did])
   const ownerTheme = resolveTheme(themes.get(profile.did), profile.did)
 
   return (
-    <div data-theme={ownerTheme}>
-      {/* Full-bleed backdrop so the whole page wears the owner's theme (the app chrome is
-          otherwise neutral). Fixed + -z-10 sits behind the content and the neutral nav. */}
-      <div className="fixed inset-0 -z-10 bg-bg" aria-hidden />
+    <>
+      {/* Theme <html> with the owner's color while this profile is open (nav, background,
+          cards); reverts to the neutral chrome on navigate-away. */}
+      <HtmlTheme theme={ownerTheme} />
       <div className="flex items-center gap-3">
         <Avatar author={profile} size={52} />
         <div>
@@ -76,6 +78,6 @@ export default async function ProfilePage({
           />
         </>
       )}
-    </div>
+    </>
   )
 }

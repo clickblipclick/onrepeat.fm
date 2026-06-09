@@ -50,7 +50,7 @@ export function JamMenu({
     <Menu
       label="Jam options"
       disabled={pending}
-      triggerClassName={`inline-flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-bg hover:text-accent disabled:opacity-50 ${className ?? ''}`}
+      triggerClassName={`inline-flex h-7 w-7 items-center justify-center rounded-full disabled:opacity-50 ${className ?? ''}`}
       items={[
         {
           label: 'Delete jam',
