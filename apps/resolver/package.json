@@ -15,7 +15,7 @@
     "@onrepeat/music": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
-    "kysely": "^0.27.0",
+    "kysely": "^0.28.17",
     "pg-boss": "^12.18.0"
   },
   "devDependencies": {

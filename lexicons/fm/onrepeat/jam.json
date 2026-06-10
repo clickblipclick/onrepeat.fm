@@ -16,7 +16,7 @@
           "createdAt"
         ],
         "properties": {
-          "sourceUrl": { "type": "string", "format": "uri" },
+          "sourceUrl": { "type": "string", "format": "uri", "maxLength": 2048 },
           "sourceProvider": { "type": "string", "maxLength": 64 },
           "title": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
           "artist": {
@@ -24,7 +24,11 @@
             "maxGraphemes": 300,
             "maxLength": 3000
           },
-          "artworkUrl": { "type": "string", "format": "uri" },
+          "artworkUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
           "isrc": { "type": "string", "maxLength": 32 },
           "caption": {
             "type": "string",

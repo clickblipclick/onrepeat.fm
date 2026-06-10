@@ -21,6 +21,26 @@ import { THEMES } from '../packages/core/src/theme'
 const DB_URL =
   process.env.DATABASE_URL ??
   'postgres://onrepeat:onrepeat@127.0.0.1:5432/onrepeat_test'
+
+// Safety: this writes seed rows into whatever DATABASE_URL points at. Refuse to run against
+// a non-local host or in production so it can't accidentally pollute a deployed database.
+function assertLocalSeedTarget(url: string): void {
+  const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', ''])
+  let host: string
+  try {
+    host = new URL(url).hostname
+  } catch {
+    throw new Error(`[seed] invalid DATABASE_URL: '${url}'`)
+  }
+  if (process.env.NODE_ENV === 'production' || !LOCAL_HOSTS.has(host)) {
+    throw new Error(
+      `[seed] refusing to seed a non-local/production database (host '${host}'). ` +
+        `The dev seed is for local Postgres only.`,
+    )
+  }
+}
+assertLocalSeedTarget(DB_URL)
+
 const BSKY = 'https://public.api.bsky.app/xrpc'
 
 // Real handles to attribute jams to (merged with your follows). getProfiles silently

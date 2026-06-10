@@ -120,4 +120,30 @@ describe('fetchBandcampEmbed', () => {
       }),
     ).toBeNull()
   })
+
+  it('refuses non-bandcamp / non-https urls without fetching (SSRF guard)', async () => {
+    let called = false
+    const fetchFn = async () => {
+      called = true
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return html
+        },
+      }
+    }
+    for (const url of [
+      'http://169.254.169.254/latest/meta-data/', // cloud metadata
+      'http://localhost:5432/',
+      'https://evil.com/track/y',
+      'https://bandcamp.com.evil.com/track/y', // suffix spoof
+      'http://x.bandcamp.com/track/y', // plain http
+      'file:///etc/passwd',
+      'not a url',
+    ]) {
+      expect(await fetchBandcampEmbed(url, { fetchFn })).toBeNull()
+    }
+    expect(called).toBe(false)
+  })
 })
