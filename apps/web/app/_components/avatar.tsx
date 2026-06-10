@@ -24,14 +24,14 @@ export function Avatar({
         src={author.avatar}
         alt=""
         style={style}
-        className="rounded object-cover"
+        className="shrink-0 rounded object-cover"
       />
     )
   }
   return (
     <span
       style={style}
-      className="inline-block rounded bg-accent"
+      className="inline-block shrink-0 rounded bg-accent"
       aria-hidden
     />
   )

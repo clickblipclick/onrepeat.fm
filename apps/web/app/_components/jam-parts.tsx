@@ -33,22 +33,35 @@ export function JamHeader({
 }) {
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
   const isOwner = !!viewerDid && viewerDid === jam.authorDid
-  const time = <RelativeTime iso={jam.createdAt} className="text-on-accent/80" />
+  const time = (
+    <RelativeTime
+      iso={jam.createdAt}
+      className="whitespace-nowrap text-on-accent/80"
+    />
+  )
   return (
+    // Single-line header: fixed bits (avatar, time, "current jam", menu) never shrink
+    // or wrap; the author name and re-jam attribution truncate instead of overflowing
+    // into their neighbors when a long handle meets a narrow card.
     <div className="flex items-center gap-2 border-b-2 border-accent bg-accent px-2 py-2 text-sm text-on-accent">
-      <Link href={profileHref} className="flex items-center gap-2 hover:underline">
+      <Link
+        href={profileHref}
+        className="flex min-w-0 items-center gap-2 hover:underline"
+      >
         <Avatar author={jam.author} />
-        <span className="font-bold">{authorName(jam.author)}</span>
+        <span className="truncate font-bold">{authorName(jam.author)}</span>
       </Link>
       {jamHref ? (
-        <Link href={jamHref} className="hover:underline">
+        <Link href={jamHref} className="shrink-0 hover:underline">
           {time}
         </Link>
       ) : (
         time
       )}
       {showCurrentJam && isCurrentJam(jam.createdAt) && (
-        <span className="text-on-accent/80">· current jam</span>
+        <span className="shrink-0 whitespace-nowrap text-on-accent/80">
+          · current jam
+        </span>
       )}
       {jam.via && jam.viaAuthor && (
         <span className="truncate text-on-accent/80">
