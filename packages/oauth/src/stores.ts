@@ -6,26 +6,46 @@ import type {
   NodeSavedSessionStore,
 } from '@atproto/oauth-client-node'
 import type { DB } from '@onrepeat/db'
+import type { StoreCipher } from './crypto'
 
 /** Authorization-request state is single-use and short-lived; flows complete in minutes.
- *  Anything older than this was abandoned and is safe to prune. */
-const STATE_TTL_MS = 60 * 60 * 1000 // 1 hour
+ *  The auth server expires the PAR request_uri at ~10 minutes anyway, so anything older
+ *  is dead weight — and each stale row holds a freshly-minted DPoP private key. */
+const STATE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+
+export interface StoreOptions {
+  /** Encrypts rows at rest (they hold refresh tokens / DPoP private keys). Plaintext
+   *  legacy rows remain readable; see {@link StoreCipher}. Omit only in local dev. */
+  cipher?: StoreCipher
+}
 
 /** Stores short-lived OAuth authorization-request state, keyed by an opaque token. */
 export class KyselyStateStore implements NodeSavedStateStore {
-  constructor(private db: DB) {}
+  constructor(
+    private db: DB,
+    private opts: StoreOptions = {},
+  ) {}
 
   async get(key: string): Promise<NodeSavedState | undefined> {
+    // Enforce the TTL on read, not just via the opportunistic sweep in set():
+    // on a quiet instance a stale row would otherwise stay servable indefinitely.
+    const cutoff = new Date(Date.now() - STATE_TTL_MS)
     const row = await this.db
       .selectFrom('oauth_state')
       .select('state')
       .where('key', '=', key)
+      .where(sql<SqlBool>`created_at >= ${cutoff}`)
       .executeTakeFirst()
-    return row ? (JSON.parse(row.state) as NodeSavedState) : undefined
+    if (!row) return undefined
+    const opened = this.opts.cipher
+      ? this.opts.cipher.open(row.state)
+      : row.state
+    return JSON.parse(opened) as NodeSavedState
   }
 
   async set(key: string, val: NodeSavedState): Promise<void> {
-    const state = JSON.stringify(val)
+    const json = JSON.stringify(val)
+    const state = this.opts.cipher ? this.opts.cipher.seal(json) : json
     await this.db
       .insertInto('oauth_state')
       .values({ key, state })
@@ -54,7 +74,10 @@ export class KyselyStateStore implements NodeSavedStateStore {
 
 /** Persists authenticated OAuth sessions (DPoP-bound tokens), keyed by the user's DID. */
 export class KyselySessionStore implements NodeSavedSessionStore {
-  constructor(private db: DB) {}
+  constructor(
+    private db: DB,
+    private opts: StoreOptions = {},
+  ) {}
 
   async get(did: string): Promise<NodeSavedSession | undefined> {
     const row = await this.db
@@ -62,11 +85,16 @@ export class KyselySessionStore implements NodeSavedSessionStore {
       .select('session')
       .where('did', '=', did)
       .executeTakeFirst()
-    return row ? (JSON.parse(row.session) as NodeSavedSession) : undefined
+    if (!row) return undefined
+    const opened = this.opts.cipher
+      ? this.opts.cipher.open(row.session)
+      : row.session
+    return JSON.parse(opened) as NodeSavedSession
   }
 
   async set(did: string, val: NodeSavedSession): Promise<void> {
-    const session = JSON.stringify(val)
+    const json = JSON.stringify(val)
+    const session = this.opts.cipher ? this.opts.cipher.seal(json) : json
     await this.db
       .insertInto('oauth_session')
       .values({ did, session })

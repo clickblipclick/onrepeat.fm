@@ -34,15 +34,30 @@ export type RuntimeLock = <T>(
  * Each in-flight locked call holds one pooled connection for the (sub-second)
  * refresh — fine at this app's volume.
  */
+/** A refresh normally completes in well under 2s; a waiter queued longer than this is
+ *  stuck behind a hung holder. Failing the refresh is better than parking a pooled
+ *  connection per waiter until the pool is exhausted. */
+const LOCK_TIMEOUT_MS = 30_000
+
 export function createPgAdvisoryLock(db: DB): RuntimeLock {
   return (name, fn) =>
     db.connection().execute(async (conn) => {
-      // hashtext() maps the lock name to the int key shared by both calls.
-      await sql`select pg_advisory_lock(hashtext(${name}))`.execute(conn)
+      // pg_advisory_lock waits forever by default; bound it so a hung refresh can't
+      // queue waiters indefinitely. set_config (not SET) because SET can't take bind
+      // params; reset in finally since the pooled connection outlives this call.
+      await sql`select set_config('lock_timeout', ${String(LOCK_TIMEOUT_MS)}, false)`.execute(
+        conn,
+      )
       try {
-        return await fn()
+        // hashtext() maps the lock name to the int key shared by both calls.
+        await sql`select pg_advisory_lock(hashtext(${name}))`.execute(conn)
+        try {
+          return await fn()
+        } finally {
+          await sql`select pg_advisory_unlock(hashtext(${name}))`.execute(conn)
+        }
       } finally {
-        await sql`select pg_advisory_unlock(hashtext(${name}))`.execute(conn)
+        await sql`select set_config('lock_timeout', '0', false)`.execute(conn)
       }
     })
 }
