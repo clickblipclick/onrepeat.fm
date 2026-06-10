@@ -102,11 +102,20 @@ export function PlaybackProvider({
 
 /** The "via {Service} ▾" switcher: opens a radio menu of this jam's embeddable platforms;
  *  picking one plays it (swapping the live embed mid-play) and persists the preference.
- *  Renders nothing when the jam has fewer than two embeddable platforms. */
+ *  With a single embeddable platform it degrades to a static "via {Service}" label, so
+ *  every card still says where playback happens. Renders nothing for link-out jams
+ *  (their artwork already reads "open in {provider} ↗"). */
 export function PlaybackSwitcher() {
   const { active, platforms, launch } = usePlayback()
-  if (active.kind === 'link' || platforms.length < 2) return null
+  if (active.kind === 'link') return null
   const activeLabel = LABELS[active.provider] ?? active.provider
+  if (platforms.length < 2) {
+    return (
+      <span className="flex min-h-8 shrink-0 items-center px-1.5 text-xs text-muted">
+        via {activeLabel}
+      </span>
+    )
+  }
   return (
     <Menu
       label={`via ${activeLabel} — change playback service`}
