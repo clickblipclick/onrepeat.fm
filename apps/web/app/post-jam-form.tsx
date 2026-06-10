@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react'
 import { postJamAction, type PostJamState } from './actions'
 import { TrackPicker } from './_components/track-picker'
 import { Button } from './_components/ui/button'
+import { inputClassName } from '../lib/input-variants'
 
 export function PostJamForm() {
   const [state, action, pending] = useActionState<
@@ -25,7 +26,7 @@ export function PostJamForm() {
         name="caption"
         aria-label="Caption (optional)"
         placeholder="why this song (optional)"
-        className="w-full rounded border border-border bg-surface px-3 py-2"
+        className={inputClassName('w-full')}
       />
       <Button type="submit" loading={pending}>
         Set as my jam

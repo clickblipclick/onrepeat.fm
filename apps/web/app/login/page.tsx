@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '../../lib/session'
 import { buttonClassName } from '../../lib/button-variants'
+import { inputClassName } from '../../lib/input-variants'
 
 const LOGIN_ERRORS: Record<string, string> = {
   handle: "Couldn't sign in with that handle — double-check it and try again.",
@@ -45,7 +46,7 @@ export default async function LoginPage({
           autoCorrect="off"
           autoComplete="username"
           required
-          className="flex-1 rounded border border-border bg-bg px-3 py-2 text-sm"
+          className={inputClassName('flex-1')}
         />
         <button type="submit" className={buttonClassName()}>
           Sign in

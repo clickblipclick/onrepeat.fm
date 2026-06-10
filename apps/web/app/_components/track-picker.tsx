@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
+import { inputClassName } from '../../lib/input-variants'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
-const inputCls = 'w-full rounded border border-border bg-surface px-3 py-2'
+const inputCls = inputClassName('w-full')
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
