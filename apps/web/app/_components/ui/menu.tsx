@@ -112,7 +112,10 @@ export function Menu({
                   })}
                 >
                   {radio && (
-                    <span aria-hidden className="w-3 text-center text-xs leading-none">
+                    <span
+                      aria-hidden
+                      className="w-3 text-center text-xs leading-none"
+                    >
                       {item.selected ? '●' : ''}
                     </span>
                   )}
