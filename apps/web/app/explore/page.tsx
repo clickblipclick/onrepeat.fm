@@ -5,6 +5,7 @@ import { hydrate } from '../../lib/appview'
 import { getSession } from '../../lib/session'
 import { readPreferredProvider } from '../../lib/playback-preference.server'
 import { FeedList } from '../_components/feed-list'
+import { SectionLabel } from '../_components/section-label'
 
 export default async function ExplorePage() {
   const session = await getSession()
@@ -13,7 +14,9 @@ export default async function ExplorePage() {
   const jams = await hydrate(page.jams)
   return (
     <>
-      <h1 className="mb-4 text-sm text-muted uppercase">Latest jams</h1>
+      <SectionLabel as="h1" size="title">
+        Latest jams
+      </SectionLabel>
       <FeedList
         jams={jams}
         cursor={page.cursor}

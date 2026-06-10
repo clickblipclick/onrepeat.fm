@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getSession } from '../../lib/session'
 import { PostJamForm } from '../post-jam-form'
+import { SectionLabel } from '../_components/section-label'
 
 export default async function PostPage() {
   const session = await getSession()
@@ -16,7 +17,9 @@ export default async function PostPage() {
   }
   return (
     <>
-      <h1 className="mb-4 text-sm text-muted uppercase">Set your jam</h1>
+      <SectionLabel as="h1" size="title">
+        Set your jam
+      </SectionLabel>
       <PostJamForm />
     </>
   )

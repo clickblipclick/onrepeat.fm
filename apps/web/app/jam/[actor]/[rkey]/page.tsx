@@ -10,6 +10,7 @@ import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
 import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
 import { cardPattern } from '../../../../lib/card-pattern'
+import { SectionLabel } from '../../../_components/section-label'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -85,7 +86,7 @@ export default async function JamPage({
 
         {detail.likerDids.length > 0 && (
           <div className="mt-4">
-            <div className="text-xs text-muted uppercase">Liked by</div>
+            <SectionLabel flush className="mb-1">Liked by</SectionLabel>
             <div className="mt-1 flex flex-wrap gap-1">
               {detail.likerDids.slice(0, 12).map((d) => {
                 const p = likerProfiles.get(d)
@@ -102,9 +103,9 @@ export default async function JamPage({
 
         {reJams.length > 0 && (
           <div className="mt-4">
-            <div className="text-xs text-muted uppercase">
+            <SectionLabel flush className="mb-1">
               Re-jams ({reJams.length})
-            </div>
+            </SectionLabel>
             <div className="mt-1 flex flex-col gap-1.5">
               {reJams.map((rj) => (
                 <Link

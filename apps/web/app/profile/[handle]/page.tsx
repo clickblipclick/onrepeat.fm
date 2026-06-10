@@ -10,6 +10,7 @@ import { ArchiveGrid } from '../../_components/archive-grid'
 import { Avatar } from '../../_components/avatar'
 import { HtmlTheme } from '../../_components/html-theme'
 import { isCurrentJam } from '../../../lib/format'
+import { SectionLabel } from '../../_components/section-label'
 
 export default async function ProfilePage({
   params,
@@ -52,7 +53,7 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      <h2 className="mt-6 mb-2 text-xs text-muted uppercase">Current jam</h2>
+      <SectionLabel>Current jam</SectionLabel>
       {current ? (
         <JamCard
           jam={current}
@@ -69,7 +70,7 @@ export default async function ProfilePage({
 
       {archive.length > 0 && (
         <>
-          <h2 className="mt-6 mb-2 text-xs text-muted uppercase">Archive</h2>
+          <SectionLabel>Archive</SectionLabel>
           <ArchiveGrid
             did={profile.did}
             handle={profile.handle ?? profile.did}

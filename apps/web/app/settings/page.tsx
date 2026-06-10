@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '../../lib/session'
 import { readViewerTheme } from '../../lib/viewer-theme'
 import { ThemePicker } from './theme-picker'
+import { SectionLabel } from '../_components/section-label'
 
 export const metadata = {
   title: 'Settings · onrepeat.fm',
@@ -16,7 +17,9 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-sm text-muted uppercase">Settings</h1>
+      <SectionLabel as="h1" size="title">
+        Settings
+      </SectionLabel>
       <section>
         <h2 className="font-bold">Profile theme</h2>
         <p className="mt-1 mb-3 text-sm text-muted">

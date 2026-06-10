@@ -7,6 +7,7 @@ import { getSession } from '../lib/session'
 import { readPreferredProvider } from '../lib/playback-preference.server'
 import { FeedList } from './_components/feed-list'
 import { EmptyState } from './_components/empty-state'
+import { SectionLabel } from './_components/section-label'
 
 export default async function Home() {
   const session = await getSession()
@@ -51,7 +52,7 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
-        <h1 className="mb-4 text-sm text-muted uppercase">Following</h1>
+        <SectionLabel as="h1" size="title">Following</SectionLabel>
         {jams.length === 0 ? (
           <EmptyState>
             Nobody you follow has a current jam.{' '}
@@ -77,7 +78,7 @@ export default async function Home() {
   } catch {
     return (
       <>
-        <h1 className="mb-4 text-sm text-muted uppercase">Following</h1>
+        <SectionLabel as="h1" size="title">Following</SectionLabel>
         <EmptyState>
           Couldn&apos;t load your feed right now.{' '}
           <Link href="/explore" className="text-accent">
