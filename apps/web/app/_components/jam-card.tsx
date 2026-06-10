@@ -1,5 +1,6 @@
 import type { HydratedJamView } from '@onrepeat/appview'
 import { Player } from './player'
+import { PlaybackProvider, PlaybackSwitcher } from './playback'
 import { JamHeader, JamBody, JamActions } from './jam-parts'
 import { JamCardShell, MediaFrame } from './jam-card-shell'
 
@@ -41,30 +42,39 @@ export function JamCard({
     <JamCardShell did={jam.authorDid} theme={jam.author.theme} interactive>
       <JamHeader jam={jam} jamHref={jamHref} viewerDid={viewerDid} />
 
-      {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
-          framed object rather than a flush block. */}
-      <MediaFrame>
-        {player ?? (
-          <Player
-            sourceProvider={jam.sourceProvider}
-            providerRefs={jam.providerRefs}
-            sourceUrl={jam.sourceUrl}
-            artworkUrl={jam.artworkUrl}
-            title={jam.title}
-            artist={jam.artist}
-            lazy
-            priority={priority}
-            preferredProvider={preferredProvider}
-          />
-        )}
-      </MediaFrame>
+      {/* One playback scope per card: the player (media frame) and the service switcher
+          (beside the title) share the same state, so switching works mid-play. */}
+      <PlaybackProvider
+        sourceProvider={jam.sourceProvider}
+        providerRefs={jam.providerRefs}
+        sourceUrl={jam.sourceUrl}
+        preferredProvider={preferredProvider}
+      >
+        {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
+            framed object rather than a flush block. */}
+        <MediaFrame>
+          {player ?? (
+            <Player
+              artworkUrl={jam.artworkUrl}
+              title={jam.title}
+              artist={jam.artist}
+              priority={priority}
+            />
+          )}
+        </MediaFrame>
 
-      <div className="px-4 pb-4">
-        <JamBody jam={jam} href={jamHref} />
-        <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-          {actions ?? <JamActions jam={jam} loggedIn={loggedIn} />}
+        <div className="px-4 pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <JamBody jam={jam} href={jamHref} />
+            </div>
+            <PlaybackSwitcher />
+          </div>
+          <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
+            {actions ?? <JamActions jam={jam} loggedIn={loggedIn} />}
+          </div>
         </div>
-      </div>
+      </PlaybackProvider>
     </JamCardShell>
   )
 }

@@ -6,6 +6,10 @@ import { hydrate, bsky } from '../../../../lib/appview'
 import { getSession } from '../../../../lib/session'
 import { readPreferredProvider } from '../../../../lib/playback-preference.server'
 import { Player } from '../../../_components/player'
+import {
+  PlaybackProvider,
+  PlaybackSwitcher,
+} from '../../../_components/playback'
 import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
 import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
@@ -62,60 +66,70 @@ export default async function JamPage({
         redirectTo={profileHref}
       />
 
-      <MediaFrame>
-        <Player
-          sourceProvider={jam.sourceProvider}
-          providerRefs={jam.providerRefs}
-          sourceUrl={jam.sourceUrl}
-          artworkUrl={jam.artworkUrl}
-          title={jam.title}
-          artist={jam.artist}
-          priority // the jam detail cover is the page hero/LCP image
-          preferredProvider={preferredProvider}
-        />
-      </MediaFrame>
+      {/* One playback scope: the hero player and the service switcher (beside the
+          title) share state, so switching works mid-play. */}
+      <PlaybackProvider
+        sourceProvider={jam.sourceProvider}
+        providerRefs={jam.providerRefs}
+        sourceUrl={jam.sourceUrl}
+        preferredProvider={preferredProvider}
+      >
+        <MediaFrame>
+          <Player
+            artworkUrl={jam.artworkUrl}
+            title={jam.title}
+            artist={jam.artist}
+            priority // the jam detail cover is the page hero/LCP image
+          />
+        </MediaFrame>
 
-      <div className="px-4 pb-4">
-        <JamBody jam={jam} />
-        <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-          <JamActions jam={jam} loggedIn={!!session.did} />
+        <div className="px-4 pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <JamBody jam={jam} />
+            </div>
+            <PlaybackSwitcher />
+          </div>
+          <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
+            <JamActions jam={jam} loggedIn={!!session.did} />
+          </div>
+
+          {detail.likerDids.length > 0 && (
+            <div className="mt-4">
+              <SectionLabel flush>Liked by</SectionLabel>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {detail.likerDids.slice(0, 12).map((d) => {
+                  const p = likerProfiles.get(d)
+                  return <Avatar key={d} author={p ?? { did: d }} size={22} />
+                })}
+                {detail.likerDids.length > 12 && (
+                  <span className="self-center text-xs text-muted">
+                    +{detail.likerDids.length - 12}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {reJams.length > 0 && (
+            <div className="mt-4">
+              <SectionLabel flush>Re-jams ({reJams.length})</SectionLabel>
+              <div className="mt-1 flex flex-col gap-1.5">
+                {reJams.map((rj) => (
+                  <Link
+                    key={rj.uri}
+                    href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
+                    className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
+                  >
+                    <b>{authorName(rj.author)}</b> re-jammed ·{' '}
+                    <RelativeTime iso={rj.createdAt} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-
-        {detail.likerDids.length > 0 && (
-          <div className="mt-4">
-            <SectionLabel flush>Liked by</SectionLabel>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {detail.likerDids.slice(0, 12).map((d) => {
-                const p = likerProfiles.get(d)
-                return <Avatar key={d} author={p ?? { did: d }} size={22} />
-              })}
-              {detail.likerDids.length > 12 && (
-                <span className="self-center text-xs text-muted">
-                  +{detail.likerDids.length - 12}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {reJams.length > 0 && (
-          <div className="mt-4">
-            <SectionLabel flush>Re-jams ({reJams.length})</SectionLabel>
-            <div className="mt-1 flex flex-col gap-1.5">
-              {reJams.map((rj) => (
-                <Link
-                  key={rj.uri}
-                  href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
-                  className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
-                >
-                  <b>{authorName(rj.author)}</b> re-jammed ·{' '}
-                  <RelativeTime iso={rj.createdAt} />
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      </PlaybackProvider>
     </JamCardShell>
   )
 }
