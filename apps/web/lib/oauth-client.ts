@@ -15,6 +15,26 @@ if (_rawOauthMode !== 'dev' && _rawOauthMode !== 'prod') {
 }
 const oauthMode: 'dev' | 'prod' = _rawOauthMode
 
+const publicUrl = process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'
+const isLoopbackUrl =
+  /^https?:\/\/(127\.0\.0\.1|\[::1\]|localhost)(:|\/|$)/i.test(publicUrl)
+
+// Fail closed in production: a deploy that forgets OAUTH_MODE/PUBLIC_URL must refuse to
+// boot rather than silently running dev/loopback OAuth (public client_id, no keyset,
+// 'none' auth) on a public origin.
+if (process.env.NODE_ENV === 'production') {
+  if (oauthMode !== 'prod') {
+    throw new Error(
+      "OAUTH_MODE must be 'prod' in production — refusing to run loopback/dev OAuth on a public deploy",
+    )
+  }
+  if (!process.env.PUBLIC_URL || isLoopbackUrl) {
+    throw new Error(
+      'PUBLIC_URL must be set to the public https origin in production (got a loopback/unset value)',
+    )
+  }
+}
+
 const db = createDb(databaseUrl)
 
 // Shared session store. Also used by getSessionAgent to tell whether a failed
@@ -34,7 +54,7 @@ function build() {
   // prod mode fails closed: createOAuthClient throws at startup without a keyset.
   return createOAuthClient({
     mode: oauthMode,
-    publicUrl: process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000',
+    publicUrl,
     stateStore: new KyselyStateStore(db),
     sessionStore: oauthSessionStore,
     // Cross-instance lock so concurrent token refreshes for the same session

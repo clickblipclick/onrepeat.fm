@@ -12,7 +12,7 @@
     "@atproto/api": "^0.20.7",
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
-    "kysely": "^0.27.0"
+    "kysely": "^0.28.17"
   },
   "devDependencies": {
     "typescript": "^5.5.0"

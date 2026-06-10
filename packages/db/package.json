@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@onrepeat/lexicons": "workspace:*",
-    "kysely": "^0.27.0",
+    "kysely": "^0.28.17",
     "pg": "^8.12.0"
   },
   "devDependencies": {

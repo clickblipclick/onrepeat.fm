@@ -64,12 +64,29 @@ export function parseBandcampTitleArtist(
   }
 }
 
+/** True iff `raw` is an https URL on bandcamp's own hosts. */
+function isBandcampUrl(raw: string): boolean {
+  let u: URL
+  try {
+    u = new URL(raw)
+  } catch {
+    return false
+  }
+  if (u.protocol !== 'https:') return false
+  const h = u.hostname.toLowerCase()
+  return h === 'bandcamp.com' || h.endsWith('.bandcamp.com')
+}
+
 /** Fetch a Bandcamp track page and extract its embed track id + cover art (one request).
  *  Returns null on a failed fetch or when neither is present (soft fail). */
 export async function fetchBandcampEmbed(
   url: string,
   opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
 ): Promise<BandcampMeta | null> {
+  // Defense-in-depth (SSRF): only ever fetch bandcamp's own hosts over https, so a caller
+  // that forwards an untrusted url can't aim this at an internal/metadata endpoint. The
+  // resolver also re-derives the provider from the url before getting here.
+  if (!isBandcampUrl(url)) return null
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   try {
     const res = await fetchFn(url, {

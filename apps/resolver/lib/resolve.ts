@@ -1,6 +1,6 @@
 import type { Updateable } from 'kysely'
 import type { DB, TracksTable } from '@onrepeat/db'
-import { providerTier } from '@onrepeat/core'
+import { providerFromUrl, providerTier } from '@onrepeat/core'
 import { resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import {
   resolveTrack,
@@ -27,19 +27,40 @@ export async function resolveJob(
 ): Promise<void> {
   const now = new Date()
 
-  if (providerTier(job.provider) === 'self-contained') {
+  // SECURITY (SSRF): job.provider / job.sourceUrl originate from an untrusted firehose
+  // record. Re-derive the provider from the URL host (allowlist in providerFromUrl) and
+  // ignore the record's self-declared provider, so a record can't claim provider:"bandcamp"
+  // on a `http://169.254.169.254/...` url and turn the self-contained fetch into a probe of
+  // internal services. A url whose host isn't a known music provider can't be resolved —
+  // mark it failed rather than fetching it.
+  const provider = providerFromUrl(job.sourceUrl)
+  if (!provider) {
+    await db
+      .updateTable('tracks')
+      .set({ resolution_status: 'failed', resolved_at: now })
+      .where('id', '=', job.identity)
+      .execute()
+    resolveLog(
+      'skip',
+      job.identity,
+      'untrusted/unrecognized source url host — marked failed',
+    )
+    return
+  }
+
+  if (providerTier(provider) === 'self-contained') {
     // Bandcamp (the only self-contained provider): scrape its embed id so the Player can
     // stream it inline (fall back to a bare url/link-out), and its cover art in the same
     // request — Bandcamp jams have no artwork otherwise (the picker drops to manual entry).
     const entry: { url: string; trackId?: string } = { url: job.sourceUrl }
     let artworkUrl: string | undefined
-    if (job.provider === 'bandcamp' && deps.bandcamp) {
+    if (provider === 'bandcamp' && deps.bandcamp) {
       const meta = await deps.bandcamp(job.sourceUrl)
       if (meta?.trackId) entry.trackId = meta.trackId
       if (meta?.artworkUrl) artworkUrl = meta.artworkUrl
     }
     const update: Updateable<TracksTable> = {
-      provider_refs: JSON.stringify({ [job.provider]: entry }),
+      provider_refs: JSON.stringify({ [provider]: entry }),
       resolution_status: 'self_contained',
       resolved_at: now,
     }
@@ -52,7 +73,7 @@ export async function resolveJob(
     resolveLog(
       'resolved',
       job.identity,
-      `self_contained bandcamp trackId=${entry.trackId ?? 'none'}${artworkUrl ? ' +art' : ''}`,
+      `self_contained ${provider} trackId=${entry.trackId ?? 'none'}${artworkUrl ? ' +art' : ''}`,
     )
     return
   }
@@ -68,7 +89,7 @@ export async function resolveJob(
   const result = await resolveTrack(
     {
       sourceUrl: job.sourceUrl,
-      sourceProvider: job.provider,
+      sourceProvider: provider,
       title: seed?.title ?? '',
       artist: seed?.artist ?? '',
     },
@@ -104,7 +125,7 @@ export async function resolveJob(
     artworkUrl = seed.artwork_url
     artSource = 'seed'
   } else if (deps.oembed) {
-    const o = await deps.oembed(job.provider, job.sourceUrl)
+    const o = await deps.oembed(provider, job.sourceUrl)
     if (o?.thumbnail) {
       artworkUrl = o.thumbnail
       artSource = 'oembed'

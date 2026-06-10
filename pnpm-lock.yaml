@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  postcss@<8.5.10: '>=8.5.10'
+
 importers:
 
   .:
@@ -45,8 +48,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/lexicons
       kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
+        specifier: ^0.28.17
+        version: 0.28.17
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -73,8 +76,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/music
       kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
+        specifier: ^0.28.17
+        version: 0.28.17
       pg-boss:
         specifier: ^12.18.0
         version: 12.18.2
@@ -162,8 +165,8 @@ importers:
         specifier: workspace:*
         version: link:../db
       kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
+        specifier: ^0.28.17
+        version: 0.28.17
     devDependencies:
       typescript:
         specifier: ^5.5.0
@@ -181,8 +184,8 @@ importers:
         specifier: workspace:*
         version: link:../lexicons
       kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
+        specifier: ^0.28.17
+        version: 0.28.17
       pg:
         specifier: ^8.12.0
         version: 8.21.0
@@ -252,8 +255,8 @@ importers:
         version: link:../db
     devDependencies:
       kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
+        specifier: ^0.28.17
+        version: 0.28.17
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
@@ -2485,9 +2488,9 @@ packages:
     resolution: {integrity: sha512-TH+b56pVXQq0tsyooYLeNfV11j6ih7D50dyN8tkM0e7ndiUH28Nziojiog3qRFlmEj9XePYdZUrNJ2079Qjdow==}
     engines: {node: '>=14.0.0'}
 
-  kysely@0.27.6:
-    resolution: {integrity: sha512-FIyV/64EkKhJmjgC0g2hygpBv5RNWVPyNCqSAD7eTCv6eFWNIi4PN1UvdSJGicN/o35bnevgis4Y0UDC0qi8jQ==}
-    engines: {node: '>=14.0.0'}
+  kysely@0.28.17:
+    resolution: {integrity: sha512-nbD8lB9EB3wNdMhOCdx5Li8DxnLbvKByylRLcJ1h+4SkrowVeECAyZlyiKMThF7xFdRz0jSQ2MoJr+wXux2y0Q==}
+    engines: {node: '>=20.0.0'}
 
   lande@1.0.10:
     resolution: {integrity: sha512-yT52DQh+UV2pEp08jOYrA4drDv0DbjpiRyZYgl25ak9G2cVR2AimzrqkYQWrD9a7Ud+qkAcaiDDoNH9DXfHPmw==}
@@ -2865,10 +2868,6 @@ packages:
   pino@8.21.0:
     resolution: {integrity: sha512-ip4qdzjkAyDDZklUaZkcRFb2iA118H9SgRh8yzTkSQK8HilsOJF7rSY8HoW5+I0M46AZgX/pxbprf2vvzQCE0Q==}
     hasBin: true
-
-  postcss@8.4.31:
-    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
-    engines: {node: ^10 || ^12 || >=14}
 
   postcss@8.5.15:
     resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
@@ -6215,7 +6214,7 @@ snapshots:
 
   kysely@0.23.5: {}
 
-  kysely@0.27.6: {}
+  kysely@0.28.17: {}
 
   lande@1.0.10:
     dependencies:
@@ -6356,7 +6355,7 @@ snapshots:
       '@next/env': 15.5.18
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001793
-      postcss: 8.4.31
+      postcss: 8.5.15
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
       styled-jsx: 5.1.6(react@19.2.6)
@@ -6523,12 +6522,6 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 3.8.1
       thread-stream: 2.7.0
-
-  postcss@8.4.31:
-    dependencies:
-      nanoid: 3.3.12
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
 
   postcss@8.5.15:
     dependencies:
