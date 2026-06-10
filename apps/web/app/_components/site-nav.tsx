@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getSession } from '../../lib/session'
 import { bsky } from '../../lib/appview'
+import { buttonClassName } from '../../lib/button-variants'
 import { UserMenu } from './user-menu'
 
 export async function SiteNav() {
@@ -41,7 +42,7 @@ export async function SiteNav() {
             <>
               <Link
                 href="/post"
-                className="rounded border border-ink px-2 py-1 hover:border-accent hover:bg-accent hover:text-on-accent"
+                className={buttonClassName({ variant: 'outline', size: 'sm' })}
               >
                 + set your jam
               </Link>
@@ -54,7 +55,7 @@ export async function SiteNav() {
           ) : (
             <Link
               href="/login"
-              className="rounded border border-ink px-2 py-1 hover:border-accent hover:bg-accent hover:text-on-accent"
+              className={buttonClassName({ variant: 'outline', size: 'sm' })}
             >
               sign in
             </Link>

@@ -19,6 +19,13 @@ describe('buttonClassName', () => {
     expect(c).toContain('bg-surface')
   })
 
+  it('outline variant fills with accent on hover', () => {
+    const cls = buttonClassName({ variant: 'outline' })
+    expect(cls).toContain('border-ink')
+    expect(cls).toContain('hover:bg-accent')
+    expect(cls).toContain('hover:text-on-accent')
+  })
+
   it('applies the ghost variant (transparent)', () => {
     expect(buttonClassName({ variant: 'ghost' })).toContain('bg-transparent')
   })
