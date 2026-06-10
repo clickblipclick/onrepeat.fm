@@ -22,6 +22,9 @@ export interface MenuItem {
   icon?: React.ReactNode
   onSelect: () => void
   danger?: boolean
+  /** Radio-style menus (e.g. a service picker): marks the active item. When any item
+   *  in the menu defines this, items render as menuitemradio with aria-checked. */
+  selected?: boolean
 }
 
 /** Accessible popover menu (Floating UI): a role=menu with roving focus + arrow/Home/End
@@ -66,6 +69,9 @@ export function Menu({
     [click, dismiss, role, listNav],
   )
 
+  // A menu where any item declares `selected` is a radio-style picker.
+  const radio = items.some((item) => item.selected !== undefined)
+
   return (
     <>
       <button
@@ -94,7 +100,8 @@ export function Menu({
                     listRef.current[i] = node
                   }}
                   type="button"
-                  role="menuitem"
+                  role={radio ? 'menuitemradio' : 'menuitem'}
+                  aria-checked={radio ? (item.selected ?? false) : undefined}
                   tabIndex={activeIndex === i ? 0 : -1}
                   className={`flex w-full items-center gap-2 px-3 py-2 text-left outline-none hover:bg-bg focus:bg-bg ${item.danger ? 'text-red-700' : ''}`}
                   {...getItemProps({
@@ -104,6 +111,11 @@ export function Menu({
                     },
                   })}
                 >
+                  {radio && (
+                    <span aria-hidden className="w-3 text-center text-xs leading-none">
+                      {item.selected ? '●' : ''}
+                    </span>
+                  )}
                   {item.icon}
                   {item.label}
                 </button>
