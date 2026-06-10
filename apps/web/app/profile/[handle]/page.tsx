@@ -11,6 +11,7 @@ import { Avatar } from '../../_components/avatar'
 import { HtmlTheme } from '../../_components/html-theme'
 import { isCurrentJam } from '../../../lib/format'
 import { SectionLabel } from '../../_components/section-label'
+import { EmptyState } from '../../_components/empty-state'
 
 export default async function ProfilePage({
   params,
@@ -63,9 +64,7 @@ export default async function ProfilePage({
           preferredProvider={preferredProvider}
         />
       ) : (
-        <div className="rounded-md border border-dashed border-border p-6 text-center text-muted">
-          hasn&apos;t jammed lately
-        </div>
+        <EmptyState>hasn&apos;t jammed lately</EmptyState>
       )}
 
       {archive.length > 0 && (
