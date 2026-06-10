@@ -81,7 +81,7 @@ export default async function JamPage({
 
         {detail.likerDids.length > 0 && (
           <div className="mt-4">
-            <SectionLabel flush className="mb-1">Liked by</SectionLabel>
+            <SectionLabel flush>Liked by</SectionLabel>
             <div className="mt-1 flex flex-wrap gap-1">
               {detail.likerDids.slice(0, 12).map((d) => {
                 const p = likerProfiles.get(d)
@@ -98,9 +98,7 @@ export default async function JamPage({
 
         {reJams.length > 0 && (
           <div className="mt-4">
-            <SectionLabel flush className="mb-1">
-              Re-jams ({reJams.length})
-            </SectionLabel>
+            <SectionLabel flush>Re-jams ({reJams.length})</SectionLabel>
             <div className="mt-1 flex flex-col gap-1.5">
               {reJams.map((rj) => (
                 <Link
