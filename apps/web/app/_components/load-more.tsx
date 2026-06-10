@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { HydratedJamView } from '@onrepeat/appview'
 import { JamCard } from './jam-card'
+import { LoadMoreButton } from './load-more-button'
 import { readPreferredProviderClient } from '../../lib/playback-preference'
 
 /** Appends pages fetched from an /api endpoint that returns { [itemsKey], cursor }. */
@@ -65,18 +66,7 @@ export function LoadMore({
         />
       ))}
       {cursor && (
-        <button
-          type="button"
-          onClick={more}
-          disabled={loading}
-          className="w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent"
-        >
-          {loading
-            ? 'loading…'
-            : error
-              ? "couldn't load — retry"
-              : 'load more ↓'}
-        </button>
+        <LoadMoreButton onClick={more} loading={loading} error={error} />
       )}
     </>
   )

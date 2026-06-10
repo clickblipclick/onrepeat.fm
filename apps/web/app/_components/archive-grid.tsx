@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { HydratedJamView } from '@onrepeat/appview'
 import { rkeyFromUri } from '../../lib/at-uri'
+import { LoadMoreButton } from './load-more-button'
 
 /**
  * A profile's archive as a 4-col artwork grid with a "load more" button. Keeps every tile in
@@ -72,18 +73,12 @@ export function ArchiveGrid({
         ))}
       </div>
       {cursor && (
-        <button
-          type="button"
+        <LoadMoreButton
           onClick={more}
-          disabled={loading}
-          className="mt-2 w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent"
-        >
-          {loading
-            ? 'loading…'
-            : error
-              ? "couldn't load — retry"
-              : 'load more ↓'}
-        </button>
+          loading={loading}
+          error={error}
+          className="mt-2"
+        />
       )}
     </>
   )
