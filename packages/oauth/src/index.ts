@@ -1,3 +1,5 @@
 export * from './stores'
 export * from './client'
+export * from './crypto'
+export * from './keyset'
 export * from './lock'

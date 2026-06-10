@@ -167,10 +167,30 @@ describe('write error classification', () => {
     expect(caught.cause).toBe(err)
   })
 
-  it('classifies a network error with no status as transient', async () => {
+  it('classifies a network error as transient', async () => {
+    // @atproto/xrpc wraps fetch failures as XRPCError with synthetic status 1
+    // (ResponseType.Unknown) — it never rethrows the bare fetch error.
+    const err = Object.assign(new Error('fetch failed'), { status: 1 })
+    await expect(deleteJam(throwingAgent(err), 'rkey1')).rejects.toMatchObject({
+      kind: 'transient',
+    })
+  })
+
+  it('classifies a statusless error as transient (defensive fallback)', async () => {
     await expect(
       deleteJam(throwingAgent(new Error('fetch failed')), 'rkey1'),
     ).rejects.toMatchObject({ kind: 'transient' })
+  })
+
+  it('classifies an InvalidSwap (HTTP 400) as conflict', async () => {
+    const err = Object.assign(new Error('InvalidSwap'), {
+      status: 400,
+      error: 'InvalidSwap',
+    })
+    await expect(deleteJam(throwingAgent(err), 'rkey1')).rejects.toMatchObject({
+      kind: 'conflict',
+      status: 400,
+    })
   })
 })
 

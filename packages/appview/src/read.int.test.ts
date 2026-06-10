@@ -221,4 +221,47 @@ describe('getLatest', () => {
       page2.jams.find((j) => j.uri.includes('did:plc:c'))!.artworkUrl,
     ).toBe('raw-art.jpg') // resolved but track art null → falls to raw
   })
+
+  it('hides jams and likes from actors whose account is not active', async () => {
+    await insertJam({
+      uri: 'at://did:plc:gone/fm.onrepeat.jam/r1',
+      did: 'did:plc:gone',
+      createdAt: '2026-06-01T00:00:00.000Z',
+    })
+    await insertJam({
+      uri: 'at://did:plc:here/fm.onrepeat.jam/r1',
+      did: 'did:plc:here',
+      createdAt: '2026-06-01T01:00:00.000Z',
+    })
+    // The deactivated actor also liked the active actor's jam.
+    await db
+      .insertInto('likes')
+      .values({
+        uri: 'at://did:plc:gone/fm.onrepeat.like/r1',
+        author_did: 'did:plc:gone',
+        subject_uri: 'at://did:plc:here/fm.onrepeat.jam/r1',
+        created_at: '2026-06-01T01:30:00.000Z',
+      })
+      .execute()
+    await db
+      .insertInto('actors')
+      .values({ did: 'did:plc:gone', status: 'deactivated' })
+      .execute()
+
+    const page = await getLatest(db, { limit: 10 })
+    expect(page.jams.map((j) => j.authorDid)).toEqual(['did:plc:here'])
+    expect(page.jams[0]!.likeCount).toBe(0) // deactivated liker not counted
+
+    // Reactivation makes everything visible again — nothing was deleted.
+    await db
+      .updateTable('actors')
+      .set({ status: 'active' })
+      .where('did', '=', 'did:plc:gone')
+      .execute()
+    const after = await getLatest(db, { limit: 10 })
+    expect(after.jams).toHaveLength(2)
+    expect(
+      after.jams.find((j) => j.authorDid === 'did:plc:here')!.likeCount,
+    ).toBe(1)
+  })
 })

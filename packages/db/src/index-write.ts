@@ -1,6 +1,6 @@
 import type { Insertable } from 'kysely'
 import type { JamRecord, LikeRecord } from '@onrepeat/lexicons'
-import type { JamsTable, LikesTable } from './schema'
+import type { ActorStatus, JamsTable, LikesTable } from './schema'
 import type { DB } from './client'
 
 /**
@@ -98,6 +98,47 @@ export async function setActorTheme(
     .insertInto('actors')
     .values({ did, color_theme: theme })
     .onConflict((oc) => oc.column('did').doUpdateSet({ color_theme: theme }))
+    .execute()
+}
+
+/**
+ * Mirror an account's upstream state (firehose #account event). Deliberately an
+ * UPDATE, not an upsert: the account stream covers every repo on the network and
+ * we only track authors we've indexed — unknown DIDs must not create rows.
+ */
+export async function setActorStatus(
+  db: DB,
+  did: string,
+  status: ActorStatus,
+): Promise<void> {
+  await db
+    .updateTable('actors')
+    .set({ status })
+    .where('did', '=', did)
+    .execute()
+}
+
+/**
+ * Remove all indexed content authored by a DID — their jams, their likes, and
+ * others' likes on their jams (the subject is gone). For accounts deleted
+ * upstream: deactivation/suspension is reversible and only gated at read time,
+ * but a deleted repo is gone for good and we must not keep serving its data.
+ */
+export async function purgeActorContent(db: DB, did: string): Promise<void> {
+  // at-uri authority prefix; escape LIKE wildcards (did:web may contain '%').
+  const prefix = `at://${did.replace(/[\\%_]/g, (m) => `\\${m}`)}/%`
+  await db
+    .deleteFrom('likes')
+    .where((eb) =>
+      eb.or([eb('author_did', '=', did), eb('subject_uri', 'like', prefix)]),
+    )
+    .execute()
+  await db.deleteFrom('jams').where('author_did', '=', did).execute()
+  // Their profile record died with the repo; fall back to the default theme.
+  await db
+    .updateTable('actors')
+    .set({ color_theme: null })
+    .where('did', '=', did)
     .execute()
 }
 

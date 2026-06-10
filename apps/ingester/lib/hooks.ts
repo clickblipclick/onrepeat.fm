@@ -1,4 +1,4 @@
-import type { IngestEvent } from './events'
+import type { RecordIngestEvent } from './events'
 
 /** Extension points the ingester calls. */
 export interface IngesterHooks {
@@ -8,7 +8,7 @@ export interface IngesterHooks {
    * editing a jam produces an update. Downstream handlers MUST be idempotent.
    * Plan 4 wires this to the resolve queue, which dedups by track identity.
    */
-  onJamIndexed: (evt: IngestEvent) => void | Promise<void>
+  onJamIndexed: (evt: RecordIngestEvent) => void | Promise<void>
 }
 
 export const defaultHooks: IngesterHooks = {

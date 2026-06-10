@@ -1,6 +1,6 @@
 import type { DB } from '@onrepeat/db'
 import type { ProviderRefs, ResolutionStatus } from '@onrepeat/db'
-import { sql } from 'kysely'
+import { sql, type SqlBool } from 'kysely'
 import { type Cursor, decodeCursor, encodeCursor } from './cursor'
 
 export interface JamView {
@@ -48,6 +48,17 @@ function clampLimit(limit?: number): number {
   return Math.min(limit, MAX_LIMIT)
 }
 
+/**
+ * Hide content authored by accounts that are not active upstream (deactivated,
+ * suspended, taken down — mirrored from firehose #account events; deleted
+ * accounts are purged outright at ingest). An author with no actors row counts
+ * as active: the ingester upserts the row before any content lands.
+ */
+const authorActive = (
+  col: 'jams.author_did' | 'likes.author_did',
+): ReturnType<typeof sql<SqlBool>> =>
+  sql<SqlBool>`not exists (select 1 from actors where actors.did = ${sql.ref(col)} and actors.status <> 'active')`
+
 /** Stored color-theme slug per DID (null when unset). Batched; empty-safe. Unknown
  *  DIDs are simply absent from the map — callers resolve absent/null to a default. */
 export async function loadActorThemes(
@@ -79,6 +90,7 @@ async function loadLikeInfo(
     .select('subject_uri')
     .select((eb) => eb.fn.count<string>('uri').as('count'))
     .where('subject_uri', 'in', uris)
+    .where(authorActive('likes.author_did'))
     .groupBy('subject_uri')
     .execute()
   for (const c of counts)
@@ -128,6 +140,7 @@ export async function loadJamsByUris(
       'tracks.resolution_status as resolution_status',
     ])
     .where('jams.uri', 'in', uris)
+    .where(authorActive('jams.author_did'))
     .execute()
   const likeInfo = await loadLikeInfo(db, uris, viewerDid)
   const byUri = new Map<string, JamView>()
@@ -186,6 +199,7 @@ export async function getLatest(
     .selectFrom('jams')
     .select('uri')
     .select(CURSOR_TS.as('cursor_ts'))
+    .where(authorActive('jams.author_did'))
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
@@ -225,6 +239,7 @@ export async function getActorJams(
     .select('uri')
     .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', '=', params.did)
+    .where(authorActive('jams.author_did'))
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
@@ -282,6 +297,7 @@ export async function getJam(
     .selectFrom('likes')
     .select('author_did')
     .where('subject_uri', '=', params.uri)
+    .where(authorActive('likes.author_did'))
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(likersLimit)
@@ -334,6 +350,7 @@ export async function getFollowFeed(
     .select(['uri', 'created_at'])
     .select(CURSOR_TS.as('cursor_ts'))
     .where('author_did', 'in', authorDids)
+    .where(authorActive('jams.author_did'))
     .where('created_at', '<=', sql<Date>`${snap}::timestamptz`)
     .where(
       'created_at',

@@ -7,11 +7,15 @@ import {
 import { IdResolver, MemoryCache } from '@atproto/identity'
 import { type DB, recordFailedEvent } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
-import { toIngestEvent } from './events'
+import { ingestEventLabel, toFailedEventInput, toIngestEvent } from './events'
 import { handleIngestEvent } from './indexer'
 import { withRetry } from './retry'
 import { runWithDeadLetter } from './dead-letter'
-import { loadCursor, saveCursor, makeThrottledCursorWriter } from './cursor'
+import {
+  loadCursorState,
+  saveCursor,
+  makeThrottledCursorWriter,
+} from './cursor'
 import { defaultHooks, type IngesterHooks } from './hooks'
 
 const SERVICE = 'firehose'
@@ -20,6 +24,12 @@ const CURSOR_INTERVAL_MS = 5000
 // (resume from a stale cursor) could open unbounded concurrent DB writes and balloon the
 // in-flight set. Keep this ≤ the DB pool size (createDb defaults to pg's max 10).
 const DEFAULT_CONCURRENCY = 8
+// Resuming from a cursor older than the relay's backfill window (~72h on bsky.network)
+// silently skips the gap — @atproto/sync 0.3 surfaces no OutdatedCursor signal. Warn
+// well before that so a stalled ingester gets noticed, and shout when the window is
+// likely blown (affected repos then need a re-backfill to reconcile).
+const CURSOR_STALE_WARN_MS = 6 * 60 * 60 * 1000
+const CURSOR_STALE_GAP_MS = 72 * 60 * 60 * 1000
 
 export interface IngesterRuntime {
   start(): Promise<void>
@@ -56,7 +66,21 @@ export async function createIngester(
   // round-trip per jam/like event, coupling stream throughput to PLC latency. Defaults
   // to 1h stale / 24h max TTL.
   const idResolver = new IdResolver({ didCache: new MemoryCache() })
-  const startCursor = liveTail ? undefined : await loadCursor(db, SERVICE)
+  const cursorState = liveTail ? undefined : await loadCursorState(db, SERVICE)
+  const startCursor = cursorState?.cursor
+  if (cursorState) {
+    const staleMs = Date.now() - cursorState.updatedAt.getTime()
+    const staleHours = (staleMs / 3_600_000).toFixed(1)
+    if (staleMs > CURSOR_STALE_GAP_MS) {
+      console.error(
+        `[ingester] cursor last advanced ${staleHours}h ago — likely past the relay backfill window; events in the gap are LOST and affected repos need re-backfill`,
+      )
+    } else if (staleMs > CURSOR_STALE_WARN_MS) {
+      console.warn(
+        `[ingester] cursor last advanced ${staleHours}h ago — replaying backlog; if this recurs, check why the ingester was down`,
+      )
+    }
+  }
 
   const cursorWriter = makeThrottledCursorWriter(
     (seq) => saveCursor(db, SERVICE, seq),
@@ -79,13 +103,21 @@ export async function createIngester(
     // resumes correctly (and advances as events complete).
     runner,
     filterCollections: [JAM_NSID, LIKE_NSID, PROFILE_NSID],
+    // Identity events stay excluded ON PURPOSE: @atproto/sync resolves the DID
+    // document for EVERY identity event before handing it to us — network-wide,
+    // that's a PLC round-trip per event for repos we mostly don't track, and it
+    // fills the unbounded MemoryCache with the whole network's DID docs. Key
+    // rotation is already handled: commit verification retries with a forced
+    // key refresh on signature failure.
     excludeIdentity: true,
-    excludeAccount: true,
+    // Account events are cheap to parse (no resolution) and required so we stop
+    // serving content of deactivated/taken-down/deleted accounts.
+    excludeAccount: false,
     excludeSync: true,
     handleEvent: async (evt: Event) => {
       const ingestEvt = toIngestEvent(evt)
       if (!ingestEvt) return
-      const label = `${ingestEvt.action} ${ingestEvt.uri}`
+      const label = ingestEventLabel(ingestEvt)
       // @atproto/sync advances the cursor as soon as this returns — even on a thrown error —
       // so a failed event would otherwise vanish. Retry transient failures first (writes are
       // idempotent); if they're exhausted, dead-letter the event for replay; if even that
@@ -101,7 +133,7 @@ export async function createIngester(
         deadLetter: async (err) => {
           await recordFailedEvent(
             db,
-            ingestEvt,
+            toFailedEventInput(ingestEvt),
             err instanceof Error ? err.message : String(err),
           )
           console.error(

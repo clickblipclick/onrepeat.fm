@@ -3,6 +3,7 @@ import {
   type NodeSavedStateStore,
   type NodeSavedSessionStore,
 } from '@atproto/oauth-client-node'
+import { safeFetchWrap } from '@atproto-labs/fetch-node'
 import type { JoseKey } from '@atproto/jwk-jose'
 import type { RuntimeLock } from './lock'
 
@@ -63,6 +64,13 @@ export function createOAuthClient(
   }
 
   return new NodeOAuthClient({
+    // The library's default fetch is unhardened for did:web documents and the
+    // PDS/auth-server metadata lookups — URLs that come from a user-supplied
+    // (attacker-controllable) DID document. Wrap with SSRF protection so those
+    // fetches can't reach private/loopback/link-local ranges, with size/time
+    // caps. Safe here because every internal call site sets `redirect`
+    // explicitly. Dev mode must NOT use this: its PDS lives on 127.0.0.1.
+    fetch: safeFetchWrap({ ssrfProtection: true }),
     clientMetadata: {
       client_id: `${opts.publicUrl}/client-metadata.json`,
       client_name: 'onrepeat.fm',

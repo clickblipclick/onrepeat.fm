@@ -40,11 +40,26 @@ function classifyWriteError(err: unknown): RepoWriteError {
     typeof (err as { status?: unknown })?.status === 'number'
       ? (err as { status: number }).status
       : undefined
+  const errorName =
+    typeof (err as { error?: unknown })?.error === 'string'
+      ? (err as { error: string }).error
+      : undefined
   let kind: WriteErrorKind
   if (status === 401 || status === 403) kind = 'auth'
   else if (status === 429) kind = 'rate-limit'
-  else if (status === 409) kind = 'conflict'
-  else if (status === undefined || status >= 500) kind = 'transient'
+  // Swap failures arrive as HTTP 400 with error name 'InvalidSwap', not 409.
+  else if (status === 409 || errorName === 'InvalidSwap') kind = 'conflict'
+  // @atproto/xrpc wraps fetch/network failures in an XRPCError with synthetic
+  // status ResponseType.Unknown (1) — and malformed responses as
+  // ResponseType.InvalidResponse (2) — rather than rethrowing, so a real network
+  // error never reaches us with status === undefined. Both are retryable.
+  else if (
+    status === undefined ||
+    status === 1 ||
+    status === 2 ||
+    status >= 500
+  )
+    kind = 'transient'
   else kind = 'unknown'
   return new RepoWriteError(kind, status, err)
 }

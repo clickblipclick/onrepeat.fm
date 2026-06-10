@@ -2,6 +2,15 @@ import type { ColumnType, Generated } from 'kysely'
 
 type Timestamp = ColumnType<Date, Date | string, Date | string>
 
+/** Upstream account state mirrored from firehose #account events. Anything other
+ *  than 'active' hides the actor's content at read time. */
+export type ActorStatus =
+  | 'active'
+  | 'deactivated'
+  | 'suspended'
+  | 'takendown'
+  | 'deleted'
+
 export interface ActorsTable {
   did: string
   handle: string | null
@@ -10,6 +19,7 @@ export interface ActorsTable {
   last_seen: Timestamp | null
   /** Chosen profile color-theme slug; null → deterministic default (see @onrepeat/core). */
   color_theme: string | null
+  status: Generated<ActorStatus>
 }
 
 export interface ProviderRefs {
