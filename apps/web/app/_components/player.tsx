@@ -84,6 +84,13 @@ export function Player({
     : ({ loading: 'lazy' } as const)
 
   function choose(p: string) {
+    // Switching providers remounts the embed — re-hide it until the new one loads.
+    // (Guarded so re-picking the active service doesn't blank a loaded embed: the
+    // iframe wouldn't remount, onLoad would never re-fire, and it'd hang hidden.)
+    if (p !== active.provider) {
+      setLoaded(false)
+      setFailed(false)
+    }
     setActive(buildEmbed(p, providerRefs, sourceUrl))
     const logical = parseProvider(p)
     if (logical) {
@@ -111,7 +118,7 @@ export function Player({
     }
     const fallback = setTimeout(() => setLoaded(true), 4000)
     return () => clearTimeout(fallback)
-  }, [playing])
+  }, [playing, active.provider])
 
   if (def.kind === 'link') {
     return (
@@ -242,7 +249,7 @@ export function Player({
       {platforms.length > 1 && (
         <div className="flex justify-end pt-1">
           <Menu
-            label={`Change playback service (currently ${activeLabel})`}
+            label={`via ${activeLabel} — change playback service`}
             triggerClassName="flex min-h-8 cursor-pointer items-center gap-1 rounded px-1.5 text-xs text-muted transition hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             items={platforms.map((p) => ({
               label: LABELS[p] ?? p,
