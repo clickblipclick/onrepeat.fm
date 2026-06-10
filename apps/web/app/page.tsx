@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getFollowFeed, getLatest } from '@onrepeat/appview'
 import { buttonClassName } from '../lib/button-variants'
+import { linkInline } from '../lib/link-variants'
 import { db } from '../lib/db'
 import { hydrate, bsky } from '../lib/appview'
 import { getSession } from '../lib/session'
@@ -56,7 +57,7 @@ export default async function Home() {
         {jams.length === 0 ? (
           <EmptyState>
             Nobody you follow has a current jam.{' '}
-            <Link href="/explore" className="text-accent">
+            <Link href="/explore" className={linkInline}>
               Explore
             </Link>{' '}
             what&apos;s playing.
@@ -81,7 +82,7 @@ export default async function Home() {
         <SectionLabel as="h1" size="title">Following</SectionLabel>
         <EmptyState>
           Couldn&apos;t load your feed right now.{' '}
-          <Link href="/explore" className="text-accent">
+          <Link href="/explore" className={linkInline}>
             Explore
           </Link>{' '}
           what&apos;s playing.

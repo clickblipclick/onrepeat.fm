@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '../../lib/session'
 import { buttonClassName } from '../../lib/button-variants'
 import { inputClassName } from '../../lib/input-variants'
+import { linkInline } from '../../lib/link-variants'
 
 const LOGIN_ERRORS: Record<string, string> = {
   handle: "Couldn't sign in with that handle — double-check it and try again.",
@@ -58,7 +59,7 @@ export default async function LoginPage({
           href="https://bsky.app"
           target="_blank"
           rel="noreferrer"
-          className="text-accent"
+          className={linkInline}
         >
           Create an account →
         </a>

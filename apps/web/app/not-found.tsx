@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { linkInline } from '../lib/link-variants'
 import { EmptyState } from './_components/empty-state'
 
 export default function NotFound() {
@@ -6,7 +7,7 @@ export default function NotFound() {
     <EmptyState>
       <h1 className="font-semibold text-muted">Nothing here.</h1>
       <p className="mt-2 text-sm">
-        <Link href="/" className="text-accent">
+        <Link href="/" className={linkInline}>
           Back to the feed
         </Link>
       </p>

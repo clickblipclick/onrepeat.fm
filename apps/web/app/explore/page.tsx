@@ -4,6 +4,7 @@ import { db } from '../../lib/db'
 import { hydrate } from '../../lib/appview'
 import { getSession } from '../../lib/session'
 import { readPreferredProvider } from '../../lib/playback-preference.server'
+import { linkInline } from '../../lib/link-variants'
 import { FeedList } from '../_components/feed-list'
 import { SectionLabel } from '../_components/section-label'
 
@@ -25,7 +26,7 @@ export default async function ExplorePage() {
         empty={
           <>
             No jams yet.{' '}
-            <Link href="/post" className="text-accent">
+            <Link href="/post" className={linkInline}>
               Set yours.
             </Link>
           </>
