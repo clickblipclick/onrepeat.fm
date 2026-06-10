@@ -50,6 +50,8 @@ export function JamCard({
             providerRefs={jam.providerRefs}
             sourceUrl={jam.sourceUrl}
             artworkUrl={jam.artworkUrl}
+            title={jam.title}
+            artist={jam.artist}
             lazy
             priority={priority}
             preferredProvider={preferredProvider}
