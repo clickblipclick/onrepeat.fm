@@ -1,7 +1,7 @@
 import type { HydratedJamView } from '@onrepeat/appview'
 import { Player } from './player'
 import { JamHeader, JamBody, JamActions } from './jam-parts'
-import { cardPattern } from '../../lib/card-pattern'
+import { JamCardShell, MediaFrame } from './jam-card-shell'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''
@@ -38,29 +38,24 @@ export function JamCard({
     // Scope the card to its author's theme — the CSS-variable cascade (globals.css)
     // re-colors everything inside. The thick ink border + offset accent shadow + framed
     // artwork give the card weight and make the author's theme pop (riso-print feel).
-    <article
-      data-theme={jam.author.theme}
-      className={`${cardPattern(jam.authorDid)} overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)] transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]`}
-    >
+    <JamCardShell did={jam.authorDid} theme={jam.author.theme} interactive>
       <JamHeader jam={jam} jamHref={jamHref} viewerDid={viewerDid} />
 
       {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
           framed object rather than a flush block. */}
-      <div className="p-4">
-        <div className="overflow-hidden rounded">
-          {player ?? (
-            <Player
-              sourceProvider={jam.sourceProvider}
-              providerRefs={jam.providerRefs}
-              sourceUrl={jam.sourceUrl}
-              artworkUrl={jam.artworkUrl}
-              lazy
-              priority={priority}
-              preferredProvider={preferredProvider}
-            />
-          )}
-        </div>
-      </div>
+      <MediaFrame>
+        {player ?? (
+          <Player
+            sourceProvider={jam.sourceProvider}
+            providerRefs={jam.providerRefs}
+            sourceUrl={jam.sourceUrl}
+            artworkUrl={jam.artworkUrl}
+            lazy
+            priority={priority}
+            preferredProvider={preferredProvider}
+          />
+        )}
+      </MediaFrame>
 
       <div className="px-4 pb-4">
         <JamBody jam={jam} href={jamHref} />
@@ -68,7 +63,7 @@ export function JamCard({
           {actions ?? <JamActions jam={jam} loggedIn={loggedIn} />}
         </div>
       </div>
-    </article>
+    </JamCardShell>
   )
 }
 

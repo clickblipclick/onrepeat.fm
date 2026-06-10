@@ -9,7 +9,7 @@ import { Player } from '../../../_components/player'
 import { Avatar, authorName } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
 import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
-import { cardPattern } from '../../../../lib/card-pattern'
+import { JamCardShell, MediaFrame } from '../../../_components/jam-card-shell'
 import { SectionLabel } from '../../../_components/section-label'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
@@ -54,10 +54,7 @@ export default async function JamPage({
     // Mirrors the feed/profile JamCard chrome (shared via jam-parts) for visual
     // consistency, minus the hover lift — the whole card isn't a link here, you're
     // already on the post — and plus the detail-only "liked by" / "re-jams" sections.
-    <article
-      data-theme={jam.author.theme}
-      className={`${cardPattern(jam.authorDid)} overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)]`}
-    >
+    <JamCardShell did={jam.authorDid} theme={jam.author.theme}>
       <JamHeader
         jam={jam}
         viewerDid={session.did}
@@ -65,18 +62,16 @@ export default async function JamPage({
         redirectTo={profileHref}
       />
 
-      <div className="p-4">
-        <div className="overflow-hidden rounded">
-          <Player
-            sourceProvider={jam.sourceProvider}
-            providerRefs={jam.providerRefs}
-            sourceUrl={jam.sourceUrl}
-            artworkUrl={jam.artworkUrl}
-            priority // the jam detail cover is the page hero/LCP image
-            preferredProvider={preferredProvider}
-          />
-        </div>
-      </div>
+      <MediaFrame>
+        <Player
+          sourceProvider={jam.sourceProvider}
+          providerRefs={jam.providerRefs}
+          sourceUrl={jam.sourceUrl}
+          artworkUrl={jam.artworkUrl}
+          priority // the jam detail cover is the page hero/LCP image
+          preferredProvider={preferredProvider}
+        />
+      </MediaFrame>
 
       <div className="px-4 pb-4">
         <JamBody jam={jam} />
@@ -121,6 +116,6 @@ export default async function JamPage({
           </div>
         )}
       </div>
-    </article>
+    </JamCardShell>
   )
 }
