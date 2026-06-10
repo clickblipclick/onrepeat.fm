@@ -1,16 +1,33 @@
 import type { DB } from '@onrepeat/db'
 
+export interface CursorState {
+  cursor: number
+  /** When the cursor last advanced — i.e. how stale a resumed subscription is. */
+  updatedAt: Date
+}
+
+export async function loadCursorState(
+  db: DB,
+  service: string,
+): Promise<CursorState | undefined> {
+  const row = await db
+    .selectFrom('subscription_state')
+    .select(['cursor', 'updated_at'])
+    .where('service', '=', service)
+    .executeTakeFirst()
+  if (!row) return undefined
+  // seq stays well below Number.MAX_SAFE_INTEGER at current relay scale; coerce bigint string → number.
+  return {
+    cursor: Number(row.cursor),
+    updatedAt: new Date(row.updated_at as unknown as string | Date),
+  }
+}
+
 export async function loadCursor(
   db: DB,
   service: string,
 ): Promise<number | undefined> {
-  const row = await db
-    .selectFrom('subscription_state')
-    .select('cursor')
-    .where('service', '=', service)
-    .executeTakeFirst()
-  // seq stays well below Number.MAX_SAFE_INTEGER at current relay scale; coerce bigint string → number.
-  return row ? Number(row.cursor) : undefined
+  return (await loadCursorState(db, service))?.cursor
 }
 
 export async function saveCursor(
@@ -23,7 +40,13 @@ export async function saveCursor(
     .values({ service, cursor })
     .onConflict((oc) =>
       // Refresh updated_at on every advance so it reflects last progress, not insert time.
-      oc.column('service').doUpdateSet({ cursor, updated_at: new Date() }),
+      oc
+        .column('service')
+        .doUpdateSet({ cursor, updated_at: new Date() })
+        // Monotonic guard: record() fire-and-forgets throttled writes, so an
+        // in-flight one can land after flush()'s final write — never let an
+        // older seq regress the persisted cursor.
+        .where('subscription_state.cursor', '<', String(cursor)),
     )
     .execute()
 }

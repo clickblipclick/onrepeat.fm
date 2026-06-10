@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import type { Event } from '@atproto/sync'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
-import { toIngestEvent } from './events'
+import {
+  ingestEventLabel,
+  toFailedEventInput,
+  toIngestEvent,
+  type RecordIngestEvent,
+} from './events'
 
 // Structural fake — toIngestEvent only reads these fields and calls .toString()
 // on uri/cid, so we don't need real AtUri/CID instances here.
@@ -55,7 +60,7 @@ describe('toIngestEvent', () => {
   it('normalizes a like delete with null cid and undefined record', () => {
     const evt = toIngestEvent(
       fakeCommit({ event: 'delete', collection: LIKE_NSID }),
-    )
+    ) as RecordIngestEvent | null
     expect(evt?.action).toBe('delete')
     expect(evt?.cid).toBeNull()
     expect(evt?.record).toBeUndefined()
@@ -71,7 +76,7 @@ describe('toIngestEvent', () => {
         rkey: 'self',
         record,
       }),
-    )
+    ) as RecordIngestEvent | null
     expect(evt?.collection).toBe(PROFILE_NSID)
     expect(evt?.record).toEqual(record)
   })
@@ -84,7 +89,7 @@ describe('toIngestEvent', () => {
     ).toBeNull()
   })
 
-  it('ignores non-commit events', () => {
+  it('ignores identity and sync events', () => {
     const identity = {
       event: 'identity',
       seq: 1,
@@ -92,5 +97,78 @@ describe('toIngestEvent', () => {
       did: 'did:plc:author',
     } as unknown as Event
     expect(toIngestEvent(identity)).toBeNull()
+    const syncEvt = {
+      event: 'sync',
+      seq: 2,
+      time: 't',
+      did: 'did:plc:author',
+    } as unknown as Event
+    expect(toIngestEvent(syncEvt)).toBeNull()
+  })
+
+  function accountEvt(p: { active: boolean; status?: string }): Event {
+    return {
+      event: 'account',
+      seq: 7,
+      time: 't',
+      did: 'did:plc:author',
+      active: p.active,
+      status: p.status,
+    } as unknown as Event
+  }
+
+  it('normalizes account events to actor statuses', () => {
+    expect(toIngestEvent(accountEvt({ active: true }))).toEqual({
+      action: 'account',
+      did: 'did:plc:author',
+      status: 'active',
+      seq: 7,
+    })
+    expect(
+      toIngestEvent(accountEvt({ active: false, status: 'takendown' })),
+    ).toMatchObject({ status: 'takendown' })
+    expect(
+      toIngestEvent(accountEvt({ active: false, status: 'deleted' })),
+    ).toMatchObject({ status: 'deleted' })
+  })
+
+  it('maps unknown/missing inactive statuses to deactivated', () => {
+    expect(toIngestEvent(accountEvt({ active: false }))).toMatchObject({
+      status: 'deactivated',
+    })
+    expect(
+      toIngestEvent(accountEvt({ active: false, status: 'desynchronized' })),
+    ).toMatchObject({ status: 'deactivated' })
+  })
+})
+
+describe('dead-letter shaping', () => {
+  it('shapes record events as-is and account events with synthetic uri/collection', () => {
+    const record = toIngestEvent(
+      fakeCommit({ event: 'create', collection: JAM_NSID, record: {}, seq: 3 }),
+    )!
+    expect(toFailedEventInput(record)).toMatchObject({
+      collection: JAM_NSID,
+      action: 'create',
+      uri: 'at://did:plc:author/fm.onrepeat.jam/rkey1',
+    })
+    const account = toIngestEvent({
+      event: 'account',
+      seq: 9,
+      time: 't',
+      did: 'did:plc:x',
+      active: false,
+      status: 'deleted',
+    } as unknown as Event)!
+    expect(toFailedEventInput(account)).toEqual({
+      seq: 9,
+      did: 'did:plc:x',
+      collection: '#account',
+      action: 'account',
+      uri: 'at://did:plc:x',
+      cid: null,
+      record: { status: 'deleted' },
+    })
+    expect(ingestEventLabel(account)).toBe('account(deleted) did:plc:x')
   })
 })

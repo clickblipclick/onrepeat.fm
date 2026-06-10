@@ -1,5 +1,12 @@
 import type { DB } from '@onrepeat/db'
-import { indexJam, likeRow, removeJam, setActorTheme } from '@onrepeat/db'
+import {
+  indexJam,
+  likeRow,
+  purgeActorContent,
+  removeJam,
+  setActorStatus,
+  setActorTheme,
+} from '@onrepeat/db'
 import {
   validateRecord,
   JAM_NSID,
@@ -20,6 +27,17 @@ export async function handleIngestEvent(
   evt: IngestEvent,
   hooks: IngesterHooks = defaultHooks,
 ): Promise<void> {
+  if (evt.action === 'account') {
+    // Mirror upstream account state so reads stop serving content of
+    // deactivated/suspended/taken-down accounts. UPDATE-only: the account
+    // stream covers the whole network and unknown DIDs must not create rows.
+    await setActorStatus(db, evt.did, evt.status)
+    // Deletion is permanent (the repo is gone); drop their indexed content
+    // instead of merely hiding it. Idempotent, so replay is safe.
+    if (evt.status === 'deleted') await purgeActorContent(db, evt.did)
+    return
+  }
+
   // Record that we've seen this author. Profile fields (handle/avatar) are
   // hydrated later (Plan 5), never here — the ingester makes no outbound calls.
   const now = new Date()

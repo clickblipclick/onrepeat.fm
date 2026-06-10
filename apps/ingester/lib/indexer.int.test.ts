@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 import { handleIngestEvent } from './indexer'
-import type { IngestEvent } from './events'
+import type { IngestEvent, RecordIngestEvent } from './events'
 
 const url =
   process.env.DATABASE_URL ??
@@ -10,7 +10,7 @@ const url =
 
 const db = createDb(url)
 
-function jamEvent(over: Partial<IngestEvent> = {}): IngestEvent {
+function jamEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
   return {
     action: 'create',
     uri: 'at://did:plc:author/fm.onrepeat.jam/1',
@@ -30,7 +30,7 @@ function jamEvent(over: Partial<IngestEvent> = {}): IngestEvent {
   }
 }
 
-function likeEvent(over: Partial<IngestEvent> = {}): IngestEvent {
+function likeEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
   return {
     action: 'create',
     uri: 'at://did:plc:author/fm.onrepeat.like/1',
@@ -50,7 +50,9 @@ function likeEvent(over: Partial<IngestEvent> = {}): IngestEvent {
   }
 }
 
-function profileEvent(over: Partial<IngestEvent> = {}): IngestEvent {
+function profileEvent(
+  over: Partial<RecordIngestEvent> = {},
+): RecordIngestEvent {
   return {
     action: 'create',
     uri: 'at://did:plc:author/fm.onrepeat.profile/self',
@@ -273,5 +275,79 @@ describe('handleIngestEvent', () => {
       .executeTakeFirst()
     expect(jam?.track_id).toBe('track-123') // untouched by the ingester
     expect(jam?.raw_title).toBe('Edited')
+  })
+
+  it('mirrors account status onto a known actor, and back to active', async () => {
+    await handleIngestEvent(db, jamEvent()) // creates the actor row
+    await handleIngestEvent(db, {
+      action: 'account',
+      did: 'did:plc:author',
+      status: 'deactivated',
+      seq: 2,
+    })
+    let actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.status).toBe('deactivated')
+
+    await handleIngestEvent(db, {
+      action: 'account',
+      did: 'did:plc:author',
+      status: 'active',
+      seq: 3,
+    })
+    actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.status).toBe('active')
+  })
+
+  it('does not create actor rows for account events of unknown DIDs', async () => {
+    await handleIngestEvent(db, {
+      action: 'account',
+      did: 'did:plc:stranger',
+      status: 'deactivated',
+      seq: 1,
+    })
+    const rows = await db.selectFrom('actors').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('purges all of an actor’s content on account deletion', async () => {
+    await handleIngestEvent(db, jamEvent())
+    await handleIngestEvent(db, likeEvent()) // author's like on someone else's jam
+    // Someone else's like on the author's jam — its subject dies with the repo.
+    await handleIngestEvent(
+      db,
+      likeEvent({
+        uri: 'at://did:plc:fan/fm.onrepeat.like/1',
+        did: 'did:plc:fan',
+        record: {
+          $type: LIKE_NSID,
+          subject: { uri: jamEvent().uri, cid: 'bafyjam1' },
+          createdAt: '2026-05-30T00:00:00.000Z',
+        },
+      }),
+    )
+
+    await handleIngestEvent(db, {
+      action: 'account',
+      did: 'did:plc:author',
+      status: 'deleted',
+      seq: 9,
+    })
+
+    expect(await db.selectFrom('jams').selectAll().execute()).toHaveLength(0)
+    expect(await db.selectFrom('likes').selectAll().execute()).toHaveLength(0)
+    const actor = await db
+      .selectFrom('actors')
+      .selectAll()
+      .where('did', '=', 'did:plc:author')
+      .executeTakeFirst()
+    expect(actor?.status).toBe('deleted')
   })
 })
