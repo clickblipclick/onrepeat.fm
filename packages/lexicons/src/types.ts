@@ -4,7 +4,7 @@ export interface ViaRef {
 }
 
 export interface JamRecord {
-  $type?: 'fm.onrepeat.jam'
+  $type: 'fm.onrepeat.jam'
   sourceUrl: string
   sourceProvider: string
   title: string
@@ -17,7 +17,7 @@ export interface JamRecord {
 }
 
 export interface ProfileRecord {
-  $type?: 'fm.onrepeat.profile'
+  $type: 'fm.onrepeat.profile'
   /** Slug of the chosen color theme; unknown values fall back to a default. */
   colorTheme?: string
   createdAt: string
@@ -29,7 +29,7 @@ export interface StrongRef {
 }
 
 export interface LikeRecord {
-  $type?: 'fm.onrepeat.like'
+  $type: 'fm.onrepeat.like'
   subject: StrongRef
   createdAt: string
 }
