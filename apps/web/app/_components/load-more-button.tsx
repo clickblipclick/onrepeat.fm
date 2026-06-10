@@ -21,7 +21,7 @@ export function LoadMoreButton({
       onClick={onClick}
       disabled={loading}
       className={cn(
-        'w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent',
+        'w-full rounded border border-dashed border-border py-2 text-sm text-muted hover:text-accent disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
     >
