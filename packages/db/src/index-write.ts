@@ -85,6 +85,34 @@ export async function removeJam(db: DB, uri: string): Promise<void> {
 }
 
 /**
+ * Upsert a like row into the index. Idempotent by at-uri: re-indexing the same
+ * uri refreshes all columns. Shared by the firehose ingester and the web app's
+ * write-through (read-your-writes) path.
+ */
+export async function indexLike(
+  db: DB,
+  args: { uri: string; did: string; record: LikeRecord },
+): Promise<void> {
+  const row = likeRow(args.uri, args.did, args.record)
+  await db
+    .insertInto('likes')
+    .values(row)
+    .onConflict((oc) =>
+      oc.column('uri').doUpdateSet({
+        author_did: row.author_did,
+        subject_uri: row.subject_uri,
+        created_at: row.created_at,
+      }),
+    )
+    .execute()
+}
+
+/** Remove a like row from the index by at-uri. Idempotent (no-op if absent). */
+export async function removeLike(db: DB, uri: string): Promise<void> {
+  await db.deleteFrom('likes').where('uri', '=', uri).execute()
+}
+
+/**
  * Set (or clear, with null) an actor's denormalized color theme. Upserts by DID so it
  * works whether or not the actor row already exists, and touches ONLY color_theme —
  * last_seen and the bsky-mirrored profile fields are left untouched.

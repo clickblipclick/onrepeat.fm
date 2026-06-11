@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest'
-import { JAM_NSID } from '@onrepeat/lexicons'
+import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
 import { createDb } from './client'
 import { createMigrator } from './migrate'
-import { indexJam, removeJam } from './index-write'
+import { indexJam, removeJam, indexLike, removeLike } from './index-write'
 
 const url =
   process.env.DATABASE_URL ??
@@ -223,6 +223,64 @@ describe('removeJam', () => {
 
   it('is a no-op when the uri is absent', async () => {
     await expect(removeJam(db, TEST_URI)).resolves.toBeUndefined()
+  })
+})
+
+const LIKE_URI = 'at://did:plc:liker/fm.onrepeat.like/intlike1'
+const LIKE_DID = 'did:plc:liker'
+
+const likeRecord = {
+  $type: LIKE_NSID as 'fm.onrepeat.like',
+  subject: { uri: TEST_URI, cid: TEST_CID },
+  createdAt: '2026-06-10T00:00:00.000Z',
+}
+
+describe('indexLike / removeLike', () => {
+  beforeEach(async () => {
+    await db.deleteFrom('likes').where('uri', '=', LIKE_URI).execute()
+  })
+
+  afterAll(async () => {
+    await db.deleteFrom('likes').where('uri', '=', LIKE_URI).execute()
+  })
+
+  it('inserts a like row retrievable by uri', async () => {
+    await indexLike(db, { uri: LIKE_URI, did: LIKE_DID, record: likeRecord })
+    const row = await db
+      .selectFrom('likes')
+      .selectAll()
+      .where('uri', '=', LIKE_URI)
+      .executeTakeFirst()
+    expect(row).toBeDefined()
+    expect(row!.author_did).toBe(LIKE_DID)
+    expect(row!.subject_uri).toBe(TEST_URI)
+  })
+
+  it('re-indexing the same uri is an idempotent upsert', async () => {
+    await indexLike(db, { uri: LIKE_URI, did: LIKE_DID, record: likeRecord })
+    await indexLike(db, {
+      uri: LIKE_URI,
+      did: LIKE_DID,
+      record: { ...likeRecord, createdAt: '2026-06-11T00:00:00.000Z' },
+    })
+    const rows = await db
+      .selectFrom('likes')
+      .selectAll()
+      .where('uri', '=', LIKE_URI)
+      .execute()
+    expect(rows).toHaveLength(1)
+  })
+
+  it('removeLike deletes the row and is a no-op when absent', async () => {
+    await indexLike(db, { uri: LIKE_URI, did: LIKE_DID, record: likeRecord })
+    await removeLike(db, LIKE_URI)
+    await removeLike(db, LIKE_URI) // second call must not throw
+    const row = await db
+      .selectFrom('likes')
+      .selectAll()
+      .where('uri', '=', LIKE_URI)
+      .executeTakeFirst()
+    expect(row).toBeUndefined()
   })
 })
 
