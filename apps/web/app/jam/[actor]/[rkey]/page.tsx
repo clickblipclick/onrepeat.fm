@@ -1,5 +1,7 @@
+import { cache } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { getJam } from '@onrepeat/appview'
 import { db } from '../../../../lib/db'
 import { hydrate, bsky } from '../../../../lib/appview'
@@ -21,6 +23,32 @@ import { SectionLabel } from '../../../_components/section-label'
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
 const JAM_NSID = 'fm.onrepeat.jam'
 
+// `actor` is a handle (pretty links) or a DID (older/shared links); resolve once
+// per request for both generateMetadata and the page body.
+const resolveAuthorDid = cache(async (actorDecoded: string) => {
+  if (actorDecoded.startsWith('did:')) return actorDecoded
+  const prof = await bsky.getProfile(actorDecoded)
+  return prof?.did ?? null
+})
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ actor: string; rkey: string }>
+}): Promise<Metadata> {
+  const { actor, rkey } = await params
+  const authorDid = await resolveAuthorDid(decodeURIComponent(actor))
+  if (!authorDid) notFound()
+  const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
+  // Existence check (viewer-independent) — one extra keyed select per page view;
+  // the page body re-queries with viewerDid for likedByYou.
+  const detail = await getJam(db, { uri })
+  if (!detail) notFound()
+  return {
+    title: `${detail.jam.title} — ${detail.jam.artist} · onrepeat.fm`,
+  }
+}
+
 export default async function JamPage({
   params,
 }: {
@@ -30,12 +58,8 @@ export default async function JamPage({
   // `actor` is a handle (pretty links) or a DID (older/shared links). Records are keyed
   // by DID, so resolve a handle to its DID before building the at-uri.
   const actorDecoded = decodeURIComponent(actor)
-  let authorDid = actorDecoded
-  if (!actorDecoded.startsWith('did:')) {
-    const prof = await bsky.getProfile(actorDecoded)
-    if (!prof) notFound()
-    authorDid = prof.did
-  }
+  const authorDid = await resolveAuthorDid(actorDecoded)
+  if (!authorDid) notFound()
   const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
   const session = await getSession()
   const preferredProvider = (await readPreferredProvider()) ?? undefined
