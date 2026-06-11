@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import { getFollowFeed, getLatest } from '@onrepeat/appview'
-import { buttonClassName } from '../lib/button-variants'
-import { linkInline } from '../lib/link-variants'
-import { db } from '../lib/db'
-import { hydrate, bsky } from '../lib/appview'
-import { getSession } from '../lib/session'
-import { readPreferredProvider } from '../lib/playback-preference.server'
-import { FeedList } from './_components/feed-list'
-import { EmptyState } from './_components/empty-state'
-import { SectionLabel } from './_components/section-label'
+import { buttonClassName } from '../../lib/button-variants'
+import { linkInline } from '../../lib/link-variants'
+import { db } from '../../lib/db'
+import { hydrate, bsky } from '../../lib/appview'
+import { getSession } from '../../lib/session'
+import { readPreferredProvider } from '../../lib/playback-preference.server'
+import { FeedList } from '../_components/feed-list'
+import { EmptyState } from '../_components/empty-state'
+import { SectionLabel } from '../_components/section-label'
 
 export default async function Home() {
   const session = await getSession()

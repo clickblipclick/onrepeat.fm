@@ -1,4 +1,4 @@
-import { cache } from 'react'
+import { cache, Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getActorJams, loadActorThemes } from '@onrepeat/appview'
@@ -35,6 +35,62 @@ export async function generateMetadata({
   }
 }
 
+async function ProfileJams({
+  did,
+  handle,
+  viewerDid,
+  preferredProvider,
+}: {
+  did: string
+  handle: string
+  viewerDid?: string
+  preferredProvider?: string
+}) {
+  const page = await getActorJams(db, { did, viewerDid, limit: 100 })
+  const jams = await hydrate(page.jams)
+  const current = jams[0] && isCurrentJam(jams[0].createdAt) ? jams[0] : null
+  const archive = current ? jams.slice(1) : jams
+
+  return (
+    <>
+      <SectionLabel>Current jam</SectionLabel>
+      {current ? (
+        <JamCard
+          jam={current}
+          loggedIn={!!viewerDid}
+          viewerDid={viewerDid}
+          priority // the profile's current jam is its hero/LCP image
+          preferredProvider={preferredProvider}
+        />
+      ) : (
+        <EmptyState>hasn&apos;t jammed lately</EmptyState>
+      )}
+
+      {archive.length > 0 && (
+        <>
+          <SectionLabel>Archive</SectionLabel>
+          <ArchiveGrid
+            did={did}
+            handle={handle}
+            initial={archive}
+            initialCursor={page.cursor}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+function JamCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-md border border-border bg-surface">
+      <div className="surface-grid h-9 border-b border-border" />
+      <div className="aspect-square w-full animate-pulse bg-border" />
+      <div className="h-16 p-3" />
+    </div>
+  )
+}
+
 export default async function ProfilePage({
   params,
 }: {
@@ -47,14 +103,6 @@ export default async function ProfilePage({
 
   const session = await getSession()
   const preferredProvider = (await readPreferredProvider()) ?? undefined
-  const page = await getActorJams(db, {
-    did: profile.did,
-    viewerDid: session.did,
-    limit: 100,
-  })
-  const jams = await hydrate(page.jams)
-  const current = jams[0] && isCurrentJam(jams[0].createdAt) ? jams[0] : null
-  const archive = current ? jams.slice(1) : jams
 
   // The profile page wears its owner's color theme across the whole shell (the rest of
   // the app is neutral mono).
@@ -76,30 +124,14 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      <SectionLabel>Current jam</SectionLabel>
-      {current ? (
-        <JamCard
-          jam={current}
-          loggedIn={!!session.did}
+      <Suspense fallback={<JamCardSkeleton />}>
+        <ProfileJams
+          did={profile.did}
+          handle={profile.handle ?? profile.did}
           viewerDid={session.did}
-          priority // the profile's current jam is its hero/LCP image
           preferredProvider={preferredProvider}
         />
-      ) : (
-        <EmptyState>hasn&apos;t jammed lately</EmptyState>
-      )}
-
-      {archive.length > 0 && (
-        <>
-          <SectionLabel>Archive</SectionLabel>
-          <ArchiveGrid
-            did={profile.did}
-            handle={profile.handle ?? profile.did}
-            initial={archive}
-            initialCursor={page.cursor}
-          />
-        </>
-      )}
+      </Suspense>
     </>
   )
 }
