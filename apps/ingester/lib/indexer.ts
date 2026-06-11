@@ -1,8 +1,9 @@
 import type { DB } from '@onrepeat/db'
 import {
   indexJam,
-  likeRow,
+  indexLike,
   purgeActorContent,
+  removeLike,
   removeJam,
   setActorStatus,
   setActorTheme,
@@ -54,7 +55,7 @@ export async function handleIngestEvent(
       // Profile gone → fall back to the deterministic default on read.
       await setActorTheme(db, evt.did, null)
     } else {
-      await db.deleteFrom('likes').where('uri', '=', evt.uri).execute()
+      await removeLike(db, evt.uri)
     }
     return
   }
@@ -86,17 +87,10 @@ export async function handleIngestEvent(
     const record = evt.record as ProfileRecord
     await setActorTheme(db, evt.did, record.colorTheme ?? null)
   } else {
-    const row = likeRow(evt.uri, evt.did, evt.record as LikeRecord)
-    await db
-      .insertInto('likes')
-      .values(row)
-      .onConflict((oc) =>
-        oc.column('uri').doUpdateSet({
-          author_did: row.author_did,
-          subject_uri: row.subject_uri,
-          created_at: row.created_at,
-        }),
-      )
-      .execute()
+    await indexLike(db, {
+      uri: evt.uri,
+      did: evt.did,
+      record: evt.record as LikeRecord,
+    })
   }
 }
