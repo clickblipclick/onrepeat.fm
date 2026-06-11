@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { oauthClient } from '../../../lib/oauth-client'
+import { getOauthClient } from '../../../lib/oauth-client'
 import { getResponseSession } from '../../../lib/session'
 import { APP_URL } from '../../../lib/session-config'
 
@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
   let oauthSession
   try {
+    const oauthClient = await getOauthClient()
     ;({ session: oauthSession } = await oauthClient.callback(params))
   } catch (err) {
     // The token exchange can fail (e.g. a network timeout to the auth server, or a

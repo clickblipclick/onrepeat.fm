@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { oauthClient } from '../../lib/oauth-client'
+import { getOauthClient } from '../../lib/oauth-client'
 import { getResponseSession } from '../../lib/session'
 import { APP_URL } from '../../lib/session-config'
 
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   // a network failure here shouldn't block the user from logging out locally.
   if (did) {
     try {
+      const oauthClient = await getOauthClient()
       await oauthClient.revoke(did)
     } catch (err) {
       console.error('[web] /logout token revocation failed', err)

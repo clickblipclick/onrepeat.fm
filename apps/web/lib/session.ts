@@ -2,7 +2,7 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import type { NextRequest, NextResponse } from 'next/server'
 import { Agent } from '@atproto/api'
-import { oauthClient, oauthSessionStore } from './oauth-client'
+import { getOauthClient, getOauthSessionStore } from './oauth-client'
 import { sessionOptions, type SessionData } from './session-config'
 
 export * from './session-config'
@@ -38,13 +38,14 @@ export async function getSessionAgent(): Promise<SessionAgentResult> {
   const session = await getSession()
   if (!session.did) return { agent: null, reason: 'logged-out' }
   try {
+    const oauthClient = await getOauthClient()
     const oauthSession = await oauthClient.restore(session.did)
     return { agent: new Agent(oauthSession) }
   } catch (err) {
     // atproto deletes the stored session when it's unrecoverable (revoked /
     // invalid_grant / invalid). If the row is gone, re-auth is required; if it
     // survived, the failure was transient — keep the session so a retry works.
-    const stored = await oauthSessionStore
+    const stored = await getOauthSessionStore()
       .get(session.did)
       .catch(() => 'unknown' as const)
     if (stored === undefined) {

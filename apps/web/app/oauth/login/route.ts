@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { oauthClient } from '../../../lib/oauth-client'
+import { getOauthClient } from '../../../lib/oauth-client'
 import { APP_URL } from '../../../lib/session-config'
 
 export async function POST(req: NextRequest) {
@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
   }
   let url: URL
   try {
+    const oauthClient = await getOauthClient()
     url = await oauthClient.authorize(handle)
   } catch (err) {
     console.error('[web] /oauth/login authorize failed', err)
