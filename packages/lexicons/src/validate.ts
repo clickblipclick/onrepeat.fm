@@ -2,11 +2,15 @@ import { Lexicons } from '@atproto/lexicon'
 import jamDoc from '../../../lexicons/fm/onrepeat/jam.json'
 import likeDoc from '../../../lexicons/fm/onrepeat/like.json'
 import profileDoc from '../../../lexicons/fm/onrepeat/profile.json'
+// Vendored verbatim from bluesky-social/atproto (lexicons/com/atproto/repo/strongRef.json)
+// so the catalog can resolve like.json's external ref — do not hand-edit.
+import strongRefDoc from '../../../lexicons/com/atproto/repo/strongRef.json'
 
 export const lexicons = new Lexicons([
   jamDoc as any,
   likeDoc as any,
   profileDoc as any,
+  strongRefDoc as any,
 ])
 
 export type ValidationOutcome =

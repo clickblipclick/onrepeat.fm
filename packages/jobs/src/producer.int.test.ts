@@ -22,7 +22,6 @@ function jam(over: Partial<JamRecord> = {}): {
       sourceProvider: 'spotify',
       title: 'Song',
       artist: 'Artist',
-      isrc: 'USRC12300001',
       createdAt: '2026-05-30T00:00:00.000Z',
       ...over,
     },
@@ -68,30 +67,29 @@ describe('enqueueResolveForJam', () => {
     const track = await db
       .selectFrom('tracks')
       .selectAll()
-      .where('id', '=', 'isrc:USRC12300001')
+      .where('id', '=', 'ta:artist|song')
       .executeTakeFirst()
     expect(track?.resolution_status).toBe('pending')
     expect(track?.title).toBe('Song')
-    expect(track?.isrc).toBe('USRC12300001')
 
     const linked = await db
       .selectFrom('jams')
       .select('track_id')
       .where('uri', '=', jam().uri)
       .executeTakeFirst()
-    expect(linked?.track_id).toBe('isrc:USRC12300001')
+    expect(linked?.track_id).toBe('ta:artist|song')
 
     const queued = await boss.fetch(RESOLVE_QUEUE)
     expect(queued).toHaveLength(1)
     expect(queued[0]?.data).toMatchObject({
-      identity: 'isrc:USRC12300001',
+      identity: 'ta:artist|song',
       provider: 'spotify',
       sourceUrl: 'https://open.spotify.com/track/1',
     })
   })
 
-  it('uses the ta: fallback identity when the jam has no isrc', async () => {
-    const noIsrc = jam({ isrc: undefined })
+  it('uses the ta: fallback identity (title/artist) for a jam without isrc', async () => {
+    const noIsrc = jam()
     await db
       .insertInto('jams')
       .values({
@@ -138,7 +136,7 @@ describe('enqueueResolveForJam', () => {
       .execute()
     await db
       .insertInto('tracks')
-      .values({ id: 'isrc:USRC12300001', resolution_status: 'resolved' })
+      .values({ id: 'ta:artist|song', resolution_status: 'resolved' })
       .execute()
 
     await enqueueResolveForJam(boss, db, jam())
@@ -146,7 +144,7 @@ describe('enqueueResolveForJam', () => {
     const track = await db
       .selectFrom('tracks')
       .selectAll()
-      .where('id', '=', 'isrc:USRC12300001')
+      .where('id', '=', 'ta:artist|song')
       .executeTakeFirst()
     expect(track?.resolution_status).toBe('resolved')
     const linked = await db
@@ -154,6 +152,6 @@ describe('enqueueResolveForJam', () => {
       .select('track_id')
       .where('uri', '=', jam().uri)
       .executeTakeFirst()
-    expect(linked?.track_id).toBe('isrc:USRC12300001')
+    expect(linked?.track_id).toBe('ta:artist|song')
   })
 })

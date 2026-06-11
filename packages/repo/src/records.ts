@@ -15,7 +15,6 @@ export interface JamInput {
   title: string
   artist: string
   artworkUrl?: string
-  isrc?: string
   caption?: string
   via?: { uri: string; did: string }
   /** Defaults to now() if omitted. */
@@ -32,7 +31,6 @@ export function buildJamRecord(input: JamInput): JamRecord {
     createdAt: input.createdAt ?? new Date().toISOString(),
   }
   if (input.artworkUrl) record.artworkUrl = input.artworkUrl
-  if (input.isrc) record.isrc = input.isrc
   if (input.caption) record.caption = input.caption
   if (input.via) record.via = input.via
 

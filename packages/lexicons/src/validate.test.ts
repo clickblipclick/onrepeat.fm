@@ -55,6 +55,45 @@ describe('validateRecord (like)', () => {
   })
 })
 
+describe('regression pins (pre-publication)', () => {
+  it('accepts a sourceProvider outside knownValues (advisory, open enum)', () => {
+    const res = validateRecord(JAM_NSID, {
+      $type: JAM_NSID,
+      sourceUrl: 'https://example-music.test/track/1',
+      sourceProvider: 'futureprovider',
+      title: 'T',
+      artist: 'A',
+      createdAt: '2026-06-10T00:00:00.000Z',
+    })
+    expect(res.success).toBe(true)
+  })
+
+  it('still accepts a legacy jam record carrying the removed isrc field', () => {
+    const res = validateRecord(JAM_NSID, {
+      $type: JAM_NSID,
+      sourceUrl: 'https://open.spotify.com/track/x',
+      sourceProvider: 'spotify',
+      title: 'T',
+      artist: 'A',
+      isrc: 'USRC12300001',
+      createdAt: '2026-06-10T00:00:00.000Z',
+    })
+    expect(res.success).toBe(true)
+  })
+
+  it('validates a like whose subject is a canonical com.atproto.repo.strongRef', () => {
+    const res = validateRecord(LIKE_NSID, {
+      $type: LIKE_NSID,
+      subject: {
+        uri: 'at://did:plc:x/fm.onrepeat.jam/abc',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+      },
+      createdAt: '2026-06-10T00:00:00.000Z',
+    })
+    expect(res.success).toBe(true)
+  })
+})
+
 describe('validateRecord (profile)', () => {
   const base = { $type: PROFILE_NSID, createdAt: '2026-05-29T12:00:00.000Z' }
 

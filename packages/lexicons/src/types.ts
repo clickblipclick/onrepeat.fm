@@ -10,7 +10,6 @@ export interface JamRecord {
   title: string
   artist: string
   artworkUrl?: string
-  isrc?: string
   caption?: string
   via?: ViaRef
   createdAt: string

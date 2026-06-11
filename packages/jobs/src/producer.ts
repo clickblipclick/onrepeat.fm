@@ -27,7 +27,6 @@ export async function enqueueResolveForJam(
   let identity: string
   try {
     identity = trackIdentity({
-      isrc: record.isrc,
       title: record.title,
       artist: record.artist,
     })
@@ -44,7 +43,6 @@ export async function enqueueResolveForJam(
     .insertInto('tracks')
     .values({
       id: identity,
-      isrc: record.isrc ?? null,
       title: record.title ?? null,
       artist: record.artist ?? null,
       artwork_url: record.artworkUrl ?? null,
