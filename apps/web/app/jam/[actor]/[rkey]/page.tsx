@@ -10,10 +10,11 @@ import {
   PlaybackProvider,
   PlaybackSwitcher,
 } from '../../../_components/playback'
-import { Avatar, authorName } from '../../../_components/avatar'
+import { authorName, type DisplayAuthor } from '../../../_components/avatar'
 import { RelativeTime } from '../../../_components/relative-time'
 import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
 import { JamCardShell, MediaFrame } from '../../../_components/jam-card-shell'
+import { LikeProvider, LikedBy } from '../../../_components/liked-by'
 import { SectionLabel } from '../../../_components/section-label'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
@@ -45,10 +46,16 @@ export default async function JamPage({
   const jam = hydrated[0]
   if (!jam) notFound()
   const reJams = await hydrate(detail.reJams)
-  // Liker avatars are enrichment: degrade to DID-only on a bsky outage rather than erroring the page.
-  let likerProfiles: Awaited<ReturnType<typeof bsky.getProfiles>> = new Map()
+  // Liker avatars are enrichment: degrade to DID-only on a bsky outage rather than erroring
+  // the page. The viewer's profile rides along so their avatar is ready if they like the jam.
+  const likerProfiles: Record<string, DisplayAuthor> = {}
   try {
-    likerProfiles = await bsky.getProfiles(detail.likerDids)
+    const dids = session.did
+      ? [...detail.likerDids, session.did]
+      : detail.likerDids
+    for (const [did, p] of await bsky.getProfiles(dids)) {
+      if (p) likerProfiles[did] = p
+    }
   } catch {
     // leave likerProfiles empty → DID-only avatars
   }
@@ -90,26 +97,17 @@ export default async function JamPage({
             </div>
             <PlaybackSwitcher />
           </div>
-          <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-            <JamActions jam={jam} loggedIn={!!session.did} />
-          </div>
-
-          {detail.likerDids.length > 0 && (
-            <div className="mt-4">
-              <SectionLabel flush>Liked by</SectionLabel>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {detail.likerDids.slice(0, 12).map((d) => {
-                  const p = likerProfiles.get(d)
-                  return <Avatar key={d} author={p ?? { did: d }} size={22} />
-                })}
-                {detail.likerDids.length > 12 && (
-                  <span className="self-center text-xs text-muted">
-                    +{detail.likerDids.length - 12}
-                  </span>
-                )}
-              </div>
+          <LikeProvider>
+            <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
+              <JamActions jam={jam} loggedIn={!!session.did} />
             </div>
-          )}
+
+            <LikedBy
+              likerDids={detail.likerDids}
+              profiles={likerProfiles}
+              viewerDid={session.did}
+            />
+          </LikeProvider>
 
           {reJams.length > 0 && (
             <div className="mt-4">
