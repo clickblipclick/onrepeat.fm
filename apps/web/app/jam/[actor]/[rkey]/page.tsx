@@ -91,7 +91,7 @@ export default async function JamPage({
         </MediaFrame>
 
         <div className="px-4 pb-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0 flex-1">
               <JamBody jam={jam} />
             </div>

@@ -109,9 +109,13 @@ export function PlaybackSwitcher() {
   const { active, platforms, launch } = usePlayback()
   if (active.kind === 'link') return null
   const activeLabel = LABELS[active.provider] ?? active.provider
+  // Both variants present their text baseline as the flex-item baseline (no inner
+  // vertical centering), so the title row's items-baseline lines them up with the
+  // track title exactly. The trigger keeps a ~32px touch target via py-2 instead
+  // of min-h, since a centered min-height box would float off the shared baseline.
   if (platforms.length < 2) {
     return (
-      <span className="flex min-h-8 shrink-0 items-center px-1.5 text-xs text-muted">
+      <span className="shrink-0 px-1.5 text-xs text-muted">
         via {activeLabel}
       </span>
     )
@@ -119,7 +123,7 @@ export function PlaybackSwitcher() {
   return (
     <Menu
       label={`via ${activeLabel} — change playback service`}
-      triggerClassName="flex min-h-8 shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 text-xs text-muted transition hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      triggerClassName="inline-flex shrink-0 cursor-pointer items-baseline gap-1 rounded px-1.5 py-2 text-xs text-muted transition hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       items={platforms.map((p) => ({
         label: LABELS[p] ?? p,
         selected: p === active.provider,
