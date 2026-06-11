@@ -14,6 +14,7 @@ import { HtmlTheme } from '../../_components/html-theme'
 import { isCurrentJam } from '../../../lib/format'
 import { SectionLabel } from '../../_components/section-label'
 import { EmptyState } from '../../_components/empty-state'
+import { JamCardSkeleton } from '../../_components/jam-card-skeleton'
 
 // One bsky.getProfile call per request, shared by generateMetadata and the page
 // body (bsky's own ~30min TTL cache sits underneath, but cache() guarantees
@@ -78,16 +79,6 @@ async function ProfileJams({
         </>
       )}
     </>
-  )
-}
-
-function JamCardSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-md border border-border bg-surface">
-      <div className="surface-grid h-9 border-b border-border" />
-      <div className="aspect-square w-full animate-pulse bg-border" />
-      <div className="h-16 p-3" />
-    </div>
   )
 }
 

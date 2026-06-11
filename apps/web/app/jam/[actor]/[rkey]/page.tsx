@@ -31,6 +31,13 @@ const resolveAuthorDid = cache(async (actorDecoded: string) => {
   return prof?.did ?? null
 })
 
+// Full jam detail, deduped between generateMetadata and the page body — getJam
+// loads likers + re-jams too, so running it twice per request would double the
+// page's DB work. Same (uri, viewerDid) args → one query set per request.
+const loadJam = cache((uri: string, viewerDid?: string) =>
+  getJam(db, { uri, viewerDid }),
+)
+
 export async function generateMetadata({
   params,
 }: {
@@ -40,9 +47,8 @@ export async function generateMetadata({
   const authorDid = await resolveAuthorDid(decodeURIComponent(actor))
   if (!authorDid) notFound()
   const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
-  // Existence check (viewer-independent) — one extra keyed select per page view;
-  // the page body re-queries with viewerDid for likedByYou.
-  const detail = await getJam(db, { uri })
+  const session = await getSession()
+  const detail = await loadJam(uri, session.did)
   if (!detail) notFound()
   return {
     title: `${detail.jam.title} — ${detail.jam.artist} · onrepeat.fm`,
@@ -63,7 +69,7 @@ export default async function JamPage({
   const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
   const session = await getSession()
   const preferredProvider = (await readPreferredProvider()) ?? undefined
-  const detail = await getJam(db, { uri, viewerDid: session.did })
+  const detail = await loadJam(uri, session.did)
   if (!detail) notFound()
 
   const hydrated = await hydrate([detail.jam])
