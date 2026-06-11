@@ -22,7 +22,7 @@ import {
 import { db } from '../lib/db'
 import { getBoss } from '../lib/jobs'
 import { didFromUri, rkeyFromUri } from '../lib/at-uri'
-import { indexJam, removeJam, setActorTheme } from '@onrepeat/db'
+import { indexJam, removeJam, setActorTheme, indexLike, removeLike } from '@onrepeat/db'
 import { enqueueResolveForJam } from '@onrepeat/jobs'
 
 /**
@@ -144,8 +144,19 @@ export async function likeJamAction(subject: {
     }
   const agent = res.agent
   try {
-    const res = await likeJam(agent, subject)
-    return { ok: true, likeUri: res.uri }
+    const { uri, record } = await likeJam(agent, subject)
+    // Write-through index for read-your-writes (best-effort: the firehose event
+    // re-applies it idempotently if this fails). Also makes an immediate unlike
+    // find the row instead of racing the ingester to 'like-not-found'.
+    try {
+      await indexLike(db, { uri, did: agent.assertDid, record })
+    } catch (e) {
+      console.error(
+        '[web] likeJam: write-through index failed (firehose will backfill)',
+        e,
+      )
+    }
+    return { ok: true, likeUri: uri }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
   }
@@ -177,6 +188,14 @@ export async function unlikeJamAction(
     }
     if (!uri) return { ok: false, error: 'like-not-found' }
     await unlikeJam(agent, rkeyFromUri(uri))
+    try {
+      await removeLike(db, uri)
+    } catch (e) {
+      console.error(
+        '[web] unlikeJam: write-through removal failed (firehose will backfill)',
+        e,
+      )
+    }
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }

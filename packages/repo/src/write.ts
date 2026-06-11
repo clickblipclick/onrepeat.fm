@@ -5,6 +5,7 @@ import {
   PROFILE_NSID,
   type StrongRef,
   type JamRecord,
+  type LikeRecord,
 } from '@onrepeat/lexicons'
 import {
   buildJamRecord,
@@ -89,6 +90,11 @@ export interface PostJamResult extends WriteResult {
   record: JamRecord
 }
 
+export interface LikeJamResult extends WriteResult {
+  /** The record that was written (incl. the resolved createdAt). */
+  record: LikeRecord
+}
+
 /** Write the user's current jam (a new append-only record) to their repo. */
 export async function postJam(
   agent: Agent,
@@ -117,7 +123,7 @@ export async function postJam(
 export async function likeJam(
   agent: Agent,
   subject: StrongRef,
-): Promise<WriteResult> {
+): Promise<LikeJamResult> {
   const record = buildLikeRecord(subject)
   const res = await tryWrite(() =>
     agent.com.atproto.repo.createRecord({
@@ -133,6 +139,7 @@ export async function likeJam(
       | 'valid'
       | 'unknown'
       | undefined,
+    record,
   }
 }
 
