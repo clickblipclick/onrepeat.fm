@@ -108,9 +108,7 @@ export default async function ProfilePage({
       <div className="flex items-center gap-3">
         <Avatar author={profile} size={52} />
         <div>
-          <h1 className="font-bold">
-            {profile.displayName ?? profile.handle}
-          </h1>
+          <h1 className="font-bold">{profile.displayName ?? profile.handle}</h1>
           <div className="text-sm text-muted">@{profile.handle}</div>
         </div>
       </div>

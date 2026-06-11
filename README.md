@@ -34,18 +34,18 @@ This writes local index rows only — nothing is pushed to anyone's PDS, and you
 
 ## Commands
 
-| Command                       | What it does                                                  |
-| ----------------------------- | ------------------------------------------------------------- |
-| `pnpm setup`                  | One-time bootstrap (install, env files, migrate)              |
-| `pnpm dev`                    | Run **all** services concurrently (web · ingester · resolver) |
-| `pnpm dev:web`                | Just the Next.js app (for UI work — no firehose/resolver)     |
-| `pnpm dev:services`           | Just the ingester + resolver                                  |
-| `pnpm db:up` / `pnpm db:down` | Start / stop the Docker Postgres                              |
-| `pnpm db:migrate`             | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
-| `pnpm seed` / `pnpm seed:clean` | Add / remove sample dev data (local index only)             |
-| `pnpm test`                   | Unit tests                                                    |
-| `pnpm test:int`               | Integration tests (needs Postgres on :5432)                   |
-| `pnpm typecheck`              | Workspace-wide `tsc --noEmit`                                 |
+| Command                         | What it does                                                  |
+| ------------------------------- | ------------------------------------------------------------- |
+| `pnpm setup`                    | One-time bootstrap (install, env files, migrate)              |
+| `pnpm dev`                      | Run **all** services concurrently (web · ingester · resolver) |
+| `pnpm dev:web`                  | Just the Next.js app (for UI work — no firehose/resolver)     |
+| `pnpm dev:services`             | Just the ingester + resolver                                  |
+| `pnpm db:up` / `pnpm db:down`   | Start / stop the Docker Postgres                              |
+| `pnpm db:migrate`               | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
+| `pnpm seed` / `pnpm seed:clean` | Add / remove sample dev data (local index only)               |
+| `pnpm test`                     | Unit tests                                                    |
+| `pnpm test:int`                 | Integration tests (needs Postgres on :5432)                   |
+| `pnpm typecheck`                | Workspace-wide `tsc --noEmit`                                 |
 
 The three services each auto-load their own `apps/<app>/.env.local`; see the matching `.env.example` for the keys.
 

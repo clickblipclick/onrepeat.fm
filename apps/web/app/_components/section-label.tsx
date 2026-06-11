@@ -21,7 +21,14 @@ export function SectionLabel({
   const sizing = size === 'title' ? 'text-sm' : 'text-xs'
   const spacing = size === 'title' ? 'mb-4' : 'mt-6 mb-2'
   return (
-    <Tag className={cn('text-muted uppercase', sizing, !flush && spacing, className)}>
+    <Tag
+      className={cn(
+        'text-muted uppercase',
+        sizing,
+        !flush && spacing,
+        className,
+      )}
+    >
       {children}
     </Tag>
   )

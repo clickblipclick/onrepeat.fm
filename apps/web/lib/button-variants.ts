@@ -1,6 +1,11 @@
 import { cn } from './cn'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger'
+  | 'outline'
 export type ButtonSize = 'sm' | 'md'
 
 const BASE =

@@ -24,7 +24,8 @@ export function JamCardShell({
       className={cn(
         cardPattern(did),
         'overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)]',
-        interactive && 'transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]',
+        interactive &&
+          'transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]',
         className,
       )}
     >

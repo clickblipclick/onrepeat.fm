@@ -53,7 +53,9 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
-        <SectionLabel as="h1" size="title">Following</SectionLabel>
+        <SectionLabel as="h1" size="title">
+          Following
+        </SectionLabel>
         {jams.length === 0 ? (
           <EmptyState>
             Nobody you follow has a current jam.{' '}
@@ -79,7 +81,9 @@ export default async function Home() {
   } catch {
     return (
       <>
-        <SectionLabel as="h1" size="title">Following</SectionLabel>
+        <SectionLabel as="h1" size="title">
+          Following
+        </SectionLabel>
         <EmptyState>
           Couldn&apos;t load your feed right now.{' '}
           <Link href="/explore" className={linkInline}>

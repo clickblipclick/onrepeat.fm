@@ -22,7 +22,13 @@ import {
 import { db } from '../lib/db'
 import { getBoss } from '../lib/jobs'
 import { didFromUri, rkeyFromUri } from '../lib/at-uri'
-import { indexJam, removeJam, setActorTheme, indexLike, removeLike } from '@onrepeat/db'
+import {
+  indexJam,
+  removeJam,
+  setActorTheme,
+  indexLike,
+  removeLike,
+} from '@onrepeat/db'
 import { enqueueResolveForJam } from '@onrepeat/jobs'
 
 /**
