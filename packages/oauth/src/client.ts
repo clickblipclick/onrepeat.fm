@@ -68,9 +68,13 @@ export function createOAuthClient(
     // PDS/auth-server metadata lookups — URLs that come from a user-supplied
     // (attacker-controllable) DID document. Wrap with SSRF protection so those
     // fetches can't reach private/loopback/link-local ranges, with size/time
-    // caps. Safe here because every internal call site sets `redirect`
-    // explicitly. Dev mode must NOT use this: its PDS lives on 127.0.0.1.
-    fetch: safeFetchWrap({ ssrfProtection: true }),
+    // caps. allowImplicitRedirect is required: the client builds its PAR/token
+    // Requests with the default redirect mode ('follow'), which the wrapper
+    // would otherwise preemptively reject ("Request redirect must be ..."); the
+    // unicast IP check runs at the undici dispatcher's connect-time lookup, so
+    // redirect hops stay SSRF-protected regardless. Dev mode must NOT use this
+    // wrapper: its PDS lives on 127.0.0.1.
+    fetch: safeFetchWrap({ ssrfProtection: true, allowImplicitRedirect: true }),
     clientMetadata: {
       client_id: `${opts.publicUrl}/client-metadata.json`,
       client_name: 'onrepeat.fm',
