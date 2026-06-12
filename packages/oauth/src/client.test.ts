@@ -71,6 +71,26 @@ describe('createOAuthClient', () => {
     )
   })
 
+  it('normalizes a trailing slash in publicUrl (deploy-config foot-gun)', async () => {
+    const keyset = [await JoseKey.generate(['ES256'], 'key1')]
+    const client = createOAuthClient({
+      mode: 'prod',
+      publicUrl: 'https://onrepeat.fm/',
+      keyset,
+      stateStore,
+      sessionStore,
+    })
+    expect(client.clientMetadata.client_id).toBe(
+      'https://onrepeat.fm/client-metadata.json',
+    )
+    expect(JSON.stringify(client.clientMetadata.redirect_uris)).toContain(
+      'https://onrepeat.fm/oauth/callback',
+    )
+    expect(client.clientMetadata.jwks_uri).toBe(
+      'https://onrepeat.fm/.well-known/jwks.json',
+    )
+  })
+
   it('prod mode without a keyset throws', () => {
     expect(() =>
       createOAuthClient({

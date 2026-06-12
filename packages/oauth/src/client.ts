@@ -34,7 +34,12 @@ export function createOAuthClient(
   opts: CreateOAuthClientOptions,
 ): NodeOAuthClient {
   const scope = opts.scope ?? DEFAULT_SCOPE
-  const redirectUri = `${opts.publicUrl}/oauth/callback`
+  // Normalize a trailing slash rather than trusting deploy config: a PUBLIC_URL
+  // of 'https://x/' would otherwise derive 'https://x//client-metadata.json',
+  // which the auth server fetches, hits our redirect-normalizing 308, and
+  // rejects ("unexpected redirect" → invalid_client_metadata).
+  const publicUrl = opts.publicUrl.replace(/\/+$/, '')
+  const redirectUri = `${publicUrl}/oauth/callback`
 
   if (opts.mode === 'dev') {
     const clientId =
@@ -76,9 +81,9 @@ export function createOAuthClient(
     // wrapper: its PDS lives on 127.0.0.1.
     fetch: safeFetchWrap({ ssrfProtection: true, allowImplicitRedirect: true }),
     clientMetadata: {
-      client_id: `${opts.publicUrl}/client-metadata.json`,
+      client_id: `${publicUrl}/client-metadata.json`,
       client_name: 'onrepeat.fm',
-      client_uri: opts.publicUrl,
+      client_uri: publicUrl,
       redirect_uris: [redirectUri],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
@@ -87,7 +92,7 @@ export function createOAuthClient(
       token_endpoint_auth_method: 'private_key_jwt',
       token_endpoint_auth_signing_alg: 'ES256',
       dpop_bound_access_tokens: true,
-      jwks_uri: `${opts.publicUrl}/.well-known/jwks.json`,
+      jwks_uri: `${publicUrl}/.well-known/jwks.json`,
     },
     keyset: opts.keyset,
     stateStore: opts.stateStore,
