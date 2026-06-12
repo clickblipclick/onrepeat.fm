@@ -34,7 +34,7 @@ export function JamCard({
   priority?: boolean
   preferredProvider?: string
 }) {
-  const jamHref = `/jam/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/${rkeyOf(jam.uri)}`
+  const jamHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}/jam/${rkeyOf(jam.uri)}`
   return (
     // Scope the card to its author's theme — the CSS-variable cascade (globals.css)
     // re-colors everything inside. The thick ink border + offset accent shadow + framed

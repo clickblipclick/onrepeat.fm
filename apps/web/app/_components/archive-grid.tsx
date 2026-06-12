@@ -54,7 +54,7 @@ export function ArchiveGrid({
         {items.map((jam) => (
           <Link
             key={jam.uri}
-            href={`/jam/${encodeURIComponent(handle)}/${rkeyFromUri(jam.uri)}`}
+            href={`/profile/${encodeURIComponent(handle)}/jam/${rkeyFromUri(jam.uri)}`}
             className="block aspect-square overflow-hidden rounded border border-border"
             title={`${jam.title} — ${jam.artist}`}
           >

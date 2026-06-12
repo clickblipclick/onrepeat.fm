@@ -319,7 +319,7 @@ export async function deleteJamAction(uri: string): Promise<ActionResult> {
     revalidatePath('/')
     revalidatePath('/explore')
     revalidatePath('/profile/[handle]', 'page')
-    revalidatePath('/jam/[actor]/[rkey]', 'page')
+    revalidatePath('/profile/[handle]/jam/[rkey]', 'page')
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }

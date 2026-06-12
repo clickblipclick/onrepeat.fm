@@ -3,27 +3,34 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getJam } from '@onrepeat/appview'
-import { db } from '../../../../lib/db'
-import { hydrate, bsky } from '../../../../lib/appview'
-import { getSession } from '../../../../lib/session'
-import { readPreferredProvider } from '../../../../lib/playback-preference.server'
-import { Player } from '../../../_components/player'
+import { db } from '../../../../../lib/db'
+import { hydrate, bsky } from '../../../../../lib/appview'
+import { getSession } from '../../../../../lib/session'
+import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
+import { Player } from '../../../../_components/player'
 import {
   PlaybackProvider,
   PlaybackSwitcher,
-} from '../../../_components/playback'
-import { authorName, type DisplayAuthor } from '../../../_components/avatar'
-import { RelativeTime } from '../../../_components/relative-time'
-import { JamHeader, JamBody, JamActions } from '../../../_components/jam-parts'
-import { JamCardShell, MediaFrame } from '../../../_components/jam-card-shell'
-import { LikeProvider, LikedBy } from '../../../_components/liked-by'
-import { SectionLabel } from '../../../_components/section-label'
+} from '../../../../_components/playback'
+import { authorName, type DisplayAuthor } from '../../../../_components/avatar'
+import { RelativeTime } from '../../../../_components/relative-time'
+import {
+  JamHeader,
+  JamBody,
+  JamActions,
+} from '../../../../_components/jam-parts'
+import {
+  JamCardShell,
+  MediaFrame,
+} from '../../../../_components/jam-card-shell'
+import { LikeProvider, LikedBy } from '../../../../_components/liked-by'
+import { SectionLabel } from '../../../../_components/section-label'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
 const JAM_NSID = 'fm.onrepeat.jam'
 
-// `actor` is a handle (pretty links) or a DID (older/shared links); resolve once
+// `handle` is a handle (pretty links) or a DID (older/shared links); resolve once
 // per request for both generateMetadata and the page body.
 const resolveAuthorDid = cache(async (actorDecoded: string) => {
   if (actorDecoded.startsWith('did:')) return actorDecoded
@@ -41,10 +48,10 @@ const loadJam = cache((uri: string, viewerDid?: string) =>
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ actor: string; rkey: string }>
+  params: Promise<{ handle: string; rkey: string }>
 }): Promise<Metadata> {
-  const { actor, rkey } = await params
-  const authorDid = await resolveAuthorDid(decodeURIComponent(actor))
+  const { handle, rkey } = await params
+  const authorDid = await resolveAuthorDid(decodeURIComponent(handle))
   if (!authorDid) notFound()
   const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
   const session = await getSession()
@@ -58,12 +65,12 @@ export async function generateMetadata({
 export default async function JamPage({
   params,
 }: {
-  params: Promise<{ actor: string; rkey: string }>
+  params: Promise<{ handle: string; rkey: string }>
 }) {
-  const { actor, rkey } = await params
-  // `actor` is a handle (pretty links) or a DID (older/shared links). Records are keyed
+  const { handle, rkey } = await params
+  // `handle` is a handle (pretty links) or a DID (older/shared links). Records are keyed
   // by DID, so resolve a handle to its DID before building the at-uri.
-  const actorDecoded = decodeURIComponent(actor)
+  const actorDecoded = decodeURIComponent(handle)
   const authorDid = await resolveAuthorDid(actorDecoded)
   if (!authorDid) notFound()
   const uri = `at://${authorDid}/${JAM_NSID}/${decodeURIComponent(rkey)}`
