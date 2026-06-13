@@ -53,7 +53,7 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
-        <SectionLabel as="h1" size="title">
+        <SectionLabel as="h1" size="title" flush className="sr-only">
           Following
         </SectionLabel>
         {jams.length === 0 ? (
@@ -81,7 +81,7 @@ export default async function Home() {
   } catch {
     return (
       <>
-        <SectionLabel as="h1" size="title">
+        <SectionLabel as="h1" size="title" flush className="sr-only">
           Following
         </SectionLabel>
         <EmptyState>
