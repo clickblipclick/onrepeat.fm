@@ -56,7 +56,9 @@ describe('buildJamOgMeta', () => {
       artist: 'The Postal Service',
       authorLabel: 'ben',
     })
-    expect(m.title).toBe('Such Great Heights — The Postal Service · onrepeat.fm')
+    expect(m.title).toBe(
+      'Such Great Heights — The Postal Service · onrepeat.fm',
+    )
     expect(m.description).toBe(
       'ben is jamming this on repeat. one song, seven days.',
     )

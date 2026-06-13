@@ -159,7 +159,11 @@ export default async function JamPage({
           </div>
           <LikeProvider>
             <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-              <JamActions jam={jam} loggedIn={!!session.did} jamUrl={jamShareUrl} />
+              <JamActions
+                jam={jam}
+                loggedIn={!!session.did}
+                jamUrl={jamShareUrl}
+              />
             </div>
 
             <LikedBy

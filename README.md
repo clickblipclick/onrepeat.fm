@@ -82,13 +82,13 @@ Production runs on [Railway](https://railway.app): the three services above plus
 
 Configuration is entirely environment variables — see each app's `.env.example` for the full list and the generation commands. The web app additionally needs, in production:
 
-| Variable             | Purpose                                                             |
-| -------------------- | ------------------------------------------------------------------- |
-| `OAUTH_MODE=prod`    | Use the hosted confidential client (loopback/dev OAuth is refused)  |
-| `PUBLIC_URL`         | Public https origin; the OAuth `client_id` is derived from it       |
-| `OAUTH_PRIVATE_KEYS` | JSON array of ES256 signing keys (append-only rotation)             |
-| `OAUTH_STORE_KEY`    | Encrypts stored OAuth sessions/state at rest                        |
-| `SESSION_SECRET`     | Encrypts the session cookie                                         |
+| Variable             | Purpose                                                            |
+| -------------------- | ------------------------------------------------------------------ |
+| `OAUTH_MODE=prod`    | Use the hosted confidential client (loopback/dev OAuth is refused) |
+| `PUBLIC_URL`         | Public https origin; the OAuth `client_id` is derived from it      |
+| `OAUTH_PRIVATE_KEYS` | JSON array of ES256 signing keys (append-only rotation)            |
+| `OAUTH_STORE_KEY`    | Encrypts stored OAuth sessions/state at rest                       |
+| `SESSION_SECRET`     | Encrypts the session cookie                                        |
 
 A misconfigured production deploy fails closed on OAuth (read-only pages still serve) rather than silently running insecure dev OAuth on a public origin.
 
