@@ -103,28 +103,17 @@ export function RepeatJamCard(props: {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div
-            style={{
-              display: 'flex',
-              fontSize: titleSize,
-              fontWeight: 700,
-              lineHeight: 1.15,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineClamp: 3,
-            }}
-          >
-            {props.title}
+          <div style={{ display: 'flex' }}>
+            <div style={{ display: 'block', fontSize: titleSize, fontWeight: 700,
+              lineHeight: 1.15, overflow: 'hidden', lineClamp: 3 }}>
+              {props.title}
+            </div>
           </div>
-          <div
-            style={{
-              display: 'flex',
-              fontSize: 32,
-              color: '#6b6b70',
-              lineClamp: 2,
-            }}
-          >
-            {props.artist}
+          <div style={{ display: 'flex' }}>
+            <div style={{ display: 'block', fontSize: 32, color: '#6b6b70',
+              overflow: 'hidden', lineClamp: 2 }}>
+              {props.artist}
+            </div>
           </div>
         </div>
         <Wordmark accent={accent} color="#18181a" />
@@ -136,10 +125,9 @@ export function RepeatJamCard(props: {
   )
 }
 
-const NEUTRAL_BRAND_ACCENT = '#1a1a1c'
-
 /** Generic branded fallback: wordmark + tagline, neutral. */
 export function RepeatBrandCard() {
+  const accent = themeAccent(undefined)
   return (
     <div
       style={{
@@ -157,7 +145,7 @@ export function RepeatBrandCard() {
     >
       <RepeatMark size={120} color="#18181a" />
       <div style={{ display: 'flex', fontSize: 72, fontWeight: 700 }}>
-        onrepeat<span style={{ color: NEUTRAL_BRAND_ACCENT }}>.fm</span>
+        onrepeat<span style={{ color: accent }}>.fm</span>
       </div>
       <div style={{ display: 'flex', fontSize: 34, color: '#6b6b70' }}>one song. seven days.</div>
     </div>
