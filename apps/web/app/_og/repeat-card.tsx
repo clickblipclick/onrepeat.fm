@@ -12,8 +12,18 @@ export async function loadOgFonts() {
     readFile(join(FONT_DIR, 'JetBrainsMono-Bold.ttf')),
   ])
   return [
-    { name: 'JetBrains Mono', data: regular, weight: 400 as const, style: 'normal' as const },
-    { name: 'JetBrains Mono', data: bold, weight: 700 as const, style: 'normal' as const },
+    {
+      name: 'JetBrains Mono',
+      data: regular,
+      weight: 400 as const,
+      style: 'normal' as const,
+    },
+    {
+      name: 'JetBrains Mono',
+      data: bold,
+      weight: 700 as const,
+      style: 'normal' as const,
+    },
   ]
 }
 
@@ -40,7 +50,16 @@ function RepeatMark({ size, color }: { size: number; color: string }) {
 
 function Wordmark({ accent, color }: { accent: string; color: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 30, fontWeight: 700, color }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        fontSize: 30,
+        fontWeight: 700,
+        color,
+      }}
+    >
       <RepeatMark size={34} color={accent} />
       <div style={{ display: 'flex' }}>
         onrepeat<span style={{ color: accent }}>.fm</span>
@@ -104,21 +123,43 @@ export function RepeatJamCard(props: {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'flex' }}>
-            <div style={{ display: 'block', fontSize: titleSize, fontWeight: 700,
-              lineHeight: 1.15, overflow: 'hidden', lineClamp: 3 }}>
+            <div
+              style={{
+                display: 'block',
+                fontSize: titleSize,
+                fontWeight: 700,
+                lineHeight: 1.15,
+                overflow: 'hidden',
+                lineClamp: 3,
+              }}
+            >
               {props.title}
             </div>
           </div>
           <div style={{ display: 'flex' }}>
-            <div style={{ display: 'block', fontSize: 32, color: '#6b6b70',
-              overflow: 'hidden', lineClamp: 2 }}>
+            <div
+              style={{
+                display: 'block',
+                fontSize: 32,
+                color: '#6b6b70',
+                overflow: 'hidden',
+                lineClamp: 2,
+              }}
+            >
               {props.artist}
             </div>
           </div>
         </div>
         <Wordmark accent={accent} color="#18181a" />
         <div
-          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 8, background: accent }}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 8,
+            background: accent,
+          }}
         />
       </div>
     </div>
@@ -147,7 +188,9 @@ export function RepeatBrandCard() {
       <div style={{ display: 'flex', fontSize: 72, fontWeight: 700 }}>
         onrepeat<span style={{ color: accent }}>.fm</span>
       </div>
-      <div style={{ display: 'flex', fontSize: 34, color: '#6b6b70' }}>one song. seven days.</div>
+      <div style={{ display: 'flex', fontSize: 34, color: '#6b6b70' }}>
+        one song. seven days.
+      </div>
     </div>
   )
 }
