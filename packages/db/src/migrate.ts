@@ -1,4 +1,5 @@
-import { Migrator, type Kysely, type Migration } from 'kysely'
+import type { Kysely } from 'kysely'
+import { Migrator, type Migration } from 'kysely/migration'
 import * as init001 from './migrations/001_init'
 import * as oauth002 from './migrations/002_oauth'
 import * as subscriptionState003 from './migrations/003_subscription_state'
