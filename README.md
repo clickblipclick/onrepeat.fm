@@ -76,6 +76,26 @@ Host processes (the apps, `tsx`, and the test runner) connect to **whatever is s
 
 Pick one. To inspect the app's real data, query the same `:5432` your services use.
 
+## Deployment
+
+Production runs on [Railway](https://railway.app): the three services above plus a managed Postgres, deployed from `main` (the web service runs migrations as its pre-deploy step). Each service builds from the repo root (the pnpm workspace needs the root lockfile) and differs only in its start command.
+
+Configuration is entirely environment variables — see each app's `.env.example` for the full list and the generation commands. The web app additionally needs, in production:
+
+| Variable             | Purpose                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `OAUTH_MODE=prod`    | Use the hosted confidential client (loopback/dev OAuth is refused)  |
+| `PUBLIC_URL`         | Public https origin; the OAuth `client_id` is derived from it       |
+| `OAUTH_PRIVATE_KEYS` | JSON array of ES256 signing keys (append-only rotation)             |
+| `OAUTH_STORE_KEY`    | Encrypts stored OAuth sessions/state at rest                        |
+| `SESSION_SECRET`     | Encrypts the session cookie                                         |
+
+A misconfigured production deploy fails closed on OAuth (read-only pages still serve) rather than silently running insecure dev OAuth on a public origin.
+
+## Lexicons
+
+The `fm.onrepeat.*` lexicons are published on the network as `com.atproto.lexicon.schema` records under [`@onrepeat.fm`](https://bsky.app/profile/onrepeat.fm) (`did:plc:uvn6p3pn2vwdjgnerqfrdcx4`), with NSID authority bound via the `_lexicon.onrepeat.fm` DNS TXT record. Source docs live in [`lexicons/`](lexicons/). Schema changes bump a monotonic `revision`; breaking changes get a new NSID.
+
 ## Testing
 
 Unit tests run with `pnpm test`.
