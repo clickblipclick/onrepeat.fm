@@ -4,6 +4,7 @@ import { Avatar, authorName } from './avatar'
 import { RelativeTime } from './relative-time'
 import { LikeButton } from './like-button'
 import { ReJamButton } from './rejam-button'
+import { ShareButton } from './share-button'
 import { JamMenu } from './jam-menu'
 import { isCurrentJam } from '../../lib/format'
 
@@ -118,9 +119,12 @@ export function JamBody({
 export function JamActions({
   jam,
   loggedIn = false,
+  showShare = false,
 }: {
   jam: HydratedJamView
   loggedIn?: boolean
+  /** Render the share-on-Bluesky button (detail page only). */
+  showShare?: boolean
 }) {
   return (
     <>
@@ -144,6 +148,15 @@ export function JamActions({
           authorName: authorName(jam.author),
         }}
       />
+      {showShare && (
+        <ShareButton
+          title={jam.title}
+          artist={jam.artist}
+          jamUrl={`${process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'}/profile/${encodeURIComponent(
+            jam.author.handle ?? jam.authorDid,
+          )}/jam/${jam.uri.split('/').pop()}`}
+        />
+      )}
     </>
   )
 }
