@@ -59,7 +59,7 @@ export function JamHeader({
             {time}
           </Link>
         ) : (
-          time
+          <span className="shrink-0">{time}</span>
         )}
         {isOwner && (
           <JamMenu
@@ -75,7 +75,7 @@ export function JamHeader({
             <span className="shrink-0 whitespace-nowrap">current jam</span>
           )}
           {jam.via && jam.viaAuthor && (
-            <span className="truncate">
+            <span className="min-w-0 truncate">
               re-jam from{' '}
               <Link
                 href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
