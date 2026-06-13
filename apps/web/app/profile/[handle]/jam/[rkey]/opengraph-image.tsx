@@ -22,7 +22,12 @@ export default async function Image({
 }: {
   params: Promise<{ handle: string; rkey: string }>
 }) {
-  const fonts = await loadOgFonts()
+  let fonts: Awaited<ReturnType<typeof loadOgFonts>> | undefined
+  try {
+    fonts = await loadOgFonts()
+  } catch {
+    // fonts unavailable on disk — still return an image (system fallback font)
+  }
   const { handle, rkey } = await params
   const actor = decodeURIComponent(handle)
 
@@ -41,6 +46,7 @@ export default async function Image({
       const detail = await getJam(db, { uri })
       if (detail) {
         const [hydrated] = await hydrate([detail.jam])
+        // hydrate preserves array length, but the destructure type is `… | undefined`; guard narrows it.
         if (hydrated) {
           card = (
             <RepeatJamCard
@@ -57,5 +63,5 @@ export default async function Image({
     // fall through to the brand card
   }
 
-  return new ImageResponse(card, { ...OG_SIZE, fonts })
+  return new ImageResponse(card, { ...OG_SIZE, ...(fonts ? { fonts } : {}) })
 }

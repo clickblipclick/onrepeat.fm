@@ -7,8 +7,14 @@ export const contentType = 'image/png'
 export const alt = 'onrepeat.fm — one song. seven days.'
 
 export default async function Image() {
+  let fonts: Awaited<ReturnType<typeof loadOgFonts>> | undefined
+  try {
+    fonts = await loadOgFonts()
+  } catch {
+    // fonts unavailable on disk — still return an image (system fallback font)
+  }
   return new ImageResponse(<RepeatBrandCard />, {
     ...OG_SIZE,
-    fonts: await loadOgFonts(),
+    ...(fonts ? { fonts } : {}),
   })
 }
