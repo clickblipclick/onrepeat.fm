@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import type { ThemeName } from '@onrepeat/core'
 import {
   themeAccent,
   titleFontSize,
@@ -17,6 +18,7 @@ describe('themeAccent', () => {
   })
   it('falls back to neutral for missing/unknown', () => {
     expect(themeAccent(undefined)).toBe('#1a1a1c')
+    expect(themeAccent('unknown-theme' as ThemeName)).toBe('#1a1a1c')
   })
 })
 
@@ -25,6 +27,10 @@ describe('titleFontSize', () => {
     expect(titleFontSize('Short')).toBe(64)
     expect(titleFontSize('A medium length song title here ok')).toBe(48) // 34 chars
     expect(titleFontSize('x'.repeat(60))).toBe(38)
+    expect(titleFontSize('x'.repeat(18))).toBe(64)
+    expect(titleFontSize('x'.repeat(19))).toBe(48)
+    expect(titleFontSize('x'.repeat(40))).toBe(48)
+    expect(titleFontSize('x'.repeat(41))).toBe(38)
   })
 })
 
@@ -36,7 +42,8 @@ describe('buildBlueskyShareUrl', () => {
       url: 'https://onrepeat.fm/profile/ben/jam/abc',
     })
     expect(u.startsWith('https://bsky.app/intent/compose?text=')).toBe(true)
-    const text = decodeURIComponent(u.split('text=')[1]!)
+    const text = new URL(u).searchParams.get('text')!
+    expect(text).toContain('🔁')
     expect(text).toContain('Such Great Heights — The Postal Service')
     expect(text).toContain('https://onrepeat.fm/profile/ben/jam/abc')
   })
