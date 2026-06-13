@@ -1,4 +1,4 @@
-import { Repeat } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { buildBlueskyShareUrl } from '../../lib/share'
 
 export function ShareButton({
@@ -18,7 +18,7 @@ export function ShareButton({
       rel="noopener noreferrer"
       className="inline-flex cursor-pointer items-center gap-1 hover:text-accent"
     >
-      <Repeat size={16} aria-hidden />
+      <Send size={16} aria-hidden />
       Share
     </a>
   )
