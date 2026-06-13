@@ -7,6 +7,7 @@ import { db } from '../../../../../lib/db'
 import { hydrate, bsky } from '../../../../../lib/appview'
 import { buildJamOgMeta } from '../../../../../lib/share'
 import { getSession } from '../../../../../lib/session'
+import { APP_URL } from '../../../../../lib/session-config'
 import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
 import { Player } from '../../../../_components/player'
 import {
@@ -118,6 +119,7 @@ export default async function JamPage({
     // leave likerProfiles empty → DID-only avatars
   }
   const profileHref = `/profile/${encodeURIComponent(jam.author.handle ?? jam.authorDid)}`
+  const jamShareUrl = `${APP_URL}${profileHref}/jam/${jam.uri.split('/').pop()}`
 
   return (
     // Mirrors the feed/profile JamCard chrome (shared via jam-parts) for visual
@@ -157,7 +159,7 @@ export default async function JamPage({
           </div>
           <LikeProvider>
             <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-              <JamActions jam={jam} loggedIn={!!session.did} showShare />
+              <JamActions jam={jam} loggedIn={!!session.did} jamUrl={jamShareUrl} />
             </div>
 
             <LikedBy

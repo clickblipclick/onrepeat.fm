@@ -119,12 +119,12 @@ export function JamBody({
 export function JamActions({
   jam,
   loggedIn = false,
-  showShare = false,
+  jamUrl,
 }: {
   jam: HydratedJamView
   loggedIn?: boolean
-  /** Render the share-on-Bluesky button (detail page only). */
-  showShare?: boolean
+  /** Absolute URL for the share-on-Bluesky button (detail page only); omit to hide. */
+  jamUrl?: string
 }) {
   return (
     <>
@@ -148,14 +148,8 @@ export function JamActions({
           authorName: authorName(jam.author),
         }}
       />
-      {showShare && (
-        <ShareButton
-          title={jam.title}
-          artist={jam.artist}
-          jamUrl={`${process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'}/profile/${encodeURIComponent(
-            jam.author.handle ?? jam.authorDid,
-          )}/jam/${jam.uri.split('/').pop()}`}
-        />
+      {jamUrl && (
+        <ShareButton title={jam.title} artist={jam.artist} jamUrl={jamUrl} />
       )}
     </>
   )
