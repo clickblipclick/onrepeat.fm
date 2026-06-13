@@ -40,47 +40,52 @@ export function JamHeader({
       className="whitespace-nowrap text-on-accent/80"
     />
   )
+  const showCurrent = showCurrentJam && isCurrentJam(jam.createdAt)
   return (
-    // Single-line header: fixed bits (avatar, time, "current jam", menu) never shrink
-    // or wrap; the author name and re-jam attribution truncate instead of overflowing
-    // into their neighbors when a long handle meets a narrow card.
-    <div className="flex items-center gap-2 border-b-2 border-accent bg-accent px-2 py-2 text-sm text-on-accent">
-      <Link
-        href={profileHref}
-        className="flex min-w-0 items-center gap-2 hover:underline"
-      >
-        <Avatar author={jam.author} />
-        <span className="truncate font-bold">{authorName(jam.author)}</span>
-      </Link>
-      {jamHref ? (
-        <Link href={jamHref} className="shrink-0 hover:underline">
-          {time}
+    // Two-row accent band. Row 1 keeps the identity + time on one line (name
+    // truncates, time stays pinned). Re-jam attribution and the "current jam"
+    // marker drop to a subline so they're never clipped on a narrow card.
+    <div className="border-b-2 border-accent bg-accent px-2 py-2 text-sm text-on-accent">
+      <div className="flex items-center gap-2">
+        <Link
+          href={profileHref}
+          className="flex min-w-0 items-center gap-2 hover:underline"
+        >
+          <Avatar author={jam.author} />
+          <span className="truncate font-bold">{authorName(jam.author)}</span>
         </Link>
-      ) : (
-        time
-      )}
-      {showCurrentJam && isCurrentJam(jam.createdAt) && (
-        <span className="shrink-0 whitespace-nowrap text-on-accent/80">
-          · current jam
-        </span>
-      )}
-      {jam.via && jam.viaAuthor && (
-        <span className="truncate text-on-accent/80">
-          · re-jam from{' '}
-          <Link
-            href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
-            className="hover:underline"
-          >
-            {authorName(jam.viaAuthor)}
+        {jamHref ? (
+          <Link href={jamHref} className="shrink-0 hover:underline">
+            {time}
           </Link>
-        </span>
-      )}
-      {isOwner && (
-        <JamMenu
-          className="ml-auto text-on-accent hover:bg-black/10"
-          jamUri={jam.uri}
-          redirectTo={redirectTo}
-        />
+        ) : (
+          time
+        )}
+        {isOwner && (
+          <JamMenu
+            className="ml-auto shrink-0 text-on-accent hover:bg-black/10"
+            jamUri={jam.uri}
+            redirectTo={redirectTo}
+          />
+        )}
+      </div>
+      {(showCurrent || (jam.via && jam.viaAuthor)) && (
+        <div className="mt-1 flex items-center gap-2 text-xs text-on-accent/80">
+          {showCurrent && (
+            <span className="shrink-0 whitespace-nowrap">current jam</span>
+          )}
+          {jam.via && jam.viaAuthor && (
+            <span className="truncate">
+              re-jam from{' '}
+              <Link
+                href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
+                className="hover:underline"
+              >
+                {authorName(jam.viaAuthor)}
+              </Link>
+            </span>
+          )}
+        </div>
       )}
     </div>
   )
