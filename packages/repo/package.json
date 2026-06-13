@@ -9,11 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.7",
+    "@atproto/api": "^0.20.15",
     "@onrepeat/lexicons": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
-    "@atproto/dev-env": "^0.4.0"
+    "@atproto/dev-env": "^0.5.11"
   }
 }
