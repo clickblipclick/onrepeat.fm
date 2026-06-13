@@ -1,4 +1,5 @@
 import './globals.css'
+import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 import { SiteNav } from './_components/site-nav'
 import { UiProviders } from './_components/ui/providers'
@@ -8,9 +9,19 @@ const mono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 })
 
-export const metadata = {
+const SITE_URL = process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'onrepeat.fm',
   description: 'one song. seven days.',
+  openGraph: {
+    title: 'onrepeat.fm',
+    description: 'one song. seven days.',
+    siteName: 'onrepeat.fm',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image' },
 }
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { getJam } from '@onrepeat/appview'
 import { db } from '../../../../../lib/db'
 import { hydrate, bsky } from '../../../../../lib/appview'
+import { buildJamOgMeta } from '../../../../../lib/share'
 import { getSession } from '../../../../../lib/session'
 import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
 import { Player } from '../../../../_components/player'
@@ -57,8 +58,28 @@ export async function generateMetadata({
   const session = await getSession()
   const detail = await loadJam(uri, session.did)
   if (!detail) notFound()
+  const [hydrated] = await hydrate([detail.jam])
+  const label = hydrated
+    ? authorName(hydrated.author)
+    : decodeURIComponent(handle)
+  const og = buildJamOgMeta({
+    title: detail.jam.title,
+    artist: detail.jam.artist,
+    authorLabel: label,
+  })
   return {
-    title: `${detail.jam.title} — ${detail.jam.artist} · onrepeat.fm`,
+    title: og.title,
+    description: og.description,
+    openGraph: {
+      title: og.title,
+      description: og.description,
+      type: 'music.song',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: og.title,
+      description: og.description,
+    },
   }
 }
 
