@@ -11,7 +11,13 @@ const inputCls = inputClassName('w-full')
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
  *  form fields so the surrounding <form> submits them; manual entry is the failure fallback. */
-export function TrackPicker() {
+export function TrackPicker({
+  onContentChange,
+}: {
+  /** Fires whenever the picker gains/loses input: a track is selected, or the
+   *  search/URL field is non-empty. Lets the parent form drive a dirty guard. */
+  onContentChange?: (hasContent: boolean) => void
+} = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
   const [selected, setSelected] = useState<TrackCandidate | null>(null)
@@ -23,6 +29,12 @@ export function TrackPicker() {
   const seq = useRef(0)
   // Guards auto-derive: the last URL we kicked off, so each link is processed once.
   const lastDerived = useRef('')
+
+  // Surface "has the user put anything in?" to the parent: a selected track, or any
+  // non-empty search/URL text (also covers manual-entry mode, which keeps the URL in query).
+  useEffect(() => {
+    onContentChange?.(selected != null || query.trim().length > 0)
+  }, [selected, query, onContentChange])
 
   useEffect(() => {
     if (selected || isUrl(query) || query.trim().length < 2) {
