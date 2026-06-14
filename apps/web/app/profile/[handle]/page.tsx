@@ -54,7 +54,7 @@ async function ProfileJams({
 
   return (
     <>
-      <SectionLabel>Current jam</SectionLabel>
+      <SectionLabel>On repeat</SectionLabel>
       {current ? (
         <JamCard
           jam={current}
@@ -64,7 +64,7 @@ async function ProfileJams({
           preferredProvider={preferredProvider}
         />
       ) : (
-        <EmptyState>hasn&apos;t jammed lately</EmptyState>
+        <EmptyState>nothing on repeat lately</EmptyState>
       )}
 
       {archive.length > 0 && (

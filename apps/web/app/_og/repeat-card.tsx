@@ -189,7 +189,7 @@ export function RepeatBrandCard() {
         onrepeat<span style={{ color: accent }}>.fm</span>
       </div>
       <div style={{ display: 'flex', fontSize: 34, color: '#6b6b70' }}>
-        one song. seven days.
+        the song you&apos;ve got on repeat.
       </div>
     </div>
   )

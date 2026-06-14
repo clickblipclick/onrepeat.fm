@@ -12,14 +12,14 @@ export default async function PostPage() {
         <Link href="/login" className={linkInline}>
           Sign in
         </Link>{' '}
-        to set your jam.
+        to post a song.
       </p>
     )
   }
   return (
     <>
       <SectionLabel as="h1" size="title">
-        Set your jam
+        What&apos;s on repeat?
       </SectionLabel>
       <PostJamForm />
     </>

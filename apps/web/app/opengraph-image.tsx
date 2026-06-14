@@ -4,7 +4,7 @@ import { OG_SIZE, loadOgFonts, RepeatBrandCard } from './_og/repeat-card'
 export const runtime = 'nodejs'
 export const size = OG_SIZE
 export const contentType = 'image/png'
-export const alt = 'onrepeat.fm — one song. seven days.'
+export const alt = "onrepeat.fm — the song you've got on repeat."
 
 export default async function Image() {
   let fonts: Awaited<ReturnType<typeof loadOgFonts>> | undefined

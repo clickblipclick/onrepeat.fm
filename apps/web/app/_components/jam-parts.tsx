@@ -81,13 +81,13 @@ export function JamHeader({
         {(showCurrent || (jam.via && jam.viaAuthor)) && (
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-on-accent/80">
             {showCurrent && (
-              <span className="shrink-0 whitespace-nowrap">current jam</span>
+              <span className="shrink-0 whitespace-nowrap">on repeat</span>
             )}
             {jam.via && jam.viaAuthor && (
               <span className="flex min-w-0 items-center gap-1">
                 <Repeat2 size={13} className="shrink-0" aria-hidden />
                 <span className="truncate">
-                  re-jam from{' '}
+                  reposted from{' '}
                   <Link
                     href={`/profile/${encodeURIComponent(jam.viaAuthor.handle ?? jam.viaAuthor.did)}`}
                     className="hover:underline"

@@ -44,6 +44,6 @@ export function buildJamOgMeta(args: {
 }): { title: string; description: string } {
   return {
     title: `${args.title} — ${args.artist} · onrepeat.fm`,
-    description: `${args.authorLabel} is jamming this on repeat. one song, seven days.`,
+    description: `${args.authorLabel} has this on repeat right now.`,
   }
 }

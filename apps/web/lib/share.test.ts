@@ -59,8 +59,6 @@ describe('buildJamOgMeta', () => {
     expect(m.title).toBe(
       'Such Great Heights — The Postal Service · onrepeat.fm',
     )
-    expect(m.description).toBe(
-      'ben is jamming this on repeat. one song, seven days.',
-    )
+    expect(m.description).toBe('ben has this on repeat right now.')
   })
 })
