@@ -25,8 +25,8 @@ export default async function Home() {
         </SectionLabel>
         <div className="mb-4 rounded-md border border-border bg-surface p-4">
           <p className="mb-2 text-sm">
-            One song. Seven days. Sign in with Bluesky to follow people and set
-            your jam.
+            The song you&apos;ve got on repeat. Sign in with Bluesky to follow
+            people and post a song.
           </p>
           <Link href="/login" className={buttonClassName()}>
             Sign in
@@ -37,7 +37,7 @@ export default async function Home() {
           cursor={page.cursor}
           endpoint="/api/latest"
           itemsKey="feed"
-          empty={<>No jams yet.</>}
+          empty={<>Nothing on repeat yet.</>}
           loggedIn={false}
           preferredProvider={preferredProvider}
         />
@@ -61,7 +61,7 @@ export default async function Home() {
         </SectionLabel>
         {jams.length === 0 ? (
           <EmptyState>
-            Nobody you follow has a current jam.{' '}
+            Nobody you follow has a song on repeat.{' '}
             <Link href="/explore" className={linkInline}>
               Explore
             </Link>{' '}

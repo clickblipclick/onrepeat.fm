@@ -175,7 +175,7 @@ export default async function JamPage({
 
           {reJams.length > 0 && (
             <div className="mt-4">
-              <SectionLabel flush>Re-jams ({reJams.length})</SectionLabel>
+              <SectionLabel flush>Reposts ({reJams.length})</SectionLabel>
               <div className="mt-1 flex flex-col gap-1.5">
                 {reJams.map((rj) => (
                   <Link
@@ -183,7 +183,7 @@ export default async function JamPage({
                     href={`/profile/${encodeURIComponent(rj.author.handle ?? rj.authorDid)}`}
                     className="rounded border border-border px-2 py-1.5 text-sm hover:text-accent"
                   >
-                    <b>{authorName(rj.author)}</b> re-jammed ·{' '}
+                    <b>{authorName(rj.author)}</b> reposted ·{' '}
                     <RelativeTime iso={rj.createdAt} />
                   </Link>
                 ))}

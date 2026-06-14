@@ -36,8 +36,8 @@ export default async function LoginPage({
         </p>
       )}
       <p className="mb-4 text-sm text-muted">
-        One song. Seven days. Sign in with Bluesky to follow people and set your
-        jam.
+        The song you&apos;ve got on repeat. Sign in with Bluesky to follow
+        people and post a song.
       </p>
       <form action="/oauth/login" method="post" className="flex gap-2">
         <input

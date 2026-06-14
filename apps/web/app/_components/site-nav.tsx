@@ -38,8 +38,8 @@ export async function SiteNav() {
                 href="/post"
                 className={buttonClassName({ variant: 'outline', size: 'sm' })}
               >
-                <span className="sm:hidden">+ jam</span>
-                <span className="hidden sm:inline">+ set your jam</span>
+                <span className="sm:hidden">+ post</span>
+                <span className="hidden sm:inline">+ post a song</span>
               </Link>
               <UserMenu
                 did={session.did}

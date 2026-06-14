@@ -24,9 +24,9 @@ export function ReJamButton({
       return
     }
     const ok = await confirm({
-      title: 'Re-jam this track?',
-      description: `It'll replace your current jam, crediting @${jam.authorName}.`,
-      confirmText: 'Re-jam',
+      title: 'Repost this track?',
+      description: `It'll replace what you've got on repeat, crediting @${jam.authorName}.`,
+      confirmText: 'Repost',
     })
     if (!ok) return
     startTransition(async () => {
@@ -35,7 +35,7 @@ export function ReJamButton({
       if (res.ok) setDone(true)
       else if (res.error === 'session-expired')
         window.location.href = '/login?expired=1'
-      else toast({ title: "Couldn't re-jam", variant: 'error' })
+      else toast({ title: "Couldn't repost", variant: 'error' })
     })
   }
 
@@ -49,17 +49,17 @@ export function ReJamButton({
       {done ? (
         <>
           <Check size={16} aria-hidden />
-          re-jammed
+          reposted
         </>
       ) : pending ? (
         <>
           <LoaderCircle size={16} className="animate-spin" aria-hidden />
-          re-jam
+          repost
         </>
       ) : (
         <>
           <Repeat2 size={16} aria-hidden />
-          re-jam
+          repost
         </>
       )}
     </button>

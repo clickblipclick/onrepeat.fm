@@ -14,10 +14,10 @@ const SITE_URL = process.env.PUBLIC_URL ?? 'http://127.0.0.1:3000'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'onrepeat.fm',
-  description: 'one song. seven days.',
+  description: "the song you've got on repeat.",
   openGraph: {
     title: 'onrepeat.fm',
-    description: 'one song. seven days.',
+    description: "the song you've got on repeat.",
     siteName: 'onrepeat.fm',
     type: 'website',
   },

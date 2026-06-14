@@ -29,7 +29,7 @@ export function PostJamForm() {
         className={inputClassName('w-full')}
       />
       <Button type="submit" loading={pending}>
-        Set as my jam
+        Put it on repeat
       </Button>
       <div aria-live="polite" aria-atomic="true">
         {state && !state.ok && state.error !== 'session-expired' && (

@@ -1,6 +1,6 @@
 # onrepeat.fm
 
-One song. Seven days. Post the single track you're into right now — it expires after a week — and follow people to see what they're currently playing. Built natively on the [AT Protocol](https://atproto.com): jam/like records live in each user's own PDS, and we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
+The song you've got on repeat. Post the single track you're into right now — it expires after a week — and follow people to see what they're currently playing. Built natively on the [AT Protocol](https://atproto.com): jam/like records live in each user's own PDS, and we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
 
 ## Stack
 
