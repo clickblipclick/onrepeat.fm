@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { postJamAction, type PostJamState } from './actions'
 import { TrackPicker } from './_components/track-picker'
 import { Button } from './_components/ui/button'
@@ -28,18 +28,28 @@ export function PostJamForm({
     onDirtyChange?.(isPostDirty({ trackContent, caption }))
   }, [trackContent, caption, onDirtyChange])
 
+  // Keep the latest onSuccess in a ref so the success effect fires it exactly once — when
+  // `state` flips to ok — instead of re-running every time a caller passes a fresh inline
+  // callback (useActionState keeps `state` as { ok: true } after the action resolves).
+  const onSuccessRef = useRef(onSuccess)
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+  })
+
   // Resolve the action result: success hands navigation to the caller; a dead OAuth
   // session (only detectable once the write runs) bounces to re-auth.
   useEffect(() => {
     if (!state) return
     if (state.ok) {
-      onSuccess?.()
+      onSuccessRef.current?.()
       return
     }
     if (state.error === 'session-expired') {
       window.location.href = '/login?expired=1'
     }
-  }, [state, onSuccess])
+    // onSuccess is intentionally omitted — it's read from a ref so success fires once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
 
   return (
     <form action={action} className="flex flex-col gap-3">
