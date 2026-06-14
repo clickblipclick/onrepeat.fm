@@ -31,20 +31,15 @@ export async function SiteNav() {
         <Link href="/" className="font-bold">
           onrepeat<span className="text-accent">.fm</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="hover:text-accent">
-            following
-          </Link>
-          <Link href="/explore" className="hover:text-accent">
-            explore
-          </Link>
+        <div className="flex items-center gap-3">
           {session.did ? (
             <>
               <Link
                 href="/post"
                 className={buttonClassName({ variant: 'outline', size: 'sm' })}
               >
-                + set your jam
+                <span className="sm:hidden">+ jam</span>
+                <span className="hidden sm:inline">+ set your jam</span>
               </Link>
               <UserMenu
                 did={session.did}
