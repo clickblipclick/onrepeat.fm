@@ -64,7 +64,7 @@ describe('createOAuthClient', () => {
       sessionStore,
     })
     expect(client.clientMetadata.client_id).toBe(
-      'https://onrepeat.fm/client-metadata.json',
+      'https://onrepeat.fm/oauth-client-metadata.json',
     )
     expect(client.clientMetadata.token_endpoint_auth_method).toBe(
       'private_key_jwt',
@@ -81,7 +81,7 @@ describe('createOAuthClient', () => {
       sessionStore,
     })
     expect(client.clientMetadata.client_id).toBe(
-      'https://onrepeat.fm/client-metadata.json',
+      'https://onrepeat.fm/oauth-client-metadata.json',
     )
     expect(JSON.stringify(client.clientMetadata.redirect_uris)).toContain(
       'https://onrepeat.fm/oauth/callback',

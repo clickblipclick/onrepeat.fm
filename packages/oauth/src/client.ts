@@ -35,7 +35,7 @@ export function createOAuthClient(
 ): NodeOAuthClient {
   const scope = opts.scope ?? DEFAULT_SCOPE
   // Normalize a trailing slash rather than trusting deploy config: a PUBLIC_URL
-  // of 'https://x/' would otherwise derive 'https://x//client-metadata.json',
+  // of 'https://x/' would otherwise derive 'https://x//oauth-client-metadata.json',
   // which the auth server fetches, hits our redirect-normalizing 308, and
   // rejects ("unexpected redirect" → invalid_client_metadata).
   const publicUrl = opts.publicUrl.replace(/\/+$/, '')
@@ -81,7 +81,7 @@ export function createOAuthClient(
     // wrapper: its PDS lives on 127.0.0.1.
     fetch: safeFetchWrap({ ssrfProtection: true, allowImplicitRedirect: true }),
     clientMetadata: {
-      client_id: `${publicUrl}/client-metadata.json`,
+      client_id: `${publicUrl}/oauth-client-metadata.json`,
       client_name: 'onrepeat.fm',
       client_uri: publicUrl,
       redirect_uris: [redirectUri],
