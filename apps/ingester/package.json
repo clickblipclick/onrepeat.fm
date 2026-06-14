@@ -14,7 +14,7 @@
     "@onrepeat/db": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
-    "kysely": "^0.28.17"
+    "kysely": "^0.29.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
