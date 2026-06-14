@@ -20,6 +20,9 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
+        <SectionLabel as="h1" size="title" flush className="sr-only">
+          Explore
+        </SectionLabel>
         <div className="mb-4 rounded-md border border-border bg-surface p-4">
           <p className="mb-2 text-sm">
             One song. Seven days. Sign in with Bluesky to follow people and set
@@ -53,7 +56,7 @@ export default async function Home() {
     const jams = await hydrate(page.jams)
     return (
       <>
-        <SectionLabel as="h1" size="title">
+        <SectionLabel as="h1" size="title" flush className="sr-only">
           Following
         </SectionLabel>
         {jams.length === 0 ? (
@@ -81,7 +84,7 @@ export default async function Home() {
   } catch {
     return (
       <>
-        <SectionLabel as="h1" size="title">
+        <SectionLabel as="h1" size="title" flush className="sr-only">
           Following
         </SectionLabel>
         <EmptyState>

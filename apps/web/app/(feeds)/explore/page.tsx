@@ -15,8 +15,8 @@ export default async function ExplorePage() {
   const jams = await hydrate(page.jams)
   return (
     <>
-      <SectionLabel as="h1" size="title">
-        Latest jams
+      <SectionLabel as="h1" size="title" flush className="sr-only">
+        Explore
       </SectionLabel>
       <FeedList
         jams={jams}
