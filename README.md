@@ -8,7 +8,7 @@ TypeScript (ESM, Node ≥ 22) · pnpm workspaces · Postgres + Kysely · Next.js
 
 ## Prerequisites
 
-- **Node ≥ 22** and **pnpm 9** (`corepack enable`)
+- **Node ≥ 22** and **pnpm 9** (`corepack enable`). The version is pinned in `.nvmrc` — run `nvm use` (or `nvm install 22`) to match it. `engine-strict` is on, so pnpm refuses to run on an older Node rather than failing later in tests.
 - **Postgres 16** reachable at `localhost:5432` — either [Postgres.app](https://postgresapp.com) or the bundled Docker container (`pnpm db:up`). See the note below.
 - A **test Bluesky account** for the logged-in flows (don't use your main account).
 
