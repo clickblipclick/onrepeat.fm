@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getSession } from '../../lib/session'
 import { linkInline } from '../../lib/link-variants'
-import { PostJamForm } from '../post-jam-form'
+import { PostFormPage } from './post-form-page'
 import { SectionLabel } from '../_components/section-label'
 
 export default async function PostPage() {
@@ -21,7 +21,7 @@ export default async function PostPage() {
       <SectionLabel as="h1" size="title">
         What&apos;s on repeat?
       </SectionLabel>
-      <PostJamForm />
+      <PostFormPage />
     </>
   )
 }
