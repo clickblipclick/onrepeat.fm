@@ -1,31 +1,55 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { postJamAction, type PostJamState } from './actions'
 import { TrackPicker } from './_components/track-picker'
 import { Button } from './_components/ui/button'
 import { inputClassName } from '../lib/input-variants'
+import { isPostDirty } from '../lib/post-form'
 
-export function PostJamForm() {
+export function PostJamForm({
+  onSuccess,
+  onDirtyChange,
+}: {
+  /** Called after a successful write. The full page navigates to '/', the modal pops back. */
+  onSuccess?: () => void
+  /** Called as the form gains/loses unsaved content, so a host modal can guard dismissal. */
+  onDirtyChange?: (dirty: boolean) => void
+} = {}) {
   const [state, action, pending] = useActionState<
     PostJamState | null,
     FormData
   >(postJamAction, null)
+  const [trackContent, setTrackContent] = useState(false)
+  const [caption, setCaption] = useState('')
 
-  // A dead OAuth session only surfaces when the write runs — bounce to re-auth.
+  // Report dirtiness up to a host (e.g. the modal) so it can confirm before discarding.
   useEffect(() => {
-    if (state && !state.ok && state.error === 'session-expired') {
+    onDirtyChange?.(isPostDirty({ trackContent, caption }))
+  }, [trackContent, caption, onDirtyChange])
+
+  // Resolve the action result: success hands navigation to the caller; a dead OAuth
+  // session (only detectable once the write runs) bounces to re-auth.
+  useEffect(() => {
+    if (!state) return
+    if (state.ok) {
+      onSuccess?.()
+      return
+    }
+    if (state.error === 'session-expired') {
       window.location.href = '/login?expired=1'
     }
-  }, [state])
+  }, [state, onSuccess])
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      <TrackPicker />
+      <TrackPicker onContentChange={setTrackContent} />
       <input
         name="caption"
         aria-label="Caption (optional)"
         placeholder="why this song (optional)"
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
         className={inputClassName('w-full')}
       />
       <Button type="submit" loading={pending}>
