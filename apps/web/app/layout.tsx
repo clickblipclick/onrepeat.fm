@@ -26,8 +26,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode
+  modal: React.ReactNode
 }) {
   // No data-theme on the chrome: it uses the neutral `mono` default (globals.css :root).
   // Color themes apply only on profile pages and individual jam cards.
@@ -37,6 +39,7 @@ export default function RootLayout({
         <UiProviders>
           <SiteNav />
           <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+          {modal}
         </UiProviders>
       </body>
     </html>
