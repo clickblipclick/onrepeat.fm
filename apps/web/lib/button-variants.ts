@@ -12,7 +12,7 @@ export type ButtonSize = 'sm' | 'md' | 'none'
 // font-bold lives per-variant (not in BASE) so the bare `link` variant can stay regular
 // weight — cn() doesn't merge Tailwind conflicts, so BASE could not be overridden.
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded transition ' +
+  'inline-flex cursor-pointer items-center justify-center gap-2 rounded transition ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ' +
   'disabled:pointer-events-none disabled:opacity-50'
 

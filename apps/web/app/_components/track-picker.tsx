@@ -117,11 +117,16 @@ export function TrackPicker({
   }, [selected, manual])
 
   // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
-  // top layer (null on the full /post page → a body portal that escapes overflow clipping).
-  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+  // top layer. Must be undefined (NOT null) when there's no dialog: FloatingPortal treats an
+  // explicit root={null} as "no portal target" and renders nothing, whereas undefined falls
+  // back to its default body portal — which is what the full /post page needs.
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | undefined>(
+    undefined,
+  )
   useEffect(() => {
     setPortalRoot(
-      (refs.reference.current as HTMLElement | null)?.closest('dialog') ?? null,
+      (refs.reference.current as HTMLElement | null)?.closest('dialog') ??
+        undefined,
     )
     // refs is stable; run once after the input mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
