@@ -308,39 +308,48 @@ export function TrackPicker({
   }
 
   return (
-    <div key="search">
-      <div className="mb-4 flex justify-center">
-        <VinylPlaceholder className="h-28 w-28 rounded-md" />
+    <div
+      key="search"
+      className="rounded-md border border-border bg-surface p-4"
+    >
+      <div className="flex items-center gap-4">
+        <VinylPlaceholder className="h-20 w-20 rounded" />
+        <div className="min-w-0 flex-1">
+          <input
+            ref={refs.setReference}
+            value={query}
+            placeholder="Search a song, or paste a link…"
+            aria-label="Search a song or paste a link"
+            className={inputCls}
+            {...getReferenceProps({
+              onChange: (e) =>
+                setQuery((e.currentTarget as HTMLInputElement).value),
+              onKeyDown: (e) => {
+                if (
+                  e.key === 'Enter' &&
+                  open &&
+                  activeIndex != null &&
+                  results[activeIndex]
+                ) {
+                  e.preventDefault()
+                  pick(results[activeIndex])
+                }
+              },
+            })}
+            role="combobox"
+            aria-autocomplete="list"
+          />
+          {isUrl(query) && (
+            <p
+              className="mt-2 text-sm text-muted"
+              role="status"
+              aria-live="polite"
+            >
+              Looking up link…
+            </p>
+          )}
+        </div>
       </div>
-      <input
-        ref={refs.setReference}
-        value={query}
-        placeholder="Search a song, or paste a link…"
-        aria-label="Search a song or paste a link"
-        className={inputCls}
-        {...getReferenceProps({
-          onChange: (e) =>
-            setQuery((e.currentTarget as HTMLInputElement).value),
-          onKeyDown: (e) => {
-            if (
-              e.key === 'Enter' &&
-              open &&
-              activeIndex != null &&
-              results[activeIndex]
-            ) {
-              e.preventDefault()
-              pick(results[activeIndex])
-            }
-          },
-        })}
-        role="combobox"
-        aria-autocomplete="list"
-      />
-      {isUrl(query) && (
-        <p className="mt-2 text-sm text-muted" role="status" aria-live="polite">
-          Looking up link…
-        </p>
-      )}
       {open && (
         <FloatingPortal root={portalRoot}>
           <div
@@ -394,7 +403,7 @@ export function TrackPicker({
       <button
         type="button"
         onClick={() => setManual(true)}
-        className="mt-2 text-xs text-muted hover:text-accent"
+        className="mt-3 text-xs text-muted hover:text-accent"
       >
         enter manually
       </button>
