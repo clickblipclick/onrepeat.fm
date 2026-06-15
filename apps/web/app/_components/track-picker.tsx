@@ -1,6 +1,19 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import {
+  useFloating,
+  offset,
+  flip,
+  shift,
+  size,
+  autoUpdate,
+  useRole,
+  useDismiss,
+  useListNavigation,
+  useInteractions,
+  FloatingPortal,
+} from '@floating-ui/react'
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
 import { inputClassName } from '../../lib/input-variants'
@@ -10,7 +23,9 @@ const inputCls = inputClassName('w-full')
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
- *  form fields so the surrounding <form> submits them; manual entry is the failure fallback. */
+ *  form fields so the surrounding <form> submits them; manual entry is the failure fallback.
+ *  Search results render as a Floating UI combobox listbox (virtual focus: the cursor stays
+ *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
 export function TrackPicker({
   onContentChange,
 }: {
@@ -30,11 +45,79 @@ export function TrackPicker({
   // Guards auto-derive: the last URL we kicked off, so each link is processed once.
   const lastDerived = useRef('')
 
+  // Combobox popover (Floating UI). `open` tracks the results list; useListNavigation runs
+  // in virtual mode so focus never leaves the search input.
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const listRef = useRef<Array<HTMLElement | null>>([])
+
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange(next) {
+      setOpen(next)
+      // Esc / outside-click closes the popover; drop the stale results AND bump the
+      // request seq so any in-flight search can't repopulate (and reopen) it.
+      if (!next) {
+        seq.current++
+        setResults([])
+      }
+    },
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    middleware: [
+      offset(4),
+      flip({ padding: 8 }),
+      shift({ padding: 8 }),
+      size({
+        padding: 8,
+        apply({ rects, elements, availableHeight }) {
+          Object.assign(elements.floating.style, {
+            width: `${rects.reference.width}px`,
+            maxHeight: `${Math.min(availableHeight, 288)}px`,
+          })
+        },
+      }),
+    ],
+    whileElementsMounted: autoUpdate,
+  })
+  const role = useRole(context, { role: 'listbox' })
+  const dismiss = useDismiss(context)
+  const listNav = useListNavigation(context, {
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
+    virtual: true,
+    loop: true,
+  })
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
+    [role, dismiss, listNav],
+  )
+
   // Surface "has the user put anything in?" to the parent: a selected track, or any
   // non-empty search/URL text (also covers manual-entry mode, which keeps the URL in query).
   useEffect(() => {
     onContentChange?.(selected != null || query.trim().length > 0)
   }, [selected, query, onContentChange])
+
+  // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
+  // top layer (null on the full /post page → a body portal that escapes overflow clipping).
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setPortalRoot(
+      (refs.reference.current as HTMLElement | null)?.closest('dialog') ?? null,
+    )
+    // refs is stable; run once after the input mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Open the combobox when results arrive (and pre-highlight the first), close when empty.
+  // Trim listRef so a shrinking result set can't leave stale (unmounted) option nodes that
+  // arrow-key navigation would land on.
+  useEffect(() => {
+    listRef.current.length = results.length
+    setOpen(results.length > 0)
+    setActiveIndex(results.length > 0 ? 0 : null)
+  }, [results])
 
   useEffect(() => {
     if (selected || isUrl(query) || query.trim().length < 2) {
@@ -75,8 +158,11 @@ export function TrackPicker({
       const c = await deriveTrackAction(url)
       setBusy(false)
       if (c) {
+        // Inline rather than calling pick() so this effect depends only on stable setters.
         setSelected(c)
         setResults([])
+        setOpen(false)
+        setActiveIndex(null)
         setEditing(false)
       } else {
         setManual(true)
@@ -84,6 +170,15 @@ export function TrackPicker({
     }, 500)
     return () => clearTimeout(id)
   }, [query, selected, manual, busy])
+
+  // Commit a chosen candidate (from a search result or a derived link).
+  const pick = (candidate: TrackCandidate) => {
+    setSelected(candidate)
+    setResults([])
+    setOpen(false)
+    setActiveIndex(null)
+    setEditing(false)
+  }
 
   if (selected) {
     return (
@@ -212,28 +307,60 @@ export function TrackPicker({
   return (
     <div>
       <input
+        ref={refs.setReference}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
         placeholder="Search a song, or paste a link…"
         aria-label="Search a song or paste a link"
         className={inputCls}
+        {...getReferenceProps({
+          onChange: (e) =>
+            setQuery((e.currentTarget as HTMLInputElement).value),
+          onKeyDown: (e) => {
+            if (
+              e.key === 'Enter' &&
+              open &&
+              activeIndex != null &&
+              results[activeIndex]
+            ) {
+              e.preventDefault()
+              pick(results[activeIndex])
+            }
+          },
+        })}
+        role="combobox"
+        aria-autocomplete="list"
       />
-      {isUrl(query) ? (
+      {isUrl(query) && (
         <p className="mt-2 text-sm text-muted" role="status" aria-live="polite">
           Looking up link…
         </p>
-      ) : results.length > 0 ? (
-        <ul className="mt-1 divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
-          {results.map((r) => (
-            <li key={r.sourceUrl}>
+      )}
+      {open && (
+        <FloatingPortal root={portalRoot}>
+          <div
+            ref={refs.setFloating}
+            style={floatingStyles}
+            {...getFloatingProps()}
+            className="z-50 overflow-y-auto rounded-md border border-border bg-surface shadow-lg"
+          >
+            {results.map((r, i) => (
               <button
-                type="button"
-                onClick={() => {
-                  setSelected(r)
-                  setResults([])
-                  setEditing(false)
+                key={r.sourceUrl}
+                ref={(node) => {
+                  listRef.current[i] = node
                 }}
-                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-bg"
+                type="button"
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${
+                  activeIndex === i ? 'bg-bg' : ''
+                }`}
+                {...getItemProps({
+                  // active/selected let Floating UI assign the active option's id and
+                  // aria-selected, and wire aria-activedescendant on the input (role="option"
+                  // comes from useRole's listbox role).
+                  active: activeIndex === i,
+                  selected: activeIndex === i,
+                  onClick: () => pick(r),
+                })}
               >
                 {r.artworkUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -254,10 +381,10 @@ export function TrackPicker({
                   </span>
                 </span>
               </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+            ))}
+          </div>
+        </FloatingPortal>
+      )}
       <button
         type="button"
         onClick={() => setManual(true)}
