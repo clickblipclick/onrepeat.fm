@@ -7,7 +7,7 @@ export type ButtonVariant =
   | 'danger'
   | 'outline'
   | 'link'
-export type ButtonSize = 'sm' | 'md' | 'none'
+export type ButtonSize = 'sm' | 'md' | 'none' | 'icon'
 
 // font-bold lives per-variant (not in BASE) so the bare `link` variant can stay regular
 // weight — cn() doesn't merge Tailwind conflicts, so BASE could not be overridden.
@@ -31,6 +31,9 @@ const SIZES: Record<ButtonSize, string> = {
   sm: 'px-2.5 py-1 text-xs',
   md: 'px-3 py-2 text-sm',
   none: '',
+  // Square hit-area for an icon-only button; the icon child sets its own size and centers
+  // via BASE's inline-flex. Pair with a look variant, e.g. <Button variant="link" size="icon">.
+  icon: 'h-9 w-9',
 }
 
 /** Resolve the class string for a button look — shared by <Button> and any element

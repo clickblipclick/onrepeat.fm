@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import type { ThemeName } from '@onrepeat/core'
 import { PostJamForm } from '../post-jam-form'
+import { Button } from './ui/button'
 import { useConfirm } from './ui/confirm'
 import { linkInline } from '../../lib/link-variants'
 
@@ -70,14 +71,16 @@ export function PostModal({
           <h2 id="post-modal-title" className="text-xl font-bold">
             What&apos;s on repeat?
           </h2>
-          <button
+          <Button
             type="button"
+            variant="link"
+            size="icon"
             onClick={() => void requestClose()}
             aria-label="Close"
-            className="-mr-1 cursor-pointer rounded p-1 text-muted hover:text-accent"
+            className="-mr-2"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
         <div className="overflow-y-auto p-6">
           {signedIn ? (
