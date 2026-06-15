@@ -55,7 +55,7 @@ export function PostModal({ signedIn }: { signedIn: boolean }) {
       aria-labelledby="post-modal-title"
       onCancel={onCancel}
       onClick={onClick}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-md border border-border bg-surface p-0 text-ink backdrop:bg-black/40 max-sm:m-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none"
+      className="post-modal m-auto w-[calc(100%-2rem)] max-w-lg rounded-md border border-border bg-surface p-0 text-ink backdrop:bg-black/40 max-sm:m-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none"
     >
       <div className="flex max-h-[85dvh] flex-col max-sm:h-full max-sm:max-h-none">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
