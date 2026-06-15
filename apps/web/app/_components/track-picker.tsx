@@ -18,6 +18,7 @@ import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
 import { inputClassName } from '../../lib/input-variants'
 import { VinylPlaceholder } from './vinyl-placeholder'
+import { Button } from './ui/button'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = inputClassName('w-full')
@@ -239,14 +240,15 @@ export function TrackPicker({
               }
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => setEditing((v) => !v)}
             aria-pressed={editing}
-            className="shrink-0 self-start text-xs text-muted hover:text-accent"
+            className="shrink-0 self-start text-xs"
           >
             {editing ? 'done' : 'edit'}
-          </button>
+          </Button>
         </div>
         <input type="hidden" name="sourceUrl" value={selected.sourceUrl} />
         <input
@@ -272,18 +274,19 @@ export function TrackPicker({
             .
           </p>
         )}
-        <button
+        <Button
           type="button"
+          variant="link"
           onClick={() => {
             setSelected(null)
             setQuery('')
             setEditing(false)
             lastDerived.current = ''
           }}
-          className="mt-2 text-xs text-muted hover:text-accent"
+          className="mt-2 text-xs"
         >
           change track
-        </button>
+        </Button>
       </div>
     )
   }
@@ -317,13 +320,14 @@ export function TrackPicker({
           className={validatedInputCls}
         />
         <input type="hidden" name="artworkUrl" value="" />
-        <button
+        <Button
           type="button"
+          variant="link"
           onClick={() => setManual(false)}
-          className="self-start text-xs text-muted hover:text-accent"
+          className="self-start text-xs"
         >
           back to search
-        </button>
+        </Button>
       </div>
     )
   }
@@ -426,13 +430,14 @@ export function TrackPicker({
           </div>
         </FloatingPortal>
       )}
-      <button
+      <Button
         type="button"
+        variant="link"
         onClick={() => setManual(true)}
-        className="mt-3 text-xs text-muted hover:text-accent"
+        className="mt-3 text-xs"
       >
         enter manually
-      </button>
+      </Button>
     </div>
   )
 }
