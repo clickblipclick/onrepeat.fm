@@ -52,7 +52,7 @@ export function PostJamForm({
   }, [state])
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <form action={action} className="flex flex-col gap-4">
       <TrackPicker onContentChange={setTrackContent} />
       <input
         name="caption"
@@ -62,7 +62,7 @@ export function PostJamForm({
         onChange={(e) => setCaption(e.target.value)}
         className={inputClassName('w-full')}
       />
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="py-2.5 text-base">
         Put it on repeat
       </Button>
       <div aria-live="polite" aria-atomic="true">

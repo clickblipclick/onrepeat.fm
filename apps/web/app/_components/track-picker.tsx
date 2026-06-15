@@ -17,6 +17,7 @@ import {
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
 import { inputClassName } from '../../lib/input-variants'
+import { VinylPlaceholder } from './vinyl-placeholder'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = inputClassName('w-full')
@@ -184,18 +185,18 @@ export function TrackPicker({
     return (
       <div
         key={selected.sourceUrl}
-        className="rounded-md border border-border bg-surface p-3"
+        className="rounded-md border border-border bg-surface p-4"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {selected.artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={selected.artworkUrl}
               alt=""
-              className="h-14 w-14 rounded object-cover"
+              className="h-20 w-20 shrink-0 rounded object-cover"
             />
           ) : (
-            <span className="accent-grid h-14 w-14 rounded" />
+            <VinylPlaceholder className="h-20 w-20 rounded" />
           )}
           <div className="min-w-0 flex-1">
             <input
@@ -369,10 +370,10 @@ export function TrackPicker({
                   <img
                     src={r.artworkUrl}
                     alt=""
-                    className="h-10 w-10 rounded object-cover"
+                    className="h-10 w-10 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <span className="accent-grid h-10 w-10 rounded" />
+                  <VinylPlaceholder className="h-10 w-10 rounded" />
                 )}
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-bold">

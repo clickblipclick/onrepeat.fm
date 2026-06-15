@@ -55,11 +55,11 @@ export function PostModal({ signedIn }: { signedIn: boolean }) {
       aria-labelledby="post-modal-title"
       onCancel={onCancel}
       onClick={onClick}
-      className="post-modal m-auto w-[calc(100%-2rem)] max-w-lg rounded-md border border-border bg-surface p-0 text-ink backdrop:bg-black/40 max-sm:m-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none"
+      className="post-modal m-auto w-[calc(100%-2rem)] max-w-2xl rounded-md border border-border bg-surface p-0 text-ink backdrop:bg-black/40 max-sm:m-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none"
     >
       <div className="flex max-h-[85dvh] flex-col max-sm:h-full max-sm:max-h-none">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 id="post-modal-title" className="text-lg font-bold">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 id="post-modal-title" className="text-xl font-bold">
             What&apos;s on repeat?
           </h2>
           <button
@@ -71,7 +71,7 @@ export function PostModal({ signedIn }: { signedIn: boolean }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="overflow-y-auto p-4">
+        <div className="overflow-y-auto p-6">
           {signedIn ? (
             <PostJamForm
               onSuccess={() => router.back()}
