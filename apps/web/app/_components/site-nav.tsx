@@ -36,6 +36,10 @@ export async function SiteNav() {
             <>
               <Link
                 href="/post"
+                // Opening /post is intercepted into a modal over the current feed; without
+                // scroll={false} Next's default scroll-to-top yanks the feed to the top as
+                // the modal opens (a programmatic scroll the dialog's scroll-lock can't stop).
+                scroll={false}
                 className={buttonClassName({ variant: 'outline', size: 'sm' })}
               >
                 <span className="sm:hidden">+ post</span>
