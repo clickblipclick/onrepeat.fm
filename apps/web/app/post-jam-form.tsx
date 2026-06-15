@@ -21,7 +21,6 @@ export function PostJamForm({
     FormData
   >(postJamAction, null)
   const [trackContent, setTrackContent] = useState(false)
-  const [trackReady, setTrackReady] = useState(false)
   const [caption, setCaption] = useState('')
 
   // Report dirtiness up to a host (e.g. the modal) so it can confirm before discarding.
@@ -54,10 +53,7 @@ export function PostJamForm({
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <TrackPicker
-        onContentChange={setTrackContent}
-        onReadyChange={setTrackReady}
-      />
+      <TrackPicker onContentChange={setTrackContent} />
       <input
         name="caption"
         aria-label="Caption (optional)"
@@ -66,12 +62,7 @@ export function PostJamForm({
         onChange={(e) => setCaption(e.target.value)}
         className={inputClassName('w-full')}
       />
-      <Button
-        type="submit"
-        loading={pending}
-        disabled={!trackReady}
-        className="py-2.5 text-base"
-      >
+      <Button type="submit" loading={pending} className="py-2.5 text-base">
         Put it on repeat
       </Button>
       <div aria-live="polite" aria-atomic="true">

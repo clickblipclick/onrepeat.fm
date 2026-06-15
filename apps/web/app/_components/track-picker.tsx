@@ -32,14 +32,10 @@ const validatedInputCls = inputClassName('w-full user-invalid:border-red-600')
  *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
 export function TrackPicker({
   onContentChange,
-  onReadyChange,
 }: {
   /** Fires whenever the picker gains/loses input: a track is selected, or the
    *  search/URL field is non-empty. Lets the parent form drive a dirty guard. */
   onContentChange?: (hasContent: boolean) => void
-  /** Fires when the picker becomes submittable (a track is selected, or the user is in
-   *  manual entry where the required fields take over). Lets the form gate its submit. */
-  onReadyChange?: (ready: boolean) => void
 } = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
@@ -107,11 +103,17 @@ export function TrackPicker({
     onContentChange?.(selected != null || query.trim().length > 0)
   }, [selected, query, onContentChange])
 
-  // A track is submittable once it's selected, or once we're in manual entry (where the
-  // required sourceUrl/title/artist inputs enforce their own validation on submit).
+  // The bare search field isn't a named/required input, so "no track chosen" can't be a
+  // field constraint. Mark it invalid with a custom message while no track is committed, so
+  // submitting surfaces that message and focuses the field — rather than disabling the submit
+  // button (which gives no feedback). Cleared once a track is selected or manual entry (with
+  // its own required fields) takes over.
   useEffect(() => {
-    onReadyChange?.(selected != null || manual)
-  }, [selected, manual, onReadyChange])
+    const el = refs.reference.current as HTMLInputElement | null
+    el?.setCustomValidity(
+      selected || manual ? '' : 'Pick a track to share, or enter one manually.',
+    )
+  }, [selected, manual])
 
   // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
   // top layer (null on the full /post page → a body portal that escapes overflow clipping).
