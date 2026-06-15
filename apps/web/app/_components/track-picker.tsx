@@ -333,7 +333,7 @@ export function TrackPicker({
       key="search"
       className="rounded-md border border-border bg-surface p-4"
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <VinylPlaceholder className="h-20 w-20 rounded" />
         <div className="min-w-0 flex-1">
           <input
@@ -361,6 +361,10 @@ export function TrackPicker({
             aria-autocomplete="list"
             aria-describedby="post-link-hint"
           />
+          <p id="post-link-hint" className="mt-2 text-xs text-muted">
+            Works with links from Spotify, Apple Music, YouTube, SoundCloud,
+            Bandcamp, Tidal, and Deezer.
+          </p>
           {isUrl(query) && (
             <p
               className="mt-2 text-sm text-muted"
@@ -372,10 +376,6 @@ export function TrackPicker({
           )}
         </div>
       </div>
-      <p id="post-link-hint" className="mt-3 text-xs text-muted">
-        Works with links from Spotify, Apple Music, YouTube, SoundCloud,
-        Bandcamp, Tidal, and Deezer.
-      </p>
       {open && (
         <FloatingPortal root={portalRoot}>
           <div
