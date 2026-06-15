@@ -309,6 +309,9 @@ export function TrackPicker({
 
   return (
     <div key="search">
+      <div className="mb-4 flex justify-center">
+        <VinylPlaceholder className="h-28 w-28 rounded-md" />
+      </div>
       <input
         ref={refs.setReference}
         value={query}
