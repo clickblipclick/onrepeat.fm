@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
+import type { ThemeName } from '@onrepeat/core'
 import { PostJamForm } from '../post-jam-form'
 import { useConfirm } from './ui/confirm'
 import { linkInline } from '../../lib/link-variants'
@@ -12,7 +13,13 @@ import { linkInline } from '../../lib/link-variants'
  *  native <dialog>; all dismissal paths (Esc, backdrop, X) run a discard guard when the
  *  form is dirty, then router.back() to pop the intercepted route and reveal the feed
  *  (already revalidated by postJamAction) behind it. */
-export function PostModal({ signedIn }: { signedIn: boolean }) {
+export function PostModal({
+  signedIn,
+  theme,
+}: {
+  signedIn: boolean
+  theme?: ThemeName
+}) {
   const router = useRouter()
   const { confirm } = useConfirm()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -52,6 +59,7 @@ export function PostModal({ signedIn }: { signedIn: boolean }) {
   return (
     <dialog
       ref={dialogRef}
+      data-theme={theme}
       aria-labelledby="post-modal-title"
       onCancel={onCancel}
       onClick={onClick}
