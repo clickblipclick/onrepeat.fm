@@ -214,10 +214,10 @@ export function TrackPicker({
             <img
               src={selected.artworkUrl}
               alt=""
-              className="h-20 w-20 shrink-0 rounded object-cover"
+              className="h-32 w-32 shrink-0 rounded object-cover"
             />
           ) : (
-            <VinylPlaceholder className="h-20 w-20 rounded" />
+            <VinylPlaceholder className="h-32 w-32 rounded" />
           )}
           <div className="min-w-0 flex-1">
             <input
@@ -343,7 +343,7 @@ export function TrackPicker({
       className="rounded-md border border-border bg-surface p-4"
     >
       <div className="flex items-start gap-4">
-        <VinylPlaceholder className="h-20 w-20 rounded" />
+        <VinylPlaceholder className="h-32 w-32 rounded" />
         <div className="min-w-0 flex-1">
           <input
             ref={refs.setReference}
