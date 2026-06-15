@@ -28,7 +28,8 @@ export function PostModal({
 
   // Open as a modal once mounted (top layer + focus trap from the platform).
   useEffect(() => {
-    if (dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal()
+    if (dialogRef.current && !dialogRef.current.open)
+      dialogRef.current.showModal()
   }, [])
 
   // Single dismissal funnel: guard when dirty, then pop the intercepted route.
