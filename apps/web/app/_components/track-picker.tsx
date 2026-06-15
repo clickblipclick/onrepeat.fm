@@ -21,6 +21,9 @@ import { VinylPlaceholder } from './vinyl-placeholder'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = inputClassName('w-full')
+// Inputs that take part in client-side validation: :user-invalid reddens the border only
+// after the user has interacted and left the field invalid (never flags untouched fields).
+const validatedInputCls = inputClassName('w-full user-invalid:border-red-600')
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
@@ -29,10 +32,14 @@ const inputCls = inputClassName('w-full')
  *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
 export function TrackPicker({
   onContentChange,
+  onReadyChange,
 }: {
   /** Fires whenever the picker gains/loses input: a track is selected, or the
    *  search/URL field is non-empty. Lets the parent form drive a dirty guard. */
   onContentChange?: (hasContent: boolean) => void
+  /** Fires when the picker becomes submittable (a track is selected, or the user is in
+   *  manual entry where the required fields take over). Lets the form gate its submit. */
+  onReadyChange?: (ready: boolean) => void
 } = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
@@ -99,6 +106,12 @@ export function TrackPicker({
   useEffect(() => {
     onContentChange?.(selected != null || query.trim().length > 0)
   }, [selected, query, onContentChange])
+
+  // A track is submittable once it's selected, or once we're in manual entry (where the
+  // required sourceUrl/title/artist inputs enforce their own validation on submit).
+  useEffect(() => {
+    onReadyChange?.(selected != null || manual)
+  }, [selected, manual, onReadyChange])
 
   // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
   // top layer (null on the full /post page → a body portal that escapes overflow clipping).
@@ -203,10 +216,11 @@ export function TrackPicker({
               name="title"
               defaultValue={selected.title}
               readOnly={!editing}
+              required
               aria-label="Song title"
               className={
                 editing
-                  ? `${inputCls} mb-1`
+                  ? `${validatedInputCls} mb-1`
                   : 'w-full truncate bg-transparent font-bold focus:outline-none'
               }
             />
@@ -214,10 +228,11 @@ export function TrackPicker({
               name="artist"
               defaultValue={selected.artist}
               readOnly={!editing}
+              required
               aria-label="Artist"
               className={
                 editing
-                  ? inputCls
+                  ? validatedInputCls
                   : 'w-full truncate bg-transparent text-sm text-muted focus:outline-none'
               }
             />
@@ -277,23 +292,27 @@ export function TrackPicker({
       // which would flip it from controlled value={query} to uncontrolled defaultValue).
       <div key="manual" className="flex flex-col gap-2">
         <input
+          type="url"
           name="sourceUrl"
           defaultValue={isUrl(query) ? query.trim() : ''}
           placeholder="https://… (music link)"
           aria-label="Song URL"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input
           name="title"
           placeholder="Song title"
           aria-label="Song title"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input
           name="artist"
           placeholder="Artist"
           aria-label="Artist"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input type="hidden" name="artworkUrl" value="" />
         <button
