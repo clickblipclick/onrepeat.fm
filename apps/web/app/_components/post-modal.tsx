@@ -74,7 +74,7 @@ export function PostModal({
             type="button"
             onClick={() => void requestClose()}
             aria-label="Close"
-            className="-mr-1 rounded p-1 text-muted hover:text-accent"
+            className="-mr-1 cursor-pointer rounded p-1 text-muted hover:text-accent"
           >
             <X className="h-5 w-5" />
           </button>
