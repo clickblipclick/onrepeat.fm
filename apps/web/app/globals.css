@@ -179,6 +179,17 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Lock background scroll while a modal <dialog> is open (showModal puts it in the top
+   layer but doesn't stop the page behind from scrolling). `:modal` matches only top-layer
+   modal dialogs, so non-modal popovers are unaffected; `scrollbar-gutter: stable` reserves
+   the scrollbar's space so locking doesn't shift the layout. */
+html {
+  scrollbar-gutter: stable;
+}
+html:has(dialog:modal) {
+  overflow: hidden;
+}
+
 /* Card-surface textures (`.pat-*`). One is assigned per card (by author) as a subtle
    signature. Every color is a low-percentage color-mix of the theme's own --ink / --accent
    over --surface, so the texture is a whisper that (a) tracks the card's theme + light/dark
