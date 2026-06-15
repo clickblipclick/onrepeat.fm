@@ -1,17 +1,43 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import {
+  useFloating,
+  offset,
+  flip,
+  shift,
+  size,
+  autoUpdate,
+  useRole,
+  useDismiss,
+  useListNavigation,
+  useInteractions,
+  FloatingPortal,
+} from '@floating-ui/react'
 import type { TrackCandidate } from '@onrepeat/music'
 import { deriveTrackAction } from '../actions'
 import { inputClassName } from '../../lib/input-variants'
+import { VinylPlaceholder } from './vinyl-placeholder'
+import { Button } from './ui/button'
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s.trim())
 const inputCls = inputClassName('w-full')
+// Inputs that take part in client-side validation: :user-invalid reddens the border only
+// after the user has interacted and left the field invalid (never flags untouched fields).
+const validatedInputCls = inputClassName('w-full user-invalid:border-red-600')
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
- *  form fields so the surrounding <form> submits them; manual entry is the failure fallback. */
-export function TrackPicker() {
+ *  form fields so the surrounding <form> submits them; manual entry is the failure fallback.
+ *  Search results render as a Floating UI combobox listbox (virtual focus: the cursor stays
+ *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
+export function TrackPicker({
+  onContentChange,
+}: {
+  /** Fires whenever the picker gains/loses input: a track is selected, or the
+   *  search/URL field is non-empty. Lets the parent form drive a dirty guard. */
+  onContentChange?: (hasContent: boolean) => void
+} = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
   const [selected, setSelected] = useState<TrackCandidate | null>(null)
@@ -23,6 +49,97 @@ export function TrackPicker() {
   const seq = useRef(0)
   // Guards auto-derive: the last URL we kicked off, so each link is processed once.
   const lastDerived = useRef('')
+
+  // Combobox popover (Floating UI). `open` tracks the results list; useListNavigation runs
+  // in virtual mode so focus never leaves the search input.
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const listRef = useRef<Array<HTMLElement | null>>([])
+
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange(next) {
+      setOpen(next)
+      // Esc / outside-click closes the popover; drop the stale results AND bump the
+      // request seq so any in-flight search can't repopulate (and reopen) it.
+      if (!next) {
+        seq.current++
+        setResults([])
+      }
+    },
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    middleware: [
+      offset(4),
+      flip({ padding: 8 }),
+      shift({ padding: 8 }),
+      size({
+        padding: 8,
+        apply({ rects, elements, availableHeight }) {
+          Object.assign(elements.floating.style, {
+            width: `${rects.reference.width}px`,
+            maxHeight: `${Math.min(availableHeight, 288)}px`,
+          })
+        },
+      }),
+    ],
+    whileElementsMounted: autoUpdate,
+  })
+  const role = useRole(context, { role: 'listbox' })
+  const dismiss = useDismiss(context)
+  const listNav = useListNavigation(context, {
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
+    virtual: true,
+    loop: true,
+  })
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
+    [role, dismiss, listNav],
+  )
+
+  // Surface "has the user put anything in?" to the parent: a selected track, or any
+  // non-empty search/URL text (also covers manual-entry mode, which keeps the URL in query).
+  useEffect(() => {
+    onContentChange?.(selected != null || query.trim().length > 0)
+  }, [selected, query, onContentChange])
+
+  // The bare search field isn't a named/required input, so "no track chosen" can't be a
+  // field constraint. Mark it invalid with a custom message while no track is committed, so
+  // submitting surfaces that message and focuses the field — rather than disabling the submit
+  // button (which gives no feedback). Cleared once a track is selected or manual entry (with
+  // its own required fields) takes over.
+  useEffect(() => {
+    const el = refs.reference.current as HTMLInputElement | null
+    el?.setCustomValidity(
+      selected || manual ? '' : 'Pick a track to share, or enter one manually.',
+    )
+  }, [selected, manual])
+
+  // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
+  // top layer. Must be undefined (NOT null) when there's no dialog: FloatingPortal treats an
+  // explicit root={null} as "no portal target" and renders nothing, whereas undefined falls
+  // back to its default body portal — which is what the full /post page needs.
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | undefined>(
+    undefined,
+  )
+  useEffect(() => {
+    setPortalRoot(
+      (refs.reference.current as HTMLElement | null)?.closest('dialog') ??
+        undefined,
+    )
+    // refs is stable; run once after the input mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Open the combobox when results arrive (and pre-highlight the first), close when empty.
+  // Trim listRef so a shrinking result set can't leave stale (unmounted) option nodes that
+  // arrow-key navigation would land on.
+  useEffect(() => {
+    listRef.current.length = results.length
+    setOpen(results.length > 0)
+    setActiveIndex(results.length > 0 ? 0 : null)
+  }, [results])
 
   useEffect(() => {
     if (selected || isUrl(query) || query.trim().length < 2) {
@@ -63,8 +180,11 @@ export function TrackPicker() {
       const c = await deriveTrackAction(url)
       setBusy(false)
       if (c) {
+        // Inline rather than calling pick() so this effect depends only on stable setters.
         setSelected(c)
         setResults([])
+        setOpen(false)
+        setActiveIndex(null)
         setEditing(false)
       } else {
         setManual(true)
@@ -73,32 +193,42 @@ export function TrackPicker() {
     return () => clearTimeout(id)
   }, [query, selected, manual, busy])
 
+  // Commit a chosen candidate (from a search result or a derived link).
+  const pick = (candidate: TrackCandidate) => {
+    setSelected(candidate)
+    setResults([])
+    setOpen(false)
+    setActiveIndex(null)
+    setEditing(false)
+  }
+
   if (selected) {
     return (
       <div
         key={selected.sourceUrl}
-        className="rounded-md border border-border bg-surface p-3"
+        className="rounded-md border border-border bg-surface p-4"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {selected.artworkUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={selected.artworkUrl}
               alt=""
-              className="h-14 w-14 rounded object-cover"
+              className="h-32 w-32 shrink-0 rounded object-cover"
             />
           ) : (
-            <span className="accent-grid h-14 w-14 rounded" />
+            <VinylPlaceholder className="h-32 w-32 rounded" />
           )}
           <div className="min-w-0 flex-1">
             <input
               name="title"
               defaultValue={selected.title}
               readOnly={!editing}
+              required
               aria-label="Song title"
               className={
                 editing
-                  ? `${inputCls} mb-1`
+                  ? `${validatedInputCls} mb-1`
                   : 'w-full truncate bg-transparent font-bold focus:outline-none'
               }
             />
@@ -106,22 +236,24 @@ export function TrackPicker() {
               name="artist"
               defaultValue={selected.artist}
               readOnly={!editing}
+              required
               aria-label="Artist"
               className={
                 editing
-                  ? inputCls
+                  ? validatedInputCls
                   : 'w-full truncate bg-transparent text-sm text-muted focus:outline-none'
               }
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => setEditing((v) => !v)}
             aria-pressed={editing}
-            className="shrink-0 self-start text-xs text-muted hover:text-accent"
+            className="shrink-0 self-start text-xs"
           >
             {editing ? 'done' : 'edit'}
-          </button>
+          </Button>
         </div>
         <input type="hidden" name="sourceUrl" value={selected.sourceUrl} />
         <input
@@ -147,91 +279,148 @@ export function TrackPicker() {
             .
           </p>
         )}
-        <button
+        <Button
           type="button"
+          variant="link"
           onClick={() => {
             setSelected(null)
             setQuery('')
             setEditing(false)
             lastDerived.current = ''
           }}
-          className="mt-2 text-xs text-muted hover:text-accent"
+          className="mt-2 text-xs"
         >
           change track
-        </button>
+        </Button>
       </div>
     )
   }
 
   if (manual) {
     return (
-      <div className="flex flex-col gap-2">
+      // Distinct key so React remounts (rather than reusing the search input's DOM node,
+      // which would flip it from controlled value={query} to uncontrolled defaultValue).
+      <div key="manual" className="flex flex-col gap-2">
         <input
+          type="url"
           name="sourceUrl"
           defaultValue={isUrl(query) ? query.trim() : ''}
           placeholder="https://… (music link)"
           aria-label="Song URL"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input
           name="title"
           placeholder="Song title"
           aria-label="Song title"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input
           name="artist"
           placeholder="Artist"
           aria-label="Artist"
-          className={inputCls}
+          required
+          className={validatedInputCls}
         />
         <input type="hidden" name="artworkUrl" value="" />
-        <button
+        <Button
           type="button"
+          variant="link"
           onClick={() => setManual(false)}
-          className="self-start text-xs text-muted hover:text-accent"
+          className="self-start text-xs"
         >
           back to search
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div>
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search a song, or paste a link…"
-        aria-label="Search a song or paste a link"
-        className={inputCls}
-      />
-      {isUrl(query) ? (
-        <p className="mt-2 text-sm text-muted" role="status" aria-live="polite">
-          Looking up link…
-        </p>
-      ) : results.length > 0 ? (
-        <ul className="mt-1 divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
-          {results.map((r) => (
-            <li key={r.sourceUrl}>
+    <div
+      key="search"
+      className="rounded-md border border-border bg-surface p-4"
+    >
+      <div className="flex items-start gap-4">
+        <VinylPlaceholder className="h-32 w-32 rounded" />
+        <div className="min-w-0 flex-1">
+          <input
+            ref={refs.setReference}
+            value={query}
+            placeholder="Search a song, or paste a link…"
+            aria-label="Search a song or paste a link"
+            className={inputCls}
+            {...getReferenceProps({
+              onChange: (e) =>
+                setQuery((e.currentTarget as HTMLInputElement).value),
+              onKeyDown: (e) => {
+                if (
+                  e.key === 'Enter' &&
+                  open &&
+                  activeIndex != null &&
+                  results[activeIndex]
+                ) {
+                  e.preventDefault()
+                  pick(results[activeIndex])
+                }
+              },
+            })}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-describedby="post-link-hint"
+          />
+          <p id="post-link-hint" className="mt-2 text-xs text-muted">
+            Works with links from Spotify, Apple Music, YouTube, SoundCloud,
+            Bandcamp, Tidal, and Deezer.
+          </p>
+          {isUrl(query) && (
+            <p
+              className="mt-2 text-sm text-muted"
+              role="status"
+              aria-live="polite"
+            >
+              Looking up link…
+            </p>
+          )}
+        </div>
+      </div>
+      {open && (
+        <FloatingPortal root={portalRoot}>
+          <div
+            ref={refs.setFloating}
+            style={floatingStyles}
+            {...getFloatingProps()}
+            className="z-50 overflow-y-auto rounded-md border border-border bg-surface shadow-lg"
+          >
+            {results.map((r, i) => (
               <button
-                type="button"
-                onClick={() => {
-                  setSelected(r)
-                  setResults([])
-                  setEditing(false)
+                key={r.sourceUrl}
+                ref={(node) => {
+                  listRef.current[i] = node
                 }}
-                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-bg"
+                type="button"
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${
+                  activeIndex === i ? 'bg-bg' : ''
+                }`}
+                {...getItemProps({
+                  // active/selected let Floating UI assign the active option's id and
+                  // aria-selected, and wire aria-activedescendant on the input (role="option"
+                  // comes from useRole's listbox role).
+                  active: activeIndex === i,
+                  selected: activeIndex === i,
+                  onClick: () => pick(r),
+                })}
               >
                 {r.artworkUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={r.artworkUrl}
                     alt=""
-                    className="h-10 w-10 rounded object-cover"
+                    className="h-10 w-10 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <span className="accent-grid h-10 w-10 rounded" />
+                  <VinylPlaceholder className="h-10 w-10 rounded" />
                 )}
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-bold">
@@ -242,17 +431,18 @@ export function TrackPicker() {
                   </span>
                 </span>
               </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <button
+            ))}
+          </div>
+        </FloatingPortal>
+      )}
+      <Button
         type="button"
+        variant="link"
         onClick={() => setManual(true)}
-        className="mt-2 text-xs text-muted hover:text-accent"
+        className="mt-3 text-xs"
       >
         enter manually
-      </button>
+      </Button>
     </div>
   )
 }

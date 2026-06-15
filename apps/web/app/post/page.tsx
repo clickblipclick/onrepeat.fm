@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { getSession } from '../../lib/session'
+import { readViewerTheme } from '../../lib/viewer-theme'
 import { linkInline } from '../../lib/link-variants'
-import { PostJamForm } from '../post-jam-form'
+import { PostFormPage } from './post-form-page'
 import { SectionLabel } from '../_components/section-label'
 
 export default async function PostPage() {
@@ -16,12 +17,14 @@ export default async function PostPage() {
       </p>
     )
   }
+  // Dress the form in the poster's own color theme (matches the modal presentation).
+  const theme = await readViewerTheme()
   return (
-    <>
+    <div data-theme={theme}>
       <SectionLabel as="h1" size="title">
         What&apos;s on repeat?
       </SectionLabel>
-      <PostJamForm />
-    </>
+      <PostFormPage />
+    </div>
   )
 }

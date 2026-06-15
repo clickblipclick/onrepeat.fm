@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { getSessionAgent } from '../lib/session'
 import {
   postJam,
@@ -101,12 +100,13 @@ export async function postJamAction(
       artworkUrl: artworkUrl || undefined,
     })
     await afterJamWrite('postJam', { uri, cid, did: agent.assertDid, record })
+    // Navigation is the caller's concern now: the modal pops back to the (revalidated)
+    // feed via router.back(); the full /post page does router.replace('/'). afterJamWrite
+    // already revalidated '/', so either way the new jam is on top when we land.
+    return { ok: true, uri }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
   }
-  // Land on the following feed, where the new jam now sits at the top. redirect()
-  // throws NEXT_REDIRECT, so it must run outside the try/catch above.
-  redirect('/')
 }
 
 export async function deriveTrackAction(

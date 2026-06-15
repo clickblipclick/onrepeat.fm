@@ -179,6 +179,61 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Lock background scroll while a modal <dialog> is open (showModal puts it in the top
+   layer but doesn't stop the page behind from scrolling). `:modal` matches only top-layer
+   modal dialogs, so non-modal popovers are unaffected; `scrollbar-gutter: stable` reserves
+   the scrollbar's space so locking doesn't shift the layout. */
+html {
+  scrollbar-gutter: stable;
+}
+html:has(dialog:modal) {
+  overflow: hidden;
+}
+
+/* Entrance transition for the post modal (a native <dialog> animating into the top layer).
+   It opens via showModal(), so @starting-style animates the entry; dismissal unmounts the
+   node (router.back), so only the entrance plays — that's the one users see. `overlay` and
+   `display` are transitioned with allow-discrete per the top-layer animation pattern. */
+.post-modal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.18s ease-out,
+    overlay 0.18s allow-discrete,
+    display 0.18s allow-discrete;
+}
+.post-modal[open] {
+  opacity: 1;
+  transform: translateY(0);
+}
+.post-modal::backdrop {
+  opacity: 0;
+  transition:
+    opacity 0.18s ease-out,
+    overlay 0.18s allow-discrete,
+    display 0.18s allow-discrete;
+}
+.post-modal[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  .post-modal[open] {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .post-modal[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-modal,
+  .post-modal[open] {
+    transform: none;
+    transition-duration: 0.01s;
+  }
+}
+
 /* Card-surface textures (`.pat-*`). One is assigned per card (by author) as a subtle
    signature. Every color is a low-percentage color-mix of the theme's own --ink / --accent
    over --surface, so the texture is a whisper that (a) tracks the card's theme + light/dark
