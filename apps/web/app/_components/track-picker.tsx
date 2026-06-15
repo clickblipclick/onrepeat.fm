@@ -359,6 +359,7 @@ export function TrackPicker({
             })}
             role="combobox"
             aria-autocomplete="list"
+            aria-describedby="post-link-hint"
           />
           {isUrl(query) && (
             <p
@@ -371,6 +372,10 @@ export function TrackPicker({
           )}
         </div>
       </div>
+      <p id="post-link-hint" className="mt-3 text-xs text-muted">
+        Works with links from Spotify, Apple Music, YouTube, SoundCloud,
+        Bandcamp, Tidal, and Deezer.
+      </p>
       {open && (
         <FloatingPortal root={portalRoot}>
           <div
