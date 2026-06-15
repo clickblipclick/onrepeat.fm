@@ -272,7 +272,9 @@ export function TrackPicker({
 
   if (manual) {
     return (
-      <div className="flex flex-col gap-2">
+      // Distinct key so React remounts (rather than reusing the search input's DOM node,
+      // which would flip it from controlled value={query} to uncontrolled defaultValue).
+      <div key="manual" className="flex flex-col gap-2">
         <input
           name="sourceUrl"
           defaultValue={isUrl(query) ? query.trim() : ''}
@@ -305,7 +307,7 @@ export function TrackPicker({
   }
 
   return (
-    <div>
+    <div key="search">
       <input
         ref={refs.setReference}
         value={query}
