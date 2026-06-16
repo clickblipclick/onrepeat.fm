@@ -24,7 +24,7 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
       } catch (err) {
         if (job.retryCount < job.retryLimit) throw err // not the last attempt → let pg-boss retry
         console.error(
-          `[resolver] giving up on ${job.data.identity} after ${job.retryCount} retries`,
+          `[resolver] giving up on ${job.data.identity} after ${job.retryCount + 1} attempts`,
           err,
         )
         try {
