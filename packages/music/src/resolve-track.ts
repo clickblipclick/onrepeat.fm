@@ -124,7 +124,9 @@ export async function resolveTrack(
           ? providerRefs[input.sourceProvider]
           : undefined
         const meta = vid && ref ? await deps.youtube.lookupVideos([vid]) : null
-        if (ref && meta?.get(vid!)?.embeddable === false) {
+        // `vid &&` lets TS narrow vid to string for meta.get; behaviour is unchanged
+        // since meta is only non-null when vid was truthy in the first place.
+        if (ref && vid && meta?.get(vid)?.embeddable === false) {
           ref.embeddable = false
           notes.push('youtube:source(not-embeddable)')
         } else {
