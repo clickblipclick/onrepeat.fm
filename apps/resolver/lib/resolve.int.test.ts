@@ -203,6 +203,21 @@ describe('resolveJob (v2)', () => {
     expect(t?.resolution_status).toBe('pending') // not falsely 'resolved'
   })
 
+  it('drops the update without throwing or creating a row when the track is gone', async () => {
+    // No seedPending: the row was deleted (or never existed) before the job ran.
+    await resolveJob(db, okDeps, {
+      identity: 'ta:missing',
+      sourceUrl: 'https://open.spotify.com/track/sp1',
+      provider: 'spotify',
+    })
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'ta:missing')
+      .executeTakeFirst()
+    expect(t).toBeUndefined() // update matched nothing; no phantom row inserted
+  })
+
   it('apple-only when no youtube client; still resolved', async () => {
     await seedPending('ta:o|t')
     await resolveJob(

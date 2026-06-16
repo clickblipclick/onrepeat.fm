@@ -19,6 +19,29 @@ export type ResolverDeps = ResolveDeps & {
   oembed?: OembedFetcher
 }
 
+/**
+ * Apply a resolution update to a track row, warning if it matched nothing. A job whose
+ * identity is no longer in `tracks` — the track was deleted, or was never seeded by the
+ * producer — would otherwise no-op silently and the resolution would vanish without a trace.
+ */
+async function applyTrackUpdate(
+  db: DB,
+  identity: string,
+  update: Updateable<TracksTable>,
+): Promise<void> {
+  const res = await db
+    .updateTable('tracks')
+    .set(update)
+    .where('id', '=', identity)
+    .execute()
+  if ((res[0]?.numUpdatedRows ?? 0n) === 0n)
+    resolveLog(
+      'skip',
+      identity,
+      'track row missing — resolution update dropped',
+    )
+}
+
 /** Resolve one queue job onto its tracks row. Idempotent (keyed by job.identity). */
 export async function resolveJob(
   db: DB,
@@ -61,11 +84,7 @@ export async function resolveJob(
       resolved_at: now,
     }
     if (artworkUrl) update.artwork_url = artworkUrl
-    await db
-      .updateTable('tracks')
-      .set(update)
-      .where('id', '=', job.identity)
-      .execute()
+    await applyTrackUpdate(db, job.identity, update)
     resolveLog(
       'resolved',
       job.identity,
@@ -129,11 +148,7 @@ export async function resolveJob(
   }
   if (artworkUrl) update.artwork_url = artworkUrl
 
-  await db
-    .updateTable('tracks')
-    .set(update)
-    .where('id', '=', job.identity)
-    .execute()
+  await applyTrackUpdate(db, job.identity, update)
   resolveLog(
     'resolved',
     job.identity,
