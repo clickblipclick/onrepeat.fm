@@ -1,5 +1,5 @@
 import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
-import type { DB } from '@onrepeat/db'
+import { type DB, markTrackFailed } from '@onrepeat/db'
 import { RESOLVE_QUEUE, resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import { resolveJob, type ResolverDeps } from './resolve'
 
@@ -28,11 +28,7 @@ export function makeResolveHandler(db: DB, deps: ResolverDeps) {
           err,
         )
         try {
-          await db
-            .updateTable('tracks')
-            .set({ resolution_status: 'failed', resolved_at: new Date() })
-            .where('id', '=', job.data.identity)
-            .execute()
+          await markTrackFailed(db, job.data.identity)
         } catch (writeErr) {
           console.error(
             `[resolver] failed to record failed-status for ${job.data.identity}`,
