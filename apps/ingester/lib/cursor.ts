@@ -23,13 +23,6 @@ export async function loadCursorState(
   }
 }
 
-export async function loadCursor(
-  db: DB,
-  service: string,
-): Promise<number | undefined> {
-  return (await loadCursorState(db, service))?.cursor
-}
-
 export async function saveCursor(
   db: DB,
   service: string,

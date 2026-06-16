@@ -5,13 +5,8 @@ import {
   createResolveQueue,
   enqueueResolveForJam,
 } from '@onrepeat/jobs'
+import { requireEnv, onShutdown } from '@onrepeat/service'
 import { createIngester } from './firehose'
-
-function requireEnv(name: string): string {
-  const v = process.env[name]
-  if (!v) throw new Error(`missing required env ${name}`)
-  return v
-}
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')
@@ -36,23 +31,11 @@ async function main(): Promise<void> {
     },
   })
 
-  let shuttingDown = false
-  const shutdown = async (signal: string) => {
-    if (shuttingDown) return
-    shuttingDown = true
-    console.log(`[ingester] received ${signal}, shutting down`)
-    try {
-      await ingester.stop()
-      await boss.stop({ graceful: true })
-      await db.destroy()
-    } catch (err) {
-      console.error('[ingester] error during shutdown', err)
-      process.exit(1)
-    }
-    process.exit(0)
-  }
-  process.on('SIGINT', () => void shutdown('SIGINT'))
-  process.on('SIGTERM', () => void shutdown('SIGTERM'))
+  onShutdown('ingester', async () => {
+    await ingester.stop()
+    await boss.stop({ graceful: true })
+    await db.destroy()
+  })
 
   // start() kicks off the firehose subscription and returns immediately; the process
   // stays alive via the open WebSocket. Errors during the stream go to onError, not here.

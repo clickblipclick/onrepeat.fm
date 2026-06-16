@@ -1,5 +1,5 @@
 import type { Updateable } from 'kysely'
-import type { DB, TracksTable } from '@onrepeat/db'
+import { type DB, type TracksTable, markTrackFailed } from '@onrepeat/db'
 import { providerFromUrl, providerTier } from '@onrepeat/core'
 import { resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import {
@@ -35,11 +35,7 @@ export async function resolveJob(
   // mark it failed rather than fetching it.
   const provider = providerFromUrl(job.sourceUrl)
   if (!provider) {
-    await db
-      .updateTable('tracks')
-      .set({ resolution_status: 'failed', resolved_at: now })
-      .where('id', '=', job.identity)
-      .execute()
+    await markTrackFailed(db, job.identity)
     resolveLog(
       'skip',
       job.identity,

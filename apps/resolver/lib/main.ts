@@ -6,15 +6,10 @@ import {
   fetchBandcampEmbed,
   fetchOembed,
 } from '@onrepeat/music'
+import { requireEnv, onShutdown } from '@onrepeat/service'
 import type { ResolverDeps } from './resolve'
 import { startResolver } from './worker'
 import { backfill } from './backfill'
-
-function requireEnv(name: string): string {
-  const v = process.env[name]
-  if (!v) throw new Error(`missing required env ${name}`)
-  return v
-}
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')
@@ -52,22 +47,10 @@ async function main(): Promise<void> {
     )
   }
 
-  let shuttingDown = false
-  const shutdown = async (signal: string) => {
-    if (shuttingDown) return
-    shuttingDown = true
-    console.log(`[resolver] received ${signal}, shutting down`)
-    try {
-      await boss.stop({ graceful: true })
-      await db.destroy()
-    } catch (err) {
-      console.error('[resolver] error during shutdown', err)
-      process.exit(1)
-    }
-    process.exit(0)
-  }
-  process.on('SIGINT', () => void shutdown('SIGINT'))
-  process.on('SIGTERM', () => void shutdown('SIGTERM'))
+  onShutdown('resolver', async () => {
+    await boss.stop({ graceful: true })
+    await db.destroy()
+  })
 
   await startResolver(boss, db, deps)
   console.log('[resolver] worker started')

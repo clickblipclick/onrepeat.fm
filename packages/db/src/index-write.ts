@@ -170,6 +170,20 @@ export async function purgeActorContent(db: DB, did: string): Promise<void> {
     .execute()
 }
 
+/**
+ * Mark a track's resolution as permanently failed. Used both when a job's source URL
+ * can't be resolved at all and when the resolver exhausts its retries — either way the
+ * track must leave `pending` so reads stop waiting on it. Idempotent; no-op if the id
+ * doesn't exist.
+ */
+export async function markTrackFailed(db: DB, id: string): Promise<void> {
+  await db
+    .updateTable('tracks')
+    .set({ resolution_status: 'failed', resolved_at: new Date() })
+    .where('id', '=', id)
+    .execute()
+}
+
 /** A firehose event that couldn't be indexed, for the dead-letter store. */
 export interface FailedEventInput {
   seq: number

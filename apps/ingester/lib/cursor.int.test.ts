@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { createDb, createMigrator } from '@onrepeat/db'
-import { loadCursor, loadCursorState, saveCursor } from './cursor'
+import { loadCursorState, saveCursor } from './cursor'
+
+const loadCursor = async (service: string): Promise<number | undefined> =>
+  (await loadCursorState(db, service))?.cursor
 
 const url =
   process.env.DATABASE_URL ??
@@ -24,20 +27,20 @@ describe('cursor persistence', () => {
   })
 
   it('returns undefined when no cursor is stored', async () => {
-    expect(await loadCursor(db, 'firehose')).toBeUndefined()
+    expect(await loadCursor('firehose')).toBeUndefined()
   })
 
   it('saves then loads a cursor, and updates on re-save', async () => {
     await saveCursor(db, 'firehose', 12345)
-    expect(await loadCursor(db, 'firehose')).toBe(12345)
+    expect(await loadCursor('firehose')).toBe(12345)
     await saveCursor(db, 'firehose', 23456)
-    expect(await loadCursor(db, 'firehose')).toBe(23456)
+    expect(await loadCursor('firehose')).toBe(23456)
   })
 
   it('never regresses: a late write with an older seq is a no-op', async () => {
     await saveCursor(db, 'firehose', 23456)
     await saveCursor(db, 'firehose', 12345) // stale in-flight write landing late
-    expect(await loadCursor(db, 'firehose')).toBe(23456)
+    expect(await loadCursor('firehose')).toBe(23456)
   })
 
   it('loadCursorState reports when the cursor last advanced', async () => {
