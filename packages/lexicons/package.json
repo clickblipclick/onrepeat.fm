@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/lexicon": "^0.4.0"
+    "@atproto/lexicon": "^0.7.1"
   },
   "devDependencies": {
     "typescript": "^5.5.0"
