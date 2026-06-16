@@ -173,15 +173,20 @@ export async function purgeActorContent(db: DB, did: string): Promise<void> {
 /**
  * Mark a track's resolution as permanently failed. Used both when a job's source URL
  * can't be resolved at all and when the resolver exhausts its retries — either way the
- * track must leave `pending` so reads stop waiting on it. Idempotent; no-op if the id
- * doesn't exist.
+ * track must leave `pending` so reads stop waiting on it. Idempotent. Warns if the id
+ * matched no row: the track was deleted (or never seeded) and the failed-mark would
+ * otherwise be dropped silently.
  */
 export async function markTrackFailed(db: DB, id: string): Promise<void> {
-  await db
+  const res = await db
     .updateTable('tracks')
     .set({ resolution_status: 'failed', resolved_at: new Date() })
     .where('id', '=', id)
     .execute()
+  if ((res[0]?.numUpdatedRows ?? 0n) === 0n)
+    console.warn(
+      `[db] markTrackFailed: no track row for ${id} — update dropped`,
+    )
 }
 
 /** A firehose event that couldn't be indexed, for the dead-letter store. */
