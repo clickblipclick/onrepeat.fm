@@ -121,6 +121,46 @@ describe('fetchBandcampEmbed', () => {
     ).toBeNull()
   })
 
+  it('requests with redirect:error so an open redirect cannot bounce the fetch (SSRF guard)', async () => {
+    let seenRedirect: string | undefined
+    const fetchFn = async (_url: string, init?: { redirect?: string }) => {
+      seenRedirect = init?.redirect
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return html
+        },
+      }
+    }
+    await fetchBandcampEmbed('https://x.bandcamp.com/track/y', { fetchFn })
+    expect(seenRedirect).toBe('error')
+  })
+
+  it('returns null when the body exceeds the size cap (OOM guard)', async () => {
+    // A body stream that would emit far more than the 1 MiB cap if read to completion.
+    const chunk = new Uint8Array(256 * 1024) // 256 KiB
+    let emitted = 0
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        emitted += 1
+        controller.enqueue(chunk) // 5 × 256 KiB = 1.25 MiB > cap, never "done"
+      },
+    })
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      body,
+      async text() {
+        throw new Error('should read body stream, not text()')
+      },
+    })
+    expect(
+      await fetchBandcampEmbed('https://x.bandcamp.com/track/y', { fetchFn }),
+    ).toBeNull()
+    expect(emitted).toBeLessThanOrEqual(6) // bailed early, didn't drain forever
+  })
+
   it('refuses non-bandcamp / non-https urls without fetching (SSRF guard)', async () => {
     let called = false
     const fetchFn = async () => {
