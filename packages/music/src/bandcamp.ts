@@ -1,10 +1,19 @@
 type FetchLike = (
   url: string,
-  init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; text(): Promise<string> }>
+  init?: { signal?: AbortSignal; redirect?: 'follow' | 'error' | 'manual' },
+) => Promise<{
+  ok: boolean
+  status: number
+  text(): Promise<string>
+  /** Present on real fetch; absent on lightweight test doubles. */
+  body?: ReadableStream<Uint8Array> | null
+}>
 
 export type BandcampMeta = { trackId?: string; artworkUrl?: string }
 export type BandcampFetcher = (url: string) => Promise<BandcampMeta | null>
+
+/** Cap on the scraped HTML we'll buffer — Bandcamp track pages are ~100–200 KB. */
+const MAX_HTML_BYTES = 1024 * 1024
 
 /** Pure: pull the EmbeddedPlayer track id out of a Bandcamp track page's HTML. */
 export function parseBandcampEmbedId(html: string): string | null {
@@ -77,6 +86,46 @@ function isBandcampUrl(raw: string): boolean {
   return h === 'bandcamp.com' || h.endsWith('.bandcamp.com')
 }
 
+/**
+ * Read a response body as text, aborting once it exceeds `maxBytes`. Without a cap, a
+ * hostile host could stream an unbounded response and OOM the single resolver worker
+ * (the 8s timeout bounds duration, not volume). Test doubles omit `body` and just
+ * resolve `text()` — fine, their payloads are small and trusted.
+ */
+async function readTextCapped(
+  res: {
+    text(): Promise<string>
+    body?: ReadableStream<Uint8Array> | null
+  },
+  maxBytes: number,
+): Promise<string | null> {
+  if (!res.body) return res.text()
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel()
+        return null
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const out = new Uint8Array(total)
+  let offset = 0
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+  return new TextDecoder().decode(out)
+}
+
 /** Fetch a Bandcamp track page and extract its embed track id + cover art (one request).
  *  Returns null on a failed fetch or when neither is present (soft fail). */
 export async function fetchBandcampEmbed(
@@ -91,9 +140,15 @@ export async function fetchBandcampEmbed(
   try {
     const res = await fetchFn(url, {
       signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+      // The host allowlist above only covers the first hop. `redirect: 'error'` makes a
+      // cross-host (or any) redirect throw rather than be followed, so an open redirect on
+      // a bandcamp page can't bounce this fetch to an internal/metadata endpoint. Canonical
+      // track URLs are served 200 directly; a rare legit redirect just soft-fails to manual.
+      redirect: 'error',
     })
     if (!res.ok) return null
-    const html = await res.text()
+    const html = await readTextCapped(res, MAX_HTML_BYTES)
+    if (html == null) return null
     const trackId = parseBandcampEmbedId(html) ?? undefined
     const artworkUrl = parseBandcampArtwork(html) ?? undefined
     if (!trackId && !artworkUrl) return null
