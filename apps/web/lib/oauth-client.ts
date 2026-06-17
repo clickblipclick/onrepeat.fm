@@ -45,6 +45,12 @@ function init(): OauthRuntime {
   const isLoopbackUrl =
     /^https?:\/\/(127\.0\.0\.1|\[::1\]|localhost)(:|\/|$)/i.test(publicUrl)
 
+  // Dev-only: when running the fully-local ephemeral loop (pnpm dev:local), point
+  // handle + DID resolution at the local dev-env PDS/PLC so a `*.test` account can
+  // log in. Unset in normal dev → resolves against real bsky/plc.directory.
+  const devPdsUrl = process.env.DEV_PDS_URL
+  const devPlcUrl = process.env.DEV_PLC_URL
+
   // Fail closed in production: a deploy that forgets OAUTH_MODE/PUBLIC_URL must refuse
   // to serve OAuth rather than silently running dev/loopback OAuth (public client_id,
   // no keyset, 'none' auth) on a public origin.
@@ -101,6 +107,9 @@ function init(): OauthRuntime {
       // Cross-instance lock so concurrent token refreshes for the same session
       // can't rotate each other's refresh token and get the session revoked.
       requestLock: createPgAdvisoryLock(db),
+      // Dev-only local-PDS resolution (ignored unless dev mode + vars set).
+      handleResolver: oauthMode === 'dev' ? devPdsUrl : undefined,
+      plcDirectoryUrl: oauthMode === 'dev' ? devPlcUrl : undefined,
     }))()
 
   return { clientPromise, sessionStore }
