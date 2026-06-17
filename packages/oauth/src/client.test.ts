@@ -41,6 +41,21 @@ describe('createOAuthClient', () => {
     )
   })
 
+  it('dev mode accepts local PLC/PDS resolver overrides without throwing', () => {
+    const client = createOAuthClient({
+      mode: 'dev',
+      publicUrl: 'http://127.0.0.1:3000',
+      stateStore,
+      sessionStore,
+      handleResolver: 'http://localhost:2583',
+      plcDirectoryUrl: 'http://localhost:2582',
+    })
+    // Still a loopback dev client; the overrides are internal to the resolver.
+    expect(client.clientMetadata.client_id.startsWith('http://localhost')).toBe(
+      true,
+    )
+  })
+
   it('requests least-privilege granular scopes (only our collections, not transition:generic)', () => {
     const client = createOAuthClient({
       mode: 'dev',
