@@ -11,6 +11,9 @@ import { createIngester } from './firehose'
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')
   const relay = process.env.RELAY_URL ?? 'wss://bsky.network'
+  // Dev: point DID resolution at a local PLC (e.g. http://localhost:2582 from
+  // the dev-env network). Unset → @atproto/identity's default (plc.directory).
+  const plcUrl = process.env.PLC_DIRECTORY_URL
 
   const db = createDb(databaseUrl)
   const boss = createBoss(databaseUrl)
@@ -20,6 +23,7 @@ async function main(): Promise<void> {
   const ingester = await createIngester({
     db,
     relay,
+    plcUrl,
     // Dev convenience: tail the live head instead of replaying from a stale cursor.
     liveTail: process.env.INGESTER_LIVE_TAIL === '1',
     hooks: {

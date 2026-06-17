@@ -26,4 +26,15 @@ describe('createIngester', () => {
     expect(typeof ingester.start).toBe('function')
     expect(typeof ingester.stop).toBe('function')
   })
+
+  it('accepts a custom plcUrl and still exposes start/stop', async () => {
+    const ingester = await createIngester({
+      db,
+      relay: 'ws://localhost:2583',
+      plcUrl: 'http://localhost:2582',
+      liveTail: true,
+    })
+    expect(typeof ingester.start).toBe('function')
+    expect(typeof ingester.stop).toBe('function')
+  })
 })
