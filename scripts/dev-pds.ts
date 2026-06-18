@@ -42,6 +42,7 @@ const DERIVED_TABLES = [
 async function wipeDerivedState(): Promise<void> {
   const db = createDb(DATABASE_URL)
   try {
+    console.log(`▸ Wiping derived state from ${DATABASE_URL}…`)
     await sql`TRUNCATE TABLE ${sql.join(
       DERIVED_TABLES.map((t) => sql.ref(t)),
     )} RESTART IDENTITY CASCADE`.execute(db)
@@ -122,6 +123,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('[dev-pds] fatal', err)
+  if ((err as { code?: string })?.code === 'EADDRINUSE') {
+    console.error(
+      `[dev-pds] port ${PLC_PORT} or ${PDS_PORT} is already in use — stop the other process (e.g. a previous dev:local) and retry`,
+    )
+  } else {
+    console.error('[dev-pds] fatal', err)
+  }
   process.exit(1)
 })
