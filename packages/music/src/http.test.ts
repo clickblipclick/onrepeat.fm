@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fetchWithRetry } from './http'
+import { fetchWithRetry, failureReason } from './http'
 
 type Res = { ok: boolean; status: number }
 const ok: Res = { ok: true, status: 200 }
@@ -102,5 +102,18 @@ describe('fetchWithRetry', () => {
       ),
     ).rejects.toThrow('down')
     expect(calls).toBe(3)
+  })
+})
+
+describe('failureReason', () => {
+  it('maps 429 and 5xx to transient', () => {
+    expect(failureReason(429)).toBe('transient')
+    expect(failureReason(500)).toBe('transient')
+    expect(failureReason(503)).toBe('transient')
+  })
+  it('maps other 4xx to unreadable', () => {
+    expect(failureReason(404)).toBe('unreadable')
+    expect(failureReason(400)).toBe('unreadable')
+    expect(failureReason(403)).toBe('unreadable')
   })
 })
