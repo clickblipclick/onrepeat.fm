@@ -1,7 +1,7 @@
 import { providerFromUrl } from '@onrepeat/core'
 import type { TrackCandidate } from './track'
 import { createRateLimiter, type RateLimiter } from './rate-limit'
-import { fetchWithRetry, type RetryOptions } from './http'
+import { fetchWithRetry, failureReason, type RetryOptions, type FetchResult } from './http'
 
 const passthrough: RateLimiter = (fn) => fn()
 /** Standalone calls don't retry by default (keeps interactive web search snappy). */
@@ -91,28 +91,43 @@ export async function searchTracks(
 
 const LOOKUP_ENDPOINT = 'https://itunes.apple.com/lookup'
 
+/** Look up a single Apple/iTunes track by id, distinguishing transient from unreadable. */
+export async function lookupTrackResult(
+  id: string,
+  opts: SearchOptions = {},
+): Promise<FetchResult<TrackCandidate>> {
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const timeoutMs = opts.timeoutMs ?? 8000
+  let res: Awaited<ReturnType<FetchLike>>
+  try {
+    res = await fetchWithRetry(
+      () =>
+        fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+      opts.retry ?? noRetry,
+    )
+  } catch {
+    return { ok: false, reason: 'transient' }
+  }
+  if (!res.ok) return { ok: false, reason: failureReason(res.status) }
+  let body: ItunesBody
+  try {
+    body = (await res.json()) as ItunesBody
+  } catch {
+    return { ok: false, reason: 'unreadable' }
+  }
+  const candidate = mapItunes(body)[0]
+  return candidate ? { ok: true, data: candidate } : { ok: false, reason: 'unreadable' }
+}
+
 /** Look up a single Apple/iTunes track by id (free, no auth). null on miss/failure. */
 export async function lookupTrack(
   id: string,
   opts: SearchOptions = {},
 ): Promise<TrackCandidate | null> {
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
-  const timeoutMs = opts.timeoutMs ?? 8000
-  const res = await fetchWithRetry(
-    () =>
-      fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
-        signal: AbortSignal.timeout(timeoutMs),
-      }),
-    opts.retry ?? noRetry,
-  )
-  if (!res.ok) return null
-  let body: ItunesBody
-  try {
-    body = (await res.json()) as ItunesBody
-  } catch {
-    return null
-  }
-  return mapItunes(body)[0] ?? null
+  const r = await lookupTrackResult(id, opts)
+  return r.ok ? r.data : null
 }
 
 /** Injectable iTunes client for the resolver (wraps the keyless search/lookup). */
