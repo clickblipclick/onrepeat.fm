@@ -5,6 +5,7 @@ import { getActorJams, loadActorThemes } from '@onrepeat/appview'
 import { resolveTheme } from '@onrepeat/core'
 import { db } from '../../../lib/db'
 import { hydrate, bsky } from '../../../lib/appview'
+import { profileOrDidFallback } from '../../../lib/profile-fallback'
 import { getSession } from '../../../lib/session'
 import { readPreferredProvider } from '../../../lib/playback-preference.server'
 import { JamCard } from '../../_components/jam-card'
@@ -18,8 +19,12 @@ import { JamCardSkeleton } from '../../_components/jam-card-skeleton'
 
 // One bsky.getProfile call per request, shared by generateMetadata and the page
 // body (bsky's own ~30min TTL cache sits underneath, but cache() guarantees
-// dedupe within the request even on cache misses).
-const getProfile = cache((actor: string) => bsky.getProfile(actor))
+// dedupe within the request even on cache misses). Falls back to a DID-only
+// profile when bsky doesn't know the actor but it's a DID, so local/de-indexed
+// accounts still render their jams instead of 404ing.
+const getProfile = cache(async (actor: string) =>
+  profileOrDidFallback(actor, await bsky.getProfile(actor)),
+)
 
 export async function generateMetadata({
   params,
