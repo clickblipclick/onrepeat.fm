@@ -11,6 +11,7 @@
     "dev": "concurrently -k -n web,ingest,resolve -c blue,green,magenta \"pnpm --filter @onrepeat/web dev\" \"pnpm --filter @onrepeat/ingester dev\" \"pnpm --filter @onrepeat/resolver dev\"",
     "dev:web": "pnpm --filter @onrepeat/web dev",
     "dev:services": "concurrently -k -n ingest,resolve -c green,magenta \"pnpm --filter @onrepeat/ingester dev\" \"pnpm --filter @onrepeat/resolver dev\"",
+    "dev:pds": "node --import=tsx/esm scripts/dev-pds.ts",
     "test": "vitest run",
     "test:int": "pnpm --filter @onrepeat/db exec tsx src/inttest-create.ts && vitest run --config vitest.int.config.ts",
     "format": "prettier --write .",
@@ -23,10 +24,14 @@
     "seed:clean": "pnpm --filter @onrepeat/db exec tsx ../../scripts/seed-dev.ts --clean"
   },
   "devDependencies": {
+    "@atproto/dev-env": "0.4.9",
+    "@onrepeat/db": "workspace:*",
     "@types/node": "^22.0.0",
     "concurrently": "^9.0.0",
+    "kysely": "^0.29.0",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   },
