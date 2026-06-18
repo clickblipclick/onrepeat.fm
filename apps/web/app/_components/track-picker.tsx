@@ -381,7 +381,7 @@ export function TrackPicker({
               {deriveError === 'unknown-host' &&
                 'That’s not a music link we recognize. Search for the song above, or paste a link from Spotify, Apple Music, YouTube, SoundCloud, or Bandcamp.'}
               {deriveError === 'unreadable' &&
-                'Couldn’t read a song from that link. Make sure it points to a single track, or search for it above.'}
+                'Couldn’t read a song from that link. Try a single-track link from a supported service, or search above.'}
               {deriveError === 'transient' && (
                 <>
                   Couldn’t reach that link just now.{' '}
