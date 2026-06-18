@@ -372,7 +372,7 @@ export function TrackPicker({
           />
           <p id="post-link-hint" className="mt-2 text-xs text-muted">
             Works with links from Spotify, Apple Music, YouTube, SoundCloud,
-            Bandcamp, Tidal, and Deezer.
+            and Bandcamp.
           </p>
           {isUrl(query) && (
             <p
