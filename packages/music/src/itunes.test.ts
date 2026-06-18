@@ -132,6 +132,12 @@ describe('lookupTrack', () => {
     })
     expect(await lookupTrack('2', { fetchFn })).toBeNull()
   })
+  it('propagates a thrown network error (resolveTrack treats this as transient)', async () => {
+    const fetchFn = async () => {
+      throw new Error('network')
+    }
+    await expect(lookupTrack('2', { fetchFn })).rejects.toThrow('network')
+  })
 })
 
 describe('itunes durationSec + client', () => {
@@ -255,24 +261,54 @@ describe('lookupTrackResult', () => {
   })
 
   it('transient on 5xx', async () => {
-    const fetchFn = async () => ({ ok: false, status: 500, async json() { return {} } })
-    expect(await lookupTrackResult('2', { fetchFn })).toEqual({ ok: false, reason: 'transient' })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 500,
+      async json() {
+        return {}
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'transient',
+    })
   })
 
   it('transient on a thrown network error', async () => {
     const fetchFn = async () => {
       throw new Error('network')
     }
-    expect(await lookupTrackResult('2', { fetchFn })).toEqual({ ok: false, reason: 'transient' })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'transient',
+    })
   })
 
   it('unreadable on 404', async () => {
-    const fetchFn = async () => ({ ok: false, status: 404, async json() { return {} } })
-    expect(await lookupTrackResult('2', { fetchFn })).toEqual({ ok: false, reason: 'unreadable' })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 404,
+      async json() {
+        return {}
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'unreadable',
+    })
   })
 
   it('unreadable on an empty result set', async () => {
-    const fetchFn = async () => ({ ok: true, status: 200, async json() { return { results: [] } } })
-    expect(await lookupTrackResult('2', { fetchFn })).toEqual({ ok: false, reason: 'unreadable' })
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return { results: [] }
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'unreadable',
+    })
   })
 })
