@@ -5,6 +5,7 @@ import { Play } from 'lucide-react'
 import { type Embed } from '../../lib/embed'
 import { usePlayback } from './playback'
 import { YouTubeEmbed } from './youtube-embed'
+import { VinylPlaceholder } from './vinyl-placeholder'
 
 // Reasonable embed dimensions per provider, sized inside the square cover frame:
 // "bar" players get a fixed height, video gets 16:9, everything else stays square.
@@ -75,7 +76,7 @@ export function Player({
     <div className="relative aspect-square w-full overflow-hidden rounded">
       {/* One persistent cover: sharp on the poster, blurs in when the player opens and
           un-blurs when it closes (CSS transitions both directions off `playing`). */}
-      {artworkUrl ? (
+      {artworkUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={artworkUrl}
@@ -84,9 +85,8 @@ export function Player({
           {...coverLoad}
           className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'blur-0 scale-100'}`}
         />
-      ) : (
-        <span aria-hidden className="accent-grid absolute inset-0" />
       )}
+      <VinylPlaceholder />
       <span
         aria-hidden
         className={`absolute inset-0 bg-black/25 transition-opacity duration-200 ${playing ? 'opacity-100' : 'opacity-0'}`}
