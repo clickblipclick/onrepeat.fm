@@ -128,7 +128,9 @@ export function JamBody({
       ) : (
         titleArtist
       )}
-      {jam.caption && <p className="mt-2 text-sm">{jam.caption}</p>}
+      {jam.caption && (
+        <p className="mt-2 text-sm whitespace-pre-line">{jam.caption}</p>
+      )}
     </>
   )
 }
