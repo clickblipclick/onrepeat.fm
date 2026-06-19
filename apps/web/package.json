@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.7",
+    "@atproto/api": "^0.20.15",
     "@atproto/oauth-client-node": "^0.4.1",
     "@floating-ui/react": "^0.27.19",
     "@onrepeat/appview": "workspace:*",
@@ -21,16 +21,16 @@
     "@onrepeat/oauth": "workspace:*",
     "@onrepeat/repo": "workspace:*",
     "iron-session": "^8.0.0",
-    "lucide-react": "^1.17.0",
+    "lucide-react": "^1.18.0",
     "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.0",
-    "@types/react": "^19.0.0",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^4.3.1",
     "typescript": "^5.5.0"
   }
 }

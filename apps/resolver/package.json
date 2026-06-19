@@ -17,10 +17,10 @@
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
     "kysely": "^0.29.0",
-    "pg-boss": "^12.18.0"
+    "pg-boss": "^12.19.1"
   },
   "devDependencies": {
-    "tsx": "^4.19.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.5.0"
   }
 }
