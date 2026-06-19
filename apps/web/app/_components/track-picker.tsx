@@ -332,7 +332,11 @@ export function TrackPicker({
       className="rounded-md border border-border bg-surface p-4"
     >
       <div className="flex items-start gap-4">
-        <VinylPlaceholder className="h-32 w-32 rounded" />
+        {/* Decorative pre-resolution art: hidden on mobile so the input — and the
+            search dropdown anchored to its width — isn't squeezed to ~160px. */}
+        <div className="hidden shrink-0 sm:block">
+          <VinylPlaceholder className="h-32 w-32 rounded" />
+        </div>
         <div className="min-w-0 flex-1">
           <input
             ref={refs.setReference}
