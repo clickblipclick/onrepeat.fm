@@ -1,7 +1,12 @@
 import { providerFromUrl } from '@onrepeat/core'
 import type { TrackCandidate } from './track'
 import { createRateLimiter, type RateLimiter } from './rate-limit'
-import { fetchWithRetry, type RetryOptions } from './http'
+import {
+  fetchWithRetry,
+  failureReason,
+  type RetryOptions,
+  type FetchResult,
+} from './http'
 
 const passthrough: RateLimiter = (fn) => fn()
 /** Standalone calls don't retry by default (keeps interactive web search snappy). */
@@ -91,7 +96,46 @@ export async function searchTracks(
 
 const LOOKUP_ENDPOINT = 'https://itunes.apple.com/lookup'
 
-/** Look up a single Apple/iTunes track by id (free, no auth). null on miss/failure. */
+/** Look up a single Apple/iTunes track by id, distinguishing transient from unreadable. */
+export async function lookupTrackResult(
+  id: string,
+  opts: SearchOptions = {},
+): Promise<FetchResult<TrackCandidate>> {
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const timeoutMs = opts.timeoutMs ?? 8000
+  let res: Awaited<ReturnType<FetchLike>>
+  try {
+    res = await fetchWithRetry(
+      () =>
+        fetchFn(`${LOOKUP_ENDPOINT}?id=${encodeURIComponent(id)}&entity=song`, {
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+      opts.retry ?? noRetry,
+    )
+  } catch {
+    return { ok: false, reason: 'transient' }
+  }
+  if (!res.ok) return { ok: false, reason: failureReason(res.status) }
+  let body: ItunesBody
+  try {
+    body = (await res.json()) as ItunesBody
+  } catch {
+    return { ok: false, reason: 'unreadable' }
+  }
+  const candidate = mapItunes(body)[0]
+  return candidate
+    ? { ok: true, data: candidate }
+    : { ok: false, reason: 'unreadable' }
+}
+
+/**
+ * Look up a single Apple/iTunes track by id (free, no auth). null on a non-OK response or
+ * a miss. NOT a thin wrapper over lookupTrackResult on purpose: this keeps the resolver's
+ * legacy contract, where a thrown network/timeout error PROPAGATES (resolveTrack catches it
+ * and marks the job transient → retried) while a 5xx is a null miss. lookupTrackResult, by
+ * contrast, classifies 5xx as transient for the picker's retry UX — a deliberately
+ * different policy, so the two don't share a body.
+ */
 export async function lookupTrack(
   id: string,
   opts: SearchOptions = {},

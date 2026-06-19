@@ -1,3 +1,5 @@
+import { failureReason, type FetchResult } from './http'
+
 type FetchLike = (
   url: string,
   init?: { signal?: AbortSignal },
@@ -17,26 +19,47 @@ interface OembedBody {
   thumbnail_url?: string
 }
 
+type Oembed = { title?: string; author?: string; thumbnail?: string }
+
+/** oEmbed fetch that distinguishes transient (network/5xx/429) from unreadable (4xx/empty). */
+export async function fetchOembedResult(
+  provider: string,
+  url: string,
+  opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
+): Promise<FetchResult<Oembed>> {
+  const endpoint = OEMBED_ENDPOINTS[provider]
+  if (!endpoint) return { ok: false, reason: 'unreadable' }
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  let res: Awaited<ReturnType<FetchLike>>
+  try {
+    res = await fetchFn(
+      `${endpoint}?format=json&url=${encodeURIComponent(url)}`,
+      {
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+      },
+    )
+  } catch {
+    return { ok: false, reason: 'transient' }
+  }
+  if (!res.ok) return { ok: false, reason: failureReason(res.status) }
+  let j: OembedBody
+  try {
+    j = (await res.json()) as OembedBody
+  } catch {
+    return { ok: false, reason: 'unreadable' }
+  }
+  return {
+    ok: true,
+    data: { title: j.title, author: j.author_name, thumbnail: j.thumbnail_url },
+  }
+}
+
 /** Best-effort oEmbed fetch. Returns null for unsupported providers or any failure. */
 export async function fetchOembed(
   provider: string,
   url: string,
   opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
 ): Promise<{ title?: string; author?: string; thumbnail?: string } | null> {
-  const endpoint = OEMBED_ENDPOINTS[provider]
-  if (!endpoint) return null
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
-  try {
-    const res = await fetchFn(
-      `${endpoint}?format=json&url=${encodeURIComponent(url)}`,
-      {
-        signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
-      },
-    )
-    if (!res.ok) return null
-    const j = (await res.json()) as OembedBody
-    return { title: j.title, author: j.author_name, thumbnail: j.thumbnail_url }
-  } catch {
-    return null
-  }
+  const r = await fetchOembedResult(provider, url, opts)
+  return r.ok ? r.data : null
 }

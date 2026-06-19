@@ -10,8 +10,18 @@ export interface RetryOptions {
 }
 
 /** Transient HTTP statuses worth retrying: rate-limit + server errors. */
-function isRetryableStatus(status: number): boolean {
+export function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500
+}
+
+/** A fetch+parse outcome that distinguishes a retryable failure from a permanent one. */
+export type FetchResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; reason: 'transient' | 'unreadable' }
+
+/** Map a non-ok HTTP status to a failure reason (429/5xx ⇒ transient, else unreadable). */
+export function failureReason(status: number): 'transient' | 'unreadable' {
+  return isRetryableStatus(status) ? 'transient' : 'unreadable'
 }
 
 function backoffMs(

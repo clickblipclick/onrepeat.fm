@@ -16,7 +16,7 @@ import { providerFromUrl, isThemeName } from '@onrepeat/core'
 import {
   deriveTrack,
   fetchYoutubeCategory,
-  type TrackCandidate,
+  type DeriveResult,
 } from '@onrepeat/music'
 import { db } from '../lib/db'
 import { getBoss } from '../lib/jobs'
@@ -109,11 +109,10 @@ export async function postJamAction(
   }
 }
 
-export async function deriveTrackAction(
-  url: string,
-): Promise<TrackCandidate | null> {
+export async function deriveTrackAction(url: string): Promise<DeriveResult> {
   const res = await getSessionAgent()
-  if (!res.agent) return null
+  // Not signed in / session hiccup — retryable from the user's point of view.
+  if (!res.agent) return { ok: false, reason: 'transient' }
   // When a YouTube Data API key is configured, flag plain youtube.com videos that
   // aren't in the Music category ('10') so the form can warn before posting.
   const apiKey = process.env.YOUTUBE_API_KEY
@@ -127,7 +126,7 @@ export async function deriveTrackAction(
     return await deriveTrack(url, { classifyYoutubeMusic })
   } catch (err) {
     console.error('[web] deriveTrackAction failed', err)
-    return null
+    return { ok: false, reason: 'transient' }
   }
 }
 

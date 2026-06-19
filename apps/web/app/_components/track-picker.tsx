@@ -15,6 +15,7 @@ import {
   FloatingPortal,
 } from '@floating-ui/react'
 import type { TrackCandidate } from '@onrepeat/music'
+import { providerFromUrl } from '@onrepeat/core'
 import { deriveTrackAction } from '../actions'
 import { inputClassName } from '../../lib/input-variants'
 import { VinylPlaceholder } from './vinyl-placeholder'
@@ -28,7 +29,9 @@ const validatedInputCls = inputClassName('w-full user-invalid:border-red-600')
 
 /** Smart track input: type to search (iTunes via /api/track-search) or paste a link
  *  (oEmbed/iTunes lookup via deriveTrackAction). Renders the title/artist/sourceUrl/artworkUrl
- *  form fields so the surrounding <form> submits them; manual entry is the failure fallback.
+ *  form fields so the surrounding <form> submits them. Links that aren't recognized music
+ *  hosts, or that can't be read, are rejected inline — the only commit paths are a picked
+ *  search result or a successfully derived link.
  *  Search results render as a Floating UI combobox listbox (virtual focus: the cursor stays
  *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
 export function TrackPicker({
@@ -41,7 +44,17 @@ export function TrackPicker({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
   const [selected, setSelected] = useState<TrackCandidate | null>(null)
-  const [manual, setManual] = useState(false)
+  // Editable title/artist for the selected track, seeded from the candidate. Controlled so
+  // edits survive the display⇄edit toggle and feed the form (hidden fields in display mode,
+  // the editable inputs in edit mode).
+  const [title, setTitle] = useState('')
+  const [artist, setArtist] = useState('')
+  // The single reject state: why the last pasted link wasn't accepted (null = no error).
+  const [deriveError, setDeriveError] = useState<
+    null | 'unknown-host' | 'transient' | 'unreadable'
+  >(null)
+  // Bumped by Retry to re-run derive for the same URL (refs alone don't re-fire effects).
+  const [retryNonce, setRetryNonce] = useState(0)
   const [busy, setBusy] = useState(false)
   // Autofilled title/artist show as read-only text (keeps the canonical metadata that
   // drives dedup/resolution); an explicit "edit" reveals editable inputs.
@@ -49,6 +62,10 @@ export function TrackPicker({
   const seq = useRef(0)
   // Guards auto-derive: the last URL we kicked off, so each link is processed once.
   const lastDerived = useRef('')
+  // Latest field value, readable inside an in-flight derive's stale closure so a slow
+  // result the user has since edited/cleared away from can be discarded.
+  const latestQuery = useRef(query)
+  latestQuery.current = query
 
   // Combobox popover (Floating UI). `open` tracks the results list; useListNavigation runs
   // in virtual mode so focus never leaves the search input.
@@ -99,7 +116,7 @@ export function TrackPicker({
   )
 
   // Surface "has the user put anything in?" to the parent: a selected track, or any
-  // non-empty search/URL text (also covers manual-entry mode, which keeps the URL in query).
+  // non-empty search/URL text.
   useEffect(() => {
     onContentChange?.(selected != null || query.trim().length > 0)
   }, [selected, query, onContentChange])
@@ -107,14 +124,11 @@ export function TrackPicker({
   // The bare search field isn't a named/required input, so "no track chosen" can't be a
   // field constraint. Mark it invalid with a custom message while no track is committed, so
   // submitting surfaces that message and focuses the field — rather than disabling the submit
-  // button (which gives no feedback). Cleared once a track is selected or manual entry (with
-  // its own required fields) takes over.
+  // button (which gives no feedback). Cleared once a track is selected.
   useEffect(() => {
     const el = refs.reference.current as HTMLInputElement | null
-    el?.setCustomValidity(
-      selected || manual ? '' : 'Pick a track to share, or enter one manually.',
-    )
-  }, [selected, manual])
+    el?.setCustomValidity(selected ? '' : 'Pick a track to share.')
+  }, [selected])
 
   // Resolve the nearest <dialog> once mounted so the listbox can portal into the modal's
   // top layer. Must be undefined (NOT null) when there's no dialog: FloatingPortal treats an
@@ -162,44 +176,67 @@ export function TrackPicker({
   }, [query, selected])
 
   // Auto-process a recognized link the moment it's pasted/typed (debounced) — no extra
-  // click. Each distinct URL is derived once; clearing the field re-arms it. A miss
-  // (unknown provider / failed lookup) drops to manual entry, keeping the URL.
+  // click. Unknown hosts are rejected client-side (no server round-trip). A supported
+  // host that can't be read reports transient (retryable) or unreadable. Each distinct
+  // URL is processed once; clearing the field or Retry re-arms it.
   useEffect(() => {
     const url = query.trim()
-    if (
-      selected ||
-      manual ||
-      busy ||
-      !isUrl(url) ||
-      url === lastDerived.current
-    )
+    if (selected || busy) return
+    if (!isUrl(url)) {
+      // Reset when the field isn't a link (typing a search, or cleared).
+      setDeriveError(null)
+      lastDerived.current = ''
       return
+    }
+    if (url === lastDerived.current) return
+    // Allowlist gate, shared with the resolver: reject non-music hosts instantly.
+    if (providerFromUrl(url) === null) {
+      lastDerived.current = url
+      setDeriveError('unknown-host')
+      return
+    }
     const id = setTimeout(async () => {
       lastDerived.current = url
+      setDeriveError(null)
       setBusy(true)
-      const c = await deriveTrackAction(url)
+      const r = await deriveTrackAction(url)
       setBusy(false)
-      if (c) {
-        // Inline rather than calling pick() so this effect depends only on stable setters.
-        setSelected(c)
+      // Discard a slow result the user has moved on from (edited/cleared the field while
+      // it was in flight) — otherwise it would hijack the form into the selected view.
+      if (latestQuery.current.trim() !== url) return
+      if (r.ok) {
+        setSelected(r.candidate)
+        setTitle(r.candidate.title)
+        setArtist(r.candidate.artist)
         setResults([])
         setOpen(false)
         setActiveIndex(null)
         setEditing(false)
       } else {
-        setManual(true)
+        setDeriveError(r.reason)
       }
     }, 500)
     return () => clearTimeout(id)
-  }, [query, selected, manual, busy])
+    // `busy` is a dep so the in-flight guard above re-evaluates on each flip; the
+    // `url === lastDerived.current` check makes the resulting re-runs no-ops.
+  }, [query, selected, busy, retryNonce])
 
   // Commit a chosen candidate (from a search result or a derived link).
   const pick = (candidate: TrackCandidate) => {
     setSelected(candidate)
+    setTitle(candidate.title)
+    setArtist(candidate.artist)
     setResults([])
     setOpen(false)
     setActiveIndex(null)
     setEditing(false)
+  }
+
+  // Re-run derive for the same URL after a transient failure.
+  const retry = () => {
+    lastDerived.current = ''
+    setDeriveError(null)
+    setRetryNonce((n) => n + 1)
   }
 
   if (selected) {
@@ -220,30 +257,35 @@ export function TrackPicker({
             <VinylPlaceholder className="h-32 w-32 rounded" />
           )}
           <div className="min-w-0 flex-1">
-            <input
-              name="title"
-              defaultValue={selected.title}
-              readOnly={!editing}
-              required
-              aria-label="Song title"
-              className={
-                editing
-                  ? `${validatedInputCls} mb-1`
-                  : 'w-full truncate bg-transparent font-bold focus:outline-none'
-              }
-            />
-            <input
-              name="artist"
-              defaultValue={selected.artist}
-              readOnly={!editing}
-              required
-              aria-label="Artist"
-              className={
-                editing
-                  ? validatedInputCls
-                  : 'w-full truncate bg-transparent text-sm text-muted focus:outline-none'
-              }
-            />
+            {editing ? (
+              <>
+                <input
+                  name="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  aria-label="Song title"
+                  className={`${validatedInputCls} mb-1`}
+                />
+                <input
+                  name="artist"
+                  value={artist}
+                  onChange={(e) => setArtist(e.target.value)}
+                  required
+                  aria-label="Artist"
+                  className={validatedInputCls}
+                />
+              </>
+            ) : (
+              <>
+                {/* Display as wrapping text (an <input> would clip a long title to one
+                    line); hidden fields carry the values for form submission. */}
+                <p className="font-bold break-words">{title}</p>
+                <p className="text-sm break-words text-muted">{artist}</p>
+                <input type="hidden" name="title" value={title} />
+                <input type="hidden" name="artist" value={artist} />
+              </>
+            )}
           </div>
           <Button
             type="button"
@@ -270,6 +312,7 @@ export function TrackPicker({
                 setSelected(null)
                 setQuery('')
                 setEditing(false)
+                setDeriveError(null)
                 lastDerived.current = ''
               }}
               className="underline hover:text-accent"
@@ -286,52 +329,12 @@ export function TrackPicker({
             setSelected(null)
             setQuery('')
             setEditing(false)
+            setDeriveError(null)
             lastDerived.current = ''
           }}
           className="mt-2 text-xs"
         >
           change track
-        </Button>
-      </div>
-    )
-  }
-
-  if (manual) {
-    return (
-      // Distinct key so React remounts (rather than reusing the search input's DOM node,
-      // which would flip it from controlled value={query} to uncontrolled defaultValue).
-      <div key="manual" className="flex flex-col gap-2">
-        <input
-          type="url"
-          name="sourceUrl"
-          defaultValue={isUrl(query) ? query.trim() : ''}
-          placeholder="https://… (music link)"
-          aria-label="Song URL"
-          required
-          className={validatedInputCls}
-        />
-        <input
-          name="title"
-          placeholder="Song title"
-          aria-label="Song title"
-          required
-          className={validatedInputCls}
-        />
-        <input
-          name="artist"
-          placeholder="Artist"
-          aria-label="Artist"
-          required
-          className={validatedInputCls}
-        />
-        <input type="hidden" name="artworkUrl" value="" />
-        <Button
-          type="button"
-          variant="link"
-          onClick={() => setManual(false)}
-          className="self-start text-xs"
-        >
-          back to search
         </Button>
       </div>
     )
@@ -343,7 +346,11 @@ export function TrackPicker({
       className="rounded-md border border-border bg-surface p-4"
     >
       <div className="flex items-start gap-4">
-        <VinylPlaceholder className="h-32 w-32 rounded" />
+        {/* Decorative pre-resolution art: hidden on mobile so the input — and the
+            search dropdown anchored to its width — isn't squeezed to ~160px. */}
+        <div className="hidden shrink-0 sm:block">
+          <VinylPlaceholder className="h-32 w-32 rounded" />
+        </div>
         <div className="min-w-0 flex-1">
           <input
             ref={refs.setReference}
@@ -371,16 +378,40 @@ export function TrackPicker({
             aria-describedby="post-link-hint"
           />
           <p id="post-link-hint" className="mt-2 text-xs text-muted">
-            Works with links from Spotify, Apple Music, YouTube, SoundCloud,
-            Bandcamp, Tidal, and Deezer.
+            Works with links from Spotify, Apple Music, YouTube, SoundCloud, and
+            Bandcamp.
           </p>
-          {isUrl(query) && (
+          {busy && (
             <p
               className="mt-2 text-sm text-muted"
               role="status"
               aria-live="polite"
             >
               Looking up link…
+            </p>
+          )}
+          {deriveError && !busy && (
+            <p
+              className="mt-2 text-sm text-red-600"
+              role="status"
+              aria-live="polite"
+            >
+              {deriveError === 'unknown-host' &&
+                'That’s not a music link we recognize. Search for the song above, or paste a link from Spotify, Apple Music, YouTube, SoundCloud, or Bandcamp.'}
+              {deriveError === 'unreadable' &&
+                'Couldn’t read a song from that link. Try a single-track link from a supported service, or search above.'}
+              {deriveError === 'transient' && (
+                <>
+                  Couldn’t reach that link just now.{' '}
+                  <button
+                    type="button"
+                    onClick={retry}
+                    className="underline hover:text-accent"
+                  >
+                    Retry
+                  </button>
+                </>
+              )}
             </p>
           )}
         </div>
@@ -435,14 +466,6 @@ export function TrackPicker({
           </div>
         </FloatingPortal>
       )}
-      <Button
-        type="button"
-        variant="link"
-        onClick={() => setManual(true)}
-        className="mt-3 text-xs"
-      >
-        enter manually
-      </Button>
     </div>
   )
 }

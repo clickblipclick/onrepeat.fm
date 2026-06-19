@@ -54,13 +54,14 @@ export function PostJamForm({
   return (
     <form action={action} className="flex flex-col gap-4">
       <TrackPicker onContentChange={setTrackContent} />
-      <input
+      <textarea
         name="caption"
         aria-label="Caption (optional)"
         placeholder="why this song (optional)"
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
-        className={inputClassName('w-full')}
+        rows={3}
+        className={inputClassName('w-full resize-y')}
       />
       <Button type="submit" loading={pending} className="py-2.5 text-base">
         Put it on repeat

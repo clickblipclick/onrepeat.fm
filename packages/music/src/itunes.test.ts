@@ -3,6 +3,7 @@ import {
   mapItunes,
   searchTracks,
   lookupTrack,
+  lookupTrackResult,
   createItunesClient,
 } from './itunes'
 
@@ -131,6 +132,12 @@ describe('lookupTrack', () => {
     })
     expect(await lookupTrack('2', { fetchFn })).toBeNull()
   })
+  it('propagates a thrown network error (resolveTrack treats this as transient)', async () => {
+    const fetchFn = async () => {
+      throw new Error('network')
+    }
+    await expect(lookupTrack('2', { fetchFn })).rejects.toThrow('network')
+  })
 })
 
 describe('itunes durationSec + client', () => {
@@ -228,5 +235,80 @@ describe('itunes durationSec + client', () => {
     })
     expect((await client.search('x y'))[0]?.durationSec).toBe(214)
     expect(calls).toBe(2)
+  })
+})
+
+describe('lookupTrackResult', () => {
+  const okBody = async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      return {
+        results: [
+          {
+            trackName: 'T',
+            artistName: 'A',
+            trackViewUrl: 'https://music.apple.com/us/album/t/1?i=2',
+          },
+        ],
+      }
+    },
+  })
+
+  it('ok with the mapped candidate', async () => {
+    const r = await lookupTrackResult('2', { fetchFn: okBody })
+    expect(r).toMatchObject({ ok: true, data: { title: 'T', artist: 'A' } })
+  })
+
+  it('transient on 5xx', async () => {
+    const fetchFn = async () => ({
+      ok: false,
+      status: 500,
+      async json() {
+        return {}
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'transient',
+    })
+  })
+
+  it('transient on a thrown network error', async () => {
+    const fetchFn = async () => {
+      throw new Error('network')
+    }
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'transient',
+    })
+  })
+
+  it('unreadable on 404', async () => {
+    const fetchFn = async () => ({
+      ok: false,
+      status: 404,
+      async json() {
+        return {}
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'unreadable',
+    })
+  })
+
+  it('unreadable on an empty result set', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return { results: [] }
+      },
+    })
+    expect(await lookupTrackResult('2', { fetchFn })).toEqual({
+      ok: false,
+      reason: 'unreadable',
+    })
   })
 })
