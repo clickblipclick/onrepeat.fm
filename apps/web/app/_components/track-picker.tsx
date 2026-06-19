@@ -44,6 +44,11 @@ export function TrackPicker({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
   const [selected, setSelected] = useState<TrackCandidate | null>(null)
+  // Editable title/artist for the selected track, seeded from the candidate. Controlled so
+  // edits survive the display⇄edit toggle and feed the form (hidden fields in display mode,
+  // the editable inputs in edit mode).
+  const [title, setTitle] = useState('')
+  const [artist, setArtist] = useState('')
   // The single reject state: why the last pasted link wasn't accepted (null = no error).
   const [deriveError, setDeriveError] = useState<
     null | 'unknown-host' | 'transient' | 'unreadable'
@@ -201,6 +206,8 @@ export function TrackPicker({
       if (latestQuery.current.trim() !== url) return
       if (r.ok) {
         setSelected(r.candidate)
+        setTitle(r.candidate.title)
+        setArtist(r.candidate.artist)
         setResults([])
         setOpen(false)
         setActiveIndex(null)
@@ -217,6 +224,8 @@ export function TrackPicker({
   // Commit a chosen candidate (from a search result or a derived link).
   const pick = (candidate: TrackCandidate) => {
     setSelected(candidate)
+    setTitle(candidate.title)
+    setArtist(candidate.artist)
     setResults([])
     setOpen(false)
     setActiveIndex(null)
@@ -248,30 +257,35 @@ export function TrackPicker({
             <VinylPlaceholder className="h-32 w-32 rounded" />
           )}
           <div className="min-w-0 flex-1">
-            <input
-              name="title"
-              defaultValue={selected.title}
-              readOnly={!editing}
-              required
-              aria-label="Song title"
-              className={
-                editing
-                  ? `${validatedInputCls} mb-1`
-                  : 'w-full truncate bg-transparent font-bold focus:outline-none'
-              }
-            />
-            <input
-              name="artist"
-              defaultValue={selected.artist}
-              readOnly={!editing}
-              required
-              aria-label="Artist"
-              className={
-                editing
-                  ? validatedInputCls
-                  : 'w-full truncate bg-transparent text-sm text-muted focus:outline-none'
-              }
-            />
+            {editing ? (
+              <>
+                <input
+                  name="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  aria-label="Song title"
+                  className={`${validatedInputCls} mb-1`}
+                />
+                <input
+                  name="artist"
+                  value={artist}
+                  onChange={(e) => setArtist(e.target.value)}
+                  required
+                  aria-label="Artist"
+                  className={validatedInputCls}
+                />
+              </>
+            ) : (
+              <>
+                {/* Display as wrapping text (an <input> would clip a long title to one
+                    line); hidden fields carry the values for form submission. */}
+                <p className="font-bold break-words">{title}</p>
+                <p className="text-sm break-words text-muted">{artist}</p>
+                <input type="hidden" name="title" value={title} />
+                <input type="hidden" name="artist" value={artist} />
+              </>
+            )}
           </div>
           <Button
             type="button"
