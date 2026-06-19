@@ -12,6 +12,6 @@
     "@atproto/lexicon": "^0.7.1"
   },
   "devDependencies": {
-    "typescript": "^5.5.0"
+    "typescript": "^6.0.3"
   }
 }
