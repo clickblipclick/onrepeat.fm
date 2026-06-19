@@ -73,17 +73,26 @@ async function fetchSpotifyArtist(
   }
 }
 
-/** Split common "Artist - Title" video titles; else keep title and use author as artist. */
+/** Normalize an oEmbed title+author into title/artist. Strips SoundCloud's
+ *  redundant " by <author>" title suffix, then splits "Artist - Title" (common on
+ *  YouTube). */
 function splitTitleArtist(
   rawTitle: string,
   author: string | undefined,
 ): { title: string; artist: string } {
-  const m = rawTitle.match(/^(.*?)\s[-–]\s(.*)$/)
-  if (m) return { artist: m[1]!.trim(), title: m[2]!.trim() }
-  return {
-    title: rawTitle.trim(),
-    artist: (author ?? '').replace(/\s*-\s*Topic$/i, '').trim(),
+  const author_ = (author ?? '').replace(/\s*-\s*Topic$/i, '').trim()
+  let title = rawTitle.trim()
+  // SoundCloud's oEmbed title is "Track Title by <author>" while author_name is set
+  // separately, so the title would otherwise read "[title] by [artist]". Match the
+  // author exactly (not any " by …") so a legitimate "by" in the title is preserved,
+  // and strip BEFORE the dash split so it also fires on "Artist - Title by <author>".
+  const suffix = ` by ${author_}`
+  if (author_ && title.toLowerCase().endsWith(suffix.toLowerCase())) {
+    title = title.slice(0, -suffix.length).trim()
   }
+  const m = title.match(/^(.*?)\s[-–]\s(.*)$/)
+  if (m) return { artist: m[1]!.trim(), title: m[2]!.trim() }
+  return { title, artist: author_ }
 }
 
 /**

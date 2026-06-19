@@ -239,4 +239,90 @@ describe('deriveTrack', () => {
     expect(r).toMatchObject({ ok: true })
     if (r.ok) expect(r.candidate.isLikelyMusic).toBeUndefined()
   })
+
+  it('soundcloud url → strips " by <artist>" from the oEmbed title', async () => {
+    const fetchFn = json({
+      title: 'Never Be Like You by Flume',
+      author_name: 'Flume',
+      thumbnail_url: 'https://t/i.jpg',
+    })
+    const r = await deriveTrack(
+      'https://soundcloud.com/flume/never-be-like-you',
+      { fetchFn },
+    )
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: {
+        title: 'Never Be Like You',
+        artist: 'Flume',
+        provider: 'soundcloud',
+      },
+    })
+  })
+
+  it('soundcloud: keeps a legitimate "by" in the title, strips only the author suffix', async () => {
+    const fetchFn = json({
+      title: 'Drive By by Train',
+      author_name: 'Train',
+      thumbnail_url: 'https://t/i.jpg',
+    })
+    const r = await deriveTrack('https://soundcloud.com/train/drive-by', {
+      fetchFn,
+    })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { title: 'Drive By', artist: 'Train', provider: 'soundcloud' },
+    })
+  })
+
+  it('soundcloud: artist name containing "by" is stripped as a whole', async () => {
+    const fetchFn = json({
+      title: 'Sunshine by Toby Mac',
+      author_name: 'Toby Mac',
+      thumbnail_url: 'https://t/i.jpg',
+    })
+    const r = await deriveTrack('https://soundcloud.com/tobymac/sunshine', {
+      fetchFn,
+    })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { title: 'Sunshine', artist: 'Toby Mac', provider: 'soundcloud' },
+    })
+  })
+
+  it('soundcloud: title with a dash AND a " by author" suffix', async () => {
+    const fetchFn = json({
+      title: 'Flume - Never Be Like You by Flume',
+      author_name: 'Flume',
+      thumbnail_url: 'https://t/i.jpg',
+    })
+    const r = await deriveTrack('https://soundcloud.com/flume/nblu', { fetchFn })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: {
+        title: 'Never Be Like You',
+        artist: 'Flume',
+        provider: 'soundcloud',
+      },
+    })
+  })
+
+  it('soundcloud: title genuinely ending in "by <not-author>" keeps that phrase', async () => {
+    const fetchFn = json({
+      title: 'Live By Night by DJ Foo',
+      author_name: 'DJ Foo',
+      thumbnail_url: 'https://t/i.jpg',
+    })
+    const r = await deriveTrack('https://soundcloud.com/djfoo/live-by-night', {
+      fetchFn,
+    })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: {
+        title: 'Live By Night',
+        artist: 'DJ Foo',
+        provider: 'soundcloud',
+      },
+    })
+  })
 })
