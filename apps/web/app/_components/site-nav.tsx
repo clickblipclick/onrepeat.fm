@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getSession } from '../../lib/session'
 import { bsky } from '../../lib/appview'
 import { buttonClassName } from '../../lib/button-variants'
+import { PostNavLink } from './post-nav-link'
 import { UserMenu } from './user-menu'
 
 export async function SiteNav() {
@@ -34,17 +35,7 @@ export async function SiteNav() {
         <div className="flex items-center gap-3">
           {session.did ? (
             <>
-              <Link
-                href="/post"
-                // Opening /post is intercepted into a modal over the current feed; without
-                // scroll={false} Next's default scroll-to-top yanks the feed to the top as
-                // the modal opens (a programmatic scroll the dialog's scroll-lock can't stop).
-                scroll={false}
-                className={buttonClassName({ variant: 'outline', size: 'sm' })}
-              >
-                <span className="sm:hidden">+ post</span>
-                <span className="hidden sm:inline">+ post a song</span>
-              </Link>
+              <PostNavLink />
               <UserMenu
                 did={session.did}
                 avatar={profileAvatar}
