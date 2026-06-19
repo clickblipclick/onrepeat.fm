@@ -41,10 +41,24 @@ type FetchLike = (
   text(): Promise<string>
 }>
 
-/** Apple Music track URLs carry the song id in the `i` query param. */
+/**
+ * Apple Music exposes a track id two ways: album-track URLs carry it in the `i` query
+ * param (…/album/<slug>/<albumId>?i=<trackId>); direct-song URLs carry it as the last
+ * path segment (…/song/<slug>/<trackId>, or …/song/<trackId>). Prefer `i`, else read the
+ * trailing numeric id of a /song/ path. Restricted to /song/ so an album URL's <albumId>
+ * is never mistaken for a track id.
+ */
 function extractAppleTrackId(url: string): string | null {
   try {
-    return new URL(url).searchParams.get('i')
+    const u = new URL(url)
+    const i = u.searchParams.get('i')
+    if (i) return i
+    const segs = u.pathname.split('/').filter(Boolean)
+    if (segs.includes('song')) {
+      const last = segs[segs.length - 1]
+      if (last && /^\d+$/.test(last)) return last
+    }
+    return null
   } catch {
     return null
   }

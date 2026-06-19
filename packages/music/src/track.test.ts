@@ -47,6 +47,40 @@ describe('deriveTrack', () => {
     })
   })
 
+  it('apple direct-song url → looks up the trailing path id', async () => {
+    const fetchFn = async (url: string) => {
+      expect(url).toContain('itunes.apple.com/lookup')
+      expect(url).toContain('id=1886119379')
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            results: [
+              {
+                trackName: 'Heaven',
+                artistName: 'A',
+                trackViewUrl:
+                  'https://music.apple.com/us/album/heaven/1?i=1886119379',
+              },
+            ],
+          }
+        },
+        async text() {
+          return ''
+        },
+      }
+    }
+    const r = await deriveTrack(
+      'https://music.apple.com/us/song/heaven/1886119379',
+      { fetchFn },
+    )
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { title: 'Heaven', provider: 'applemusic' },
+    })
+  })
+
   it('apple url with no track id → unreadable', async () => {
     const r = await deriveTrack('https://music.apple.com/us/album/t/1')
     expect(r).toEqual({ ok: false, reason: 'unreadable' })
