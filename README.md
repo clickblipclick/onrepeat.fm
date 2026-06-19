@@ -32,6 +32,21 @@ pnpm seed:clean   # revert it
 
 This writes local index rows only — nothing is pushed to anyone's PDS, and your own data is left untouched.
 
+### Fully-local ephemeral testing (no public network)
+
+`pnpm dev:local` runs an in-process atproto network (a local PLC + PDS from
+`@atproto/dev-env`) alongside the web app, ingester, and resolver, all wired to
+each other instead of the public network. Post, like, re-jam, and delete through
+the real UI and watch the ingester + resolver process it — without writing any
+record to a real PDS or surfacing it on the live site.
+
+It is **ephemeral**: the PDS is recreated on every start (a new account/DID each
+run) and the launcher wipes the derived Postgres tables, so every session begins
+clean. Requires Postgres on :5432 (migrated via `pnpm setup` / `pnpm db:migrate`).
+
+The `pds` pane prints the dev account's handle/password and URLs at startup. Sign
+in at http://127.0.0.1:3000/login with those. Press Ctrl-C to tear it all down.
+
 ## Commands
 
 | Command                         | What it does                                                  |

@@ -40,6 +40,10 @@ export interface CreateIngesterOpts {
   db: DB
   /** Relay websocket URL, e.g. wss://bsky.network */
   relay: string
+  /** Override the PLC directory used to resolve DIDs for commit-signature
+   *  verification. Default: the library default (https://plc.directory).
+   *  Set to a local PLC (e.g. http://localhost:2582) for fully-local dev. */
+  plcUrl?: string
   hooks?: IngesterHooks
   /** Dev: ignore the stored cursor and start at the live head instead of replaying the
    *  backlog. Prod leaves this off so restarts resume from the persisted cursor. */
@@ -65,7 +69,10 @@ export async function createIngester(
   // commit signature (parseCommitAuthenticated). Without a cache that's a network
   // round-trip per jam/like event, coupling stream throughput to PLC latency. Defaults
   // to 1h stale / 24h max TTL.
-  const idResolver = new IdResolver({ didCache: new MemoryCache() })
+  const idResolver = new IdResolver({
+    plcUrl: opts.plcUrl,
+    didCache: new MemoryCache(),
+  })
   const cursorState = liveTail ? undefined : await loadCursorState(db, SERVICE)
   const startCursor = cursorState?.cursor
   if (cursorState) {

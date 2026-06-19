@@ -28,6 +28,19 @@ export interface CreateOAuthClientOptions {
    * might get revoked under horizontal scaling — see {@link createPgAdvisoryLock}.
    */
   requestLock?: RuntimeLock
+  /**
+   * Dev-only: resolve handles against this URL instead of public DNS/well-known.
+   * Point at a local PDS (e.g. http://localhost:2583) so a `*.test` handle on a
+   * local dev-env PDS resolves. Ignored in prod mode.
+   */
+  handleResolver?: string | URL
+  /**
+   * Dev-only: resolve `did:plc:*` against this PLC directory instead of
+   * https://plc.directory. Point at a local PLC (e.g. http://localhost:2582).
+   * When set, the dev client also enables `allowHttp` so it can talk to the
+   * loopback PDS/auth-server over plain HTTP. Ignored in prod mode.
+   */
+  plcDirectoryUrl?: string | URL
 }
 
 export function createOAuthClient(
@@ -61,6 +74,12 @@ export function createOAuthClient(
       stateStore: opts.stateStore,
       sessionStore: opts.sessionStore,
       requestLock: opts.requestLock,
+      // Dev-only local-PDS wiring. Omitted → library defaults (DNS handle
+      // resolution + plc.directory), i.e. today's behavior against real bsky.
+      ...(opts.handleResolver ? { handleResolver: opts.handleResolver } : {}),
+      ...(opts.plcDirectoryUrl
+        ? { plcDirectoryUrl: opts.plcDirectoryUrl, allowHttp: true }
+        : {}),
     })
   }
 
