@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { deriveTrack } from './track'
 
-const json = (j: unknown, text = '') => async () => ({
-  ok: true,
-  status: 200,
-  async json() {
-    return j
-  },
-  async text() {
-    return text
-  },
-})
+const json =
+  (j: unknown, text = '') =>
+  async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      return j
+    },
+    async text() {
+      return text
+    },
+  })
 
 describe('deriveTrack', () => {
   it('apple url → ok candidate from iTunes lookup', async () => {
@@ -36,7 +38,9 @@ describe('deriveTrack', () => {
         },
       }
     }
-    const r = await deriveTrack('https://music.apple.com/us/album/t/1?i=2', { fetchFn })
+    const r = await deriveTrack('https://music.apple.com/us/album/t/1?i=2', {
+      fetchFn,
+    })
     expect(r).toMatchObject({
       ok: true,
       candidate: { title: 'T', artist: 'A', provider: 'applemusic' },
@@ -49,8 +53,19 @@ describe('deriveTrack', () => {
   })
 
   it('apple lookup 5xx → transient', async () => {
-    const fetchFn = async () => ({ ok: false, status: 500, async json() { return {} }, async text() { return '' } })
-    const r = await deriveTrack('https://music.apple.com/us/album/t/1?i=2', { fetchFn })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 500,
+      async json() {
+        return {}
+      },
+      async text() {
+        return ''
+      },
+    })
+    const r = await deriveTrack('https://music.apple.com/us/album/t/1?i=2', {
+      fetchFn,
+    })
     expect(r).toEqual({ ok: false, reason: 'transient' })
   })
 
@@ -63,18 +78,40 @@ describe('deriveTrack', () => {
     const r = await deriveTrack('https://youtu.be/abc', { fetchFn })
     expect(r).toMatchObject({
       ok: true,
-      candidate: { title: 'Thinkin Bout You (Official)', artist: 'Frank Ocean', provider: 'youtube' },
+      candidate: {
+        title: 'Thinkin Bout You (Official)',
+        artist: 'Frank Ocean',
+        provider: 'youtube',
+      },
     })
   })
 
   it('youtube oEmbed 404 → unreadable', async () => {
-    const fetchFn = async () => ({ ok: false, status: 404, async json() { return {} }, async text() { return '' } })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 404,
+      async json() {
+        return {}
+      },
+      async text() {
+        return ''
+      },
+    })
     const r = await deriveTrack('https://youtu.be/abc', { fetchFn })
     expect(r).toEqual({ ok: false, reason: 'unreadable' })
   })
 
   it('youtube oEmbed 503 → transient', async () => {
-    const fetchFn = async () => ({ ok: false, status: 503, async json() { return {} }, async text() { return '' } })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 503,
+      async json() {
+        return {}
+      },
+      async text() {
+        return ''
+      },
+    })
     const r = await deriveTrack('https://youtu.be/abc', { fetchFn })
     expect(r).toEqual({ ok: false, reason: 'transient' })
   })
@@ -86,7 +123,10 @@ describe('deriveTrack', () => {
           ok: true,
           status: 200,
           async json() {
-            return { title: 'Thinkin Bout You', thumbnail_url: 'https://t/i.jpg' }
+            return {
+              title: 'Thinkin Bout You',
+              thumbnail_url: 'https://t/i.jpg',
+            }
           },
           async text() {
             return ''
@@ -106,7 +146,11 @@ describe('deriveTrack', () => {
     const r = await deriveTrack('https://open.spotify.com/track/x', { fetchFn })
     expect(r).toMatchObject({
       ok: true,
-      candidate: { title: 'Thinkin Bout You', artist: 'Frank Ocean', provider: 'spotify' },
+      candidate: {
+        title: 'Thinkin Bout You',
+        artist: 'Frank Ocean',
+        provider: 'spotify',
+      },
     })
   })
 
@@ -123,7 +167,9 @@ describe('deriveTrack', () => {
       {},
       '<meta property="og:title" content="Wet Hands, by C418"><meta property="og:image" content="https://f4.bcbits.com/img/a_10.jpg">',
     )
-    const r = await deriveTrack('https://c418.bandcamp.com/track/wet-hands', { fetchFn })
+    const r = await deriveTrack('https://c418.bandcamp.com/track/wet-hands', {
+      fetchFn,
+    })
     expect(r).toMatchObject({
       ok: true,
       candidate: {
@@ -137,13 +183,26 @@ describe('deriveTrack', () => {
 
   it('bandcamp page with no parseable title → unreadable', async () => {
     const fetchFn = json({}, '<html></html>')
-    const r = await deriveTrack('https://c418.bandcamp.com/track/x', { fetchFn })
+    const r = await deriveTrack('https://c418.bandcamp.com/track/x', {
+      fetchFn,
+    })
     expect(r).toEqual({ ok: false, reason: 'unreadable' })
   })
 
   it('bandcamp page fetch 502 → transient', async () => {
-    const fetchFn = async () => ({ ok: false, status: 502, async json() { return {} }, async text() { return '' } })
-    const r = await deriveTrack('https://c418.bandcamp.com/track/x', { fetchFn })
+    const fetchFn = async () => ({
+      ok: false,
+      status: 502,
+      async json() {
+        return {}
+      },
+      async text() {
+        return ''
+      },
+    })
+    const r = await deriveTrack('https://c418.bandcamp.com/track/x', {
+      fetchFn,
+    })
     expect(r).toEqual({ ok: false, reason: 'transient' })
   })
 
@@ -286,7 +345,11 @@ describe('deriveTrack', () => {
     })
     expect(r).toMatchObject({
       ok: true,
-      candidate: { title: 'Sunshine', artist: 'Toby Mac', provider: 'soundcloud' },
+      candidate: {
+        title: 'Sunshine',
+        artist: 'Toby Mac',
+        provider: 'soundcloud',
+      },
     })
   })
 
@@ -296,7 +359,9 @@ describe('deriveTrack', () => {
       author_name: 'Flume',
       thumbnail_url: 'https://t/i.jpg',
     })
-    const r = await deriveTrack('https://soundcloud.com/flume/nblu', { fetchFn })
+    const r = await deriveTrack('https://soundcloud.com/flume/nblu', {
+      fetchFn,
+    })
     expect(r).toMatchObject({
       ok: true,
       candidate: {

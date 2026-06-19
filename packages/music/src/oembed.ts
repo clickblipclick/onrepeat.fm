@@ -32,9 +32,12 @@ export async function fetchOembedResult(
   const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
   let res: Awaited<ReturnType<FetchLike>>
   try {
-    res = await fetchFn(`${endpoint}?format=json&url=${encodeURIComponent(url)}`, {
-      signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
-    })
+    res = await fetchFn(
+      `${endpoint}?format=json&url=${encodeURIComponent(url)}`,
+      {
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+      },
+    )
   } catch {
     return { ok: false, reason: 'transient' }
   }

@@ -60,15 +60,25 @@ describe('fetchOembedResult', () => {
       author_name: 'A',
       thumbnail_url: 'https://t/i.jpg',
     })
-    expect(await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn })).toEqual({
+    expect(
+      await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn }),
+    ).toEqual({
       ok: true,
       data: { title: 'T', author: 'A', thumbnail: 'https://t/i.jpg' },
     })
   })
 
   it('transient on 5xx', async () => {
-    const fetchFn = async () => ({ ok: false, status: 503, async json() { return {} } })
-    expect(await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn })).toEqual({
+    const fetchFn = async () => ({
+      ok: false,
+      status: 503,
+      async json() {
+        return {}
+      },
+    })
+    expect(
+      await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn }),
+    ).toEqual({
       ok: false,
       reason: 'transient',
     })
@@ -78,22 +88,34 @@ describe('fetchOembedResult', () => {
     const fetchFn = async () => {
       throw new Error('network')
     }
-    expect(await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn })).toEqual({
+    expect(
+      await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn }),
+    ).toEqual({
       ok: false,
       reason: 'transient',
     })
   })
 
   it('unreadable on 404', async () => {
-    const fetchFn = async () => ({ ok: false, status: 404, async json() { return {} } })
-    expect(await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn })).toEqual({
+    const fetchFn = async () => ({
+      ok: false,
+      status: 404,
+      async json() {
+        return {}
+      },
+    })
+    expect(
+      await fetchOembedResult('youtube', 'https://youtu.be/v', { fetchFn }),
+    ).toEqual({
       ok: false,
       reason: 'unreadable',
     })
   })
 
   it('unreadable for an unsupported provider', async () => {
-    expect(await fetchOembedResult('tidal', 'https://tidal.com/track/1', {})).toEqual({
+    expect(
+      await fetchOembedResult('tidal', 'https://tidal.com/track/1', {}),
+    ).toEqual({
       ok: false,
       reason: 'unreadable',
     })
