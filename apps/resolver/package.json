@@ -17,7 +17,7 @@
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
     "kysely": "^0.29.0",
-    "pg-boss": "^12.19.1"
+    "pg-boss": "^12.20.0"
   },
   "devDependencies": {
     "tsx": "^4.22.4",

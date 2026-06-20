@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.15",
-    "@atproto/oauth-client-node": "^0.4.1",
+    "@atproto/api": "^0.20.16",
+    "@atproto/oauth-client-node": "^0.4.2",
     "@floating-ui/react": "^0.27.19",
     "@onrepeat/appview": "workspace:*",
     "@onrepeat/core": "workspace:*",
@@ -21,7 +21,7 @@
     "@onrepeat/oauth": "workspace:*",
     "@onrepeat/repo": "workspace:*",
     "iron-session": "^8.0.0",
-    "lucide-react": "^1.18.0",
+    "lucide-react": "^1.21.0",
     "next": "^16.2.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
