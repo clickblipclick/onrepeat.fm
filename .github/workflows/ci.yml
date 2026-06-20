@@ -35,3 +35,39 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: onrepeat
+          POSTGRES_PASSWORD: onrepeat
+          POSTGRES_DB: onrepeat_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U onrepeat"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Integration tests
+        run: pnpm test:int
+        env:
+          DATABASE_URL_INTTEST: postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest
