@@ -60,7 +60,9 @@ export function Player({
   const marker = isDesktop && isNowPlaying
 
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded">
+    <div
+      className={`relative aspect-square w-full overflow-hidden rounded ${marker ? 'ring-2 ring-accent ring-inset' : ''}`}
+    >
       {artworkUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -96,8 +98,11 @@ export function Player({
           </div>
         </>
       ) : marker ? (
-        <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-xs font-bold text-white">
-          <span aria-hidden>♫</span> now playing
+        <span
+          aria-label="Now playing"
+          className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-accent"
+        >
+          <Equalizer />
         </span>
       ) : (
         // The whole cover is the play target — plays the resolved service without touching
@@ -125,5 +130,21 @@ export function Player({
         </button>
       )}
     </div>
+  )
+}
+
+/** Animated equalizer bars — the "now playing" affordance. Inherits color via `currentColor`;
+ *  bars hold still (full height) under prefers-reduced-motion. */
+function Equalizer() {
+  return (
+    <span aria-hidden className="flex h-3.5 items-end gap-[2px]">
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="h-full w-[3px] origin-bottom rounded-full bg-current motion-safe:animate-[eq_0.9s_ease-in-out_infinite]"
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
   )
 }

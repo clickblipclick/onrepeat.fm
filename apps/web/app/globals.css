@@ -398,3 +398,14 @@ html:has(dialog:modal) {
       18 18,
     pointer;
 }
+
+/* Equalizer bars for the "now playing" marker on the active card (player.tsx). */
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
