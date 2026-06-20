@@ -18,8 +18,8 @@ export default function TermsPage() {
       <p>
         These Terms of Use (&ldquo;Terms&rdquo;) govern your use of onrepeat.fm
         (the &ldquo;Service&rdquo;), operated by Hey Ben, LLC (&ldquo;we&rdquo;,
-        &ldquo;us&rdquo;). By using the Service, you agree to these Terms. If you
-        do not agree, do not use the Service.
+        &ldquo;us&rdquo;). By using the Service, you agree to these Terms. If
+        you do not agree, do not use the Service.
       </p>
 
       <section className="space-y-2">
@@ -38,6 +38,12 @@ export default function TermsPage() {
           Bluesky (AT Protocol) account; sign-in happens through your own data
           server.
         </p>
+        <p>
+          We are an independent project and are not affiliated with, endorsed
+          by, or sponsored by Bluesky or the AT Protocol. onrepeat.fm is open
+          source. These Terms apply to your use of the hosted service at
+          onrepeat.fm, not to self-hosted instances or forks of the source code.
+        </p>
       </section>
 
       <section className="space-y-2">
@@ -45,10 +51,14 @@ export default function TermsPage() {
         <p>
           The jams and likes you create are stored as records on{' '}
           <strong>your own Personal Data Server (PDS)</strong> and are{' '}
-          <strong>public</strong> on the AT Protocol network. You are responsible
-          for the content you post and the links you share, and you agree not to
-          post anything unlawful, infringing, or abusive. You must have the right
-          to share what you link to.
+          <strong>public</strong> on the AT Protocol network. You are
+          responsible for the content you post and the links you share, and you
+          agree not to post anything unlawful, infringing, or abusive. You must
+          have the right to share what you link to.
+        </p>
+        <p>
+          You must be at least 13 years old (or the minimum age required in your
+          jurisdiction) to use the Service.
         </p>
       </section>
 
@@ -56,19 +66,20 @@ export default function TermsPage() {
         <h2 className="font-semibold text-ink">Third-party services</h2>
         <p>
           The Service relies on third parties, including your PDS / Bluesky and
-          embedded players from Apple Music/iTunes, YouTube, Bandcamp, SoundCloud,
-          and Spotify. We do not host or control that content or playback, and
-          your use of it is governed by those providers&rsquo; own terms.
+          embedded players from Apple Music/iTunes, YouTube, Bandcamp,
+          SoundCloud, and Spotify. We do not host or control that content or
+          playback, and your use of it is governed by those providers&rsquo; own
+          terms.
         </p>
       </section>
 
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Intellectual property</h2>
         <p>
-          You retain rights to your content. If you believe content on the Service
-          infringes your rights, contact us at{' '}
-          <a href="mailto:ben@heyben.com" className={linkInline}>
-            ben@heyben.com
+          You retain rights to your content. If you believe content on the
+          Service infringes your rights, contact us at{' '}
+          <a href="mailto:help@onrepeat.fm" className={linkInline}>
+            help@onrepeat.fm
           </a>
           .
         </p>
@@ -80,10 +91,10 @@ export default function TermsPage() {
         </h2>
         <p>
           The Service is provided &ldquo;as is&rdquo; and &ldquo;as
-          available&rdquo;, without warranties of any kind. To the fullest extent
-          permitted by law, Hey Ben, LLC will not be liable for any indirect,
-          incidental, or consequential damages arising from your use of the
-          Service.
+          available&rdquo;, without warranties of any kind. To the fullest
+          extent permitted by law, Hey Ben, LLC will not be liable for any
+          indirect, incidental, or consequential damages arising from your use
+          of the Service.
         </p>
       </section>
 
@@ -106,8 +117,8 @@ export default function TermsPage() {
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Governing law</h2>
         <p>
-          These Terms are governed by the laws of the State of Minnesota, without
-          regard to its conflict-of-laws rules.
+          These Terms are governed by the laws of the State of Minnesota,
+          without regard to its conflict-of-laws rules.
         </p>
       </section>
 
@@ -115,8 +126,8 @@ export default function TermsPage() {
         <h2 className="font-semibold text-ink">Contact</h2>
         <p>
           Questions about these Terms? Email{' '}
-          <a href="mailto:ben@heyben.com" className={linkInline}>
-            ben@heyben.com
+          <a href="mailto:help@onrepeat.fm" className={linkInline}>
+            help@onrepeat.fm
           </a>
           .
         </p>

@@ -19,31 +19,35 @@ export default function PrivacyPage() {
         This Privacy Policy explains how Hey Ben, LLC (&ldquo;we&rdquo;,
         &ldquo;us&rdquo;), the operator of onrepeat.fm (the
         &ldquo;Service&rdquo;), handles information. Contact us at{' '}
-        <a href="mailto:ben@heyben.com" className={linkInline}>
-          ben@heyben.com
+        <a href="mailto:help@onrepeat.fm" className={linkInline}>
+          help@onrepeat.fm
         </a>
         .
       </p>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-ink">We don&rsquo;t collect passwords</h2>
+        <h2 className="font-semibold text-ink">
+          We don&rsquo;t collect passwords
+        </h2>
         <p>
-          You sign in with your Bluesky (AT Protocol) account using OAuth through
-          your own data server. We never see or store your password. We do store
-          an encrypted session cookie containing only your account identifier
-          (DID), and the OAuth tokens needed to act on your behalf when you post
-          or like.
+          You sign in with your Bluesky (AT Protocol) account using OAuth
+          through your own data server. We never see or store your password. We
+          store an encrypted session cookie containing only your account
+          identifier (DID); the OAuth tokens needed to act on your behalf when
+          you post or like are kept in our server-side store, not in the cookie.
         </p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-ink">Your activity is public by design</h2>
+        <h2 className="font-semibold text-ink">
+          Your activity is public by design
+        </h2>
         <p>
           The jams and likes you create are public records stored on{' '}
-          <strong>your own Personal Data Server (PDS)</strong> on the AT Protocol
-          network. The Service indexes public records from the network into our
-          own database so we can build feeds and profiles. We do not control the
-          public nature of AT Protocol data.
+          <strong>your own Personal Data Server (PDS)</strong> on the AT
+          Protocol network. The Service indexes public records from the network
+          into our own database so we can build feeds and profiles. We do not
+          control the public nature of AT Protocol data.
         </p>
       </section>
 
@@ -59,20 +63,20 @@ export default function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Third parties</h2>
         <p>
-          The Service uses Bluesky&rsquo;s public API to display profiles, embeds
-          media players from providers such as Apple Music/iTunes, YouTube,
-          Bandcamp, SoundCloud, and Spotify, and runs on a third-party hosting
-          provider. When a player loads, information such as your IP address is
-          shared with that provider under their own privacy policy.
+          The Service uses Bluesky&rsquo;s public API to display profiles,
+          embeds media players from providers such as Apple Music/iTunes,
+          YouTube, Bandcamp, SoundCloud, and Spotify, and runs on a third-party
+          hosting provider. When a player loads, information such as your IP
+          address is shared with that provider under their own privacy policy.
         </p>
       </section>
 
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Your control over your data</h2>
         <p>
-          Deleting a jam removes it from your PDS and from our index. Signing out
-          clears your session cookie. Because your records live on your own PDS,
-          your AT Protocol data ultimately remains yours and is portable.
+          Deleting a jam removes it from your PDS and from our index. Signing
+          out clears your session cookie. Because your records live on your own
+          PDS, your AT Protocol data ultimately remains yours and is portable.
         </p>
       </section>
 
@@ -104,8 +108,8 @@ export default function PrivacyPage() {
         <h2 className="font-semibold text-ink">Contact</h2>
         <p>
           Questions about this Policy? Email{' '}
-          <a href="mailto:ben@heyben.com" className={linkInline}>
-            ben@heyben.com
+          <a href="mailto:help@onrepeat.fm" className={linkInline}>
+            help@onrepeat.fm
           </a>
           .
         </p>
