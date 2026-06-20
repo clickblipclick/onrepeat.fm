@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 import { SiteNav } from './_components/site-nav'
+import { SiteFooter } from './_components/site-footer'
 import { UiProviders } from './_components/ui/providers'
 
 const mono = JetBrains_Mono({
@@ -35,10 +36,13 @@ export default function RootLayout({
   // Color themes apply only on profile pages and individual jam cards.
   return (
     <html lang="en" className={mono.variable}>
-      <body className="min-h-screen">
+      <body className="flex min-h-screen flex-col">
         <UiProviders>
           <SiteNav />
-          <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+          <main className="mx-auto w-full max-w-2xl grow px-4 py-6">
+            {children}
+          </main>
+          <SiteFooter />
           {modal}
         </UiProviders>
       </body>
