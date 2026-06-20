@@ -13,15 +13,16 @@ import {
 import { playNowPlaying } from '@/lib/now-playing-store'
 import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
 
+import { Menu } from './ui/menu'
 import { useIsDesktop } from './use-is-desktop'
 import { useNowPlaying } from './use-now-playing'
-import { Menu } from './ui/menu'
 
 interface PlaybackState {
   /** The embed the player would/does show (resolved: preferred → source → first ref). */
   active: Embed
   /** Embeddable platform keys offered for this jam (the switcher's menu items). */
   platforms: string[]
+  /** Mobile only: the in-card embed is open. (Desktop playback lives in the corner host.) */
   playing: boolean
   /** Desktop only: this jam is the one playing in the corner. */
   isNowPlaying: boolean
@@ -121,7 +122,19 @@ export function PlaybackProvider({
       launch,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [active, playing, isNowPlaying, isDesktop, sourceProvider, providerRefs, sourceUrl],
+    [
+      active,
+      playing,
+      isNowPlaying,
+      isDesktop,
+      jamUri,
+      title,
+      artist,
+      artworkUrl,
+      sourceProvider,
+      providerRefs,
+      sourceUrl,
+    ],
   )
 
   return (
