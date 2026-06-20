@@ -20,7 +20,8 @@ export function Player({
   artist: string
   priority?: boolean
 }) {
-  const { active, playing, isNowPlaying, isDesktop, play, close } = usePlayback()
+  const { active, playing, isNowPlaying, isDesktop, play, close } =
+    usePlayback()
   const coverLoad = priority
     ? ({ fetchPriority: 'high' } as const)
     : ({ loading: 'lazy' } as const)

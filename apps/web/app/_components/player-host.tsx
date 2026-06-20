@@ -25,7 +25,8 @@ export function PlayerHost() {
   // Move focus to the close button when a player appears (keyboard handle on the corner).
   // preventScroll so focusing the fixed control never scrolls the page.
   useEffect(() => {
-    if (nowPlaying && isDesktop) closeRef.current?.focus({ preventScroll: true })
+    if (nowPlaying && isDesktop)
+      closeRef.current?.focus({ preventScroll: true })
   }, [nowPlaying, isDesktop])
 
   if (!nowPlaying || !isDesktop) return null
