@@ -100,28 +100,35 @@ export function Player({
             type="button"
             onClick={close}
             aria-label="Close player"
-            className="absolute inset-0 cursor-zoom-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset"
+            className="cursor-close absolute inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset"
           />
           {/* Keyed by provider: a mid-play service switch remounts the box, resetting its
               load gate so the incoming embed stays hidden until it actually loads. */}
           <EmbedBox key={active.provider} embed={active} />
         </>
       ) : (
-        // One play button, centered — plays the resolved service without touching the
-        // stored preference (only an explicit switcher pick persists). Same legibility
-        // treatment over arbitrary art as a scrim: dark circle + blur + ring.
+        // The whole cover is the play target — plays the resolved service without touching
+        // the stored preference (only an explicit switcher pick persists). Hovering anywhere
+        // over the art darkens the centered badge (a `group`), so the entire square reads as
+        // clickable. The badge keeps the same legibility treatment over arbitrary art:
+        // dark circle + blur + ring.
         <button
           type="button"
           onClick={play}
           aria-label={`Play ${title} by ${artist}`}
-          className="absolute inset-0 m-auto flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-sm transition hover:bg-black/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="cursor-play group absolute inset-0 flex items-center justify-center focus:outline-none"
         >
-          <Play
-            size={20}
-            fill="currentColor"
+          <span
             aria-hidden
-            className="translate-x-px"
-          />
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-sm transition group-hover:bg-black/75 group-focus-visible:ring-2 group-focus-visible:ring-white"
+          >
+            <Play
+              size={20}
+              fill="currentColor"
+              aria-hidden
+              className="translate-x-px"
+            />
+          </span>
         </button>
       )}
     </div>
