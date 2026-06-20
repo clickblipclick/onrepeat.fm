@@ -10,8 +10,11 @@ import {
   LABELS,
   type Embed,
 } from '@/lib/embed'
+import { playNowPlaying } from '@/lib/now-playing-store'
 import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
 
+import { useIsDesktop } from './use-is-desktop'
+import { useNowPlaying } from './use-now-playing'
 import { Menu } from './ui/menu'
 
 interface PlaybackState {
@@ -20,6 +23,10 @@ interface PlaybackState {
   /** Embeddable platform keys offered for this jam (the switcher's menu items). */
   platforms: string[]
   playing: boolean
+  /** Desktop only: this jam is the one playing in the corner. */
+  isNowPlaying: boolean
+  /** True at desktop widths (play routes to the corner host). */
+  isDesktop: boolean
   /** Start playing the currently-resolved service (never touches the stored preference). */
   play: () => void
   close: () => void
@@ -40,17 +47,25 @@ export function usePlayback(): PlaybackState {
  *  media frame) and the service switcher (beside the title/artist) stay in sync without
  *  living in the same component. Wraps the card's media + body regions. */
 export function PlaybackProvider({
+  jamUri,
   sourceProvider,
   providerRefs,
   sourceUrl,
   preferredProvider,
+  title,
+  artist,
+  artworkUrl,
   lazy = true,
   children,
 }: {
+  jamUri: string
   sourceProvider: string | null
   providerRefs: ProviderRefs
   sourceUrl: string
   preferredProvider?: string
+  title: string
+  artist: string
+  artworkUrl: string | null
   lazy?: boolean
   children: React.ReactNode
 }) {
@@ -67,17 +82,31 @@ export function PlaybackProvider({
   const [active, setActive] = useState<Embed>(def)
   const [playing, setPlaying] = useState(!lazy)
 
+  const isDesktop = useIsDesktop()
+  const nowPlaying = useNowPlaying()
+  const isNowPlaying = nowPlaying?.jamUri === jamUri
+
+  /** Desktop → set the corner host; mobile → open the in-card embed. */
+  function start(embed: Embed) {
+    if (isDesktop) {
+      playNowPlaying({ jamUri, embed, title, artist, artworkUrl })
+    } else {
+      setActive(embed)
+      setPlaying(true)
+    }
+  }
+
   function launch(p: string) {
-    setActive(buildEmbed(p, providerRefs, sourceUrl))
+    const embed = buildEmbed(p, providerRefs, sourceUrl)
     const logical = parseProvider(p)
     if (logical) {
-      // Persist the picked service as the default for future jams (read on next load).
       document.cookie = playbackCookieString(
         logical,
         location.protocol === 'https:',
       )
     }
-    setPlaying(true)
+    setActive(embed) // keep the switcher label in sync on both platforms
+    start(embed)
   }
 
   const value = useMemo<PlaybackState>(
@@ -85,12 +114,14 @@ export function PlaybackProvider({
       active,
       platforms,
       playing,
-      play: () => setPlaying(true),
+      isNowPlaying,
+      isDesktop,
+      play: () => start(active),
       close: () => setPlaying(false),
       launch,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [active, playing, sourceProvider, providerRefs, sourceUrl],
+    [active, playing, isNowPlaying, isDesktop, sourceProvider, providerRefs, sourceUrl],
   )
 
   return (
