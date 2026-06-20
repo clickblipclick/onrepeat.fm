@@ -2,9 +2,10 @@
  * Dev-only seed: populate the local index with jams from a curated list of real, public
  * Bluesky accounts so the feeds/profiles/themes have something to look at. Uses REAL DIDs
  * because the appview hydrates author profiles from bsky at read time and the profile page
- * 404s for DIDs bsky can't resolve. Song metadata + artwork come from the iTunes Search API
- * (Apple-Music URLs also give working embeds). Nothing is written to anyone's PDS — these
- * are local index rows only.
+ * 404s for DIDs bsky can't resolve. Apple-Music jams come from the iTunes Search API; a
+ * hand-picked set of YouTube / Spotify / SoundCloud tracks is mixed in so every player shape
+ * is exercised locally (artwork is filled best-effort from iTunes). Nothing is written to
+ * anyone's PDS — these are local index rows only.
  *
  * Run:   pnpm --filter @onrepeat/db exec tsx /ABS/PATH/scripts/seed-dev.ts
  * Reset: ...seed-dev.ts --clean  — deletes the seed jams + likes and reverts the seeded
@@ -85,6 +86,86 @@ const SONG_QUERIES = [
   'Dog Days Are Over Florence and the Machine',
 ]
 
+// Hand-picked, verified-embeddable tracks for the non-Apple providers, so the local feed
+// exercises every player shape: YouTube (16:9 video), Spotify (bar), SoundCloud (bar),
+// Bandcamp (bar). Bandcamp's embed keys off a numeric trackId (scraped from the track page,
+// not derivable from the URL), so those entries carry `bandcampTrackId` and get a matching
+// `tracks` row below. Artwork is filled best-effort from iTunes (null → placeholder).
+const CURATED_TRACKS: {
+  provider: string
+  url: string
+  title: string
+  artist: string
+  bandcampTrackId?: string
+}[] = [
+  // YouTube — 16:9 video player
+  {
+    provider: 'youtube',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    title: 'Never Gonna Give You Up',
+    artist: 'Rick Astley',
+  },
+  {
+    provider: 'youtube',
+    url: 'https://www.youtube.com/watch?v=JGwWNGJdvx8',
+    title: 'Shape of You',
+    artist: 'Ed Sheeran',
+  },
+  {
+    provider: 'youtube',
+    url: 'https://www.youtube.com/watch?v=60ItHLz5WEA',
+    title: 'Faded',
+    artist: 'Alan Walker',
+  },
+  // Spotify — audio bar
+  {
+    provider: 'spotify',
+    url: 'https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b',
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+  },
+  {
+    provider: 'spotify',
+    url: 'https://open.spotify.com/track/003vvx7Niy0yvhvHt4a68B',
+    title: 'Mr. Brightside',
+    artist: 'The Killers',
+  },
+  {
+    provider: 'spotify',
+    url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv',
+    title: 'Bohemian Rhapsody',
+    artist: 'Queen',
+  },
+  // SoundCloud — square player
+  {
+    provider: 'soundcloud',
+    url: 'https://soundcloud.com/forss/flickermood',
+    title: 'Flickermood',
+    artist: 'Forss',
+  },
+  {
+    provider: 'soundcloud',
+    url: 'https://soundcloud.com/theweeknd/blinding-lights',
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+  },
+  // Bandcamp — audio bar; needs the numeric track id (scraped from the track page).
+  {
+    provider: 'bandcamp',
+    url: 'https://plini.bandcamp.com/track/electric-sunrise',
+    title: 'Electric Sunrise',
+    artist: 'Plini',
+    bandcampTrackId: '3500321596',
+  },
+  {
+    provider: 'bandcamp',
+    url: 'https://comtruise.bandcamp.com/track/propagation',
+    title: 'Propagation',
+    artist: 'Com Truise',
+    bandcampTrackId: '3975060853',
+  },
+]
+
 const CAPTIONS = [
   'on repeat all week',
   'this one still hits',
@@ -103,8 +184,11 @@ interface Author {
 interface Song {
   title: string
   artist: string
-  artwork: string
+  artwork: string | null
   url: string
+  provider: string
+  /** Bandcamp's numeric embed id; when set, the seed writes a `tracks` row carrying it. */
+  bandcampTrackId?: string
 }
 
 async function getJSON<T>(url: string): Promise<T> {
@@ -149,7 +233,23 @@ async function resolveAuthors(): Promise<Author[]> {
     .slice(0, 12)
 }
 
-async function fetchSongs(): Promise<Song[]> {
+/** Best-effort iTunes artwork (600px) for a title/artist; null if nothing matches. */
+async function fetchArtwork(
+  title: string,
+  artist: string,
+): Promise<string | null> {
+  try {
+    const r = await getJSON<{ results: { artworkUrl100?: string }[] }>(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(`${title} ${artist}`)}&entity=song&limit=1`,
+    )
+    const art = r.results?.[0]?.artworkUrl100
+    return art ? art.replace('100x100', '600x600') : null
+  } catch {
+    return null
+  }
+}
+
+async function fetchAppleSongs(): Promise<Song[]> {
   const songs: Song[] = []
   for (const q of SONG_QUERIES) {
     try {
@@ -170,6 +270,7 @@ async function fetchSongs(): Promise<Song[]> {
           artist: t.artistName,
           artwork: t.artworkUrl100.replace('100x100', '600x600'),
           url: t.trackViewUrl,
+          provider: 'applemusic',
         })
       }
     } catch (e) {
@@ -177,6 +278,30 @@ async function fetchSongs(): Promise<Song[]> {
     }
   }
   return songs
+}
+
+async function fetchCuratedSongs(): Promise<Song[]> {
+  const songs: Song[] = []
+  for (const t of CURATED_TRACKS) {
+    songs.push({
+      title: t.title,
+      artist: t.artist,
+      artwork: await fetchArtwork(t.title, t.artist),
+      url: t.url,
+      provider: t.provider,
+      bandcampTrackId: t.bandcampTrackId,
+    })
+  }
+  return songs
+}
+
+/** Round-robin interleave so each author's jams mix providers (every player is easy to find). */
+function interleave(...lists: Song[][]): Song[] {
+  const out: Song[] = []
+  const max = Math.max(0, ...lists.map((l) => l.length))
+  for (let i = 0; i < max; i++)
+    for (const l of lists) if (i < l.length) out.push(l[i]!)
+  return out
 }
 
 async function clean(db: ReturnType<typeof createDb>): Promise<void> {
@@ -188,6 +313,8 @@ async function clean(db: ReturnType<typeof createDb>): Promise<void> {
     .deleteFrom('jams')
     .where('uri', 'like', '%/fm.onrepeat.jam/seed-%')
     .execute()
+  // Seed-only `tracks` rows (Bandcamp embed refs). Deleted after the jams that reference them.
+  await db.deleteFrom('tracks').where('id', 'like', 'seedtrack-%').execute()
   // Revert themes on accounts that have no jams left — i.e. the seeded-only accounts.
   // Anyone with real jams (including you) keeps their chosen theme, so this is a no-op
   // on real data and restores the pre-seed state.
@@ -212,8 +339,13 @@ async function main(): Promise<void> {
 
     const authors = await resolveAuthors()
     if (authors.length === 0) throw new Error('no real authors resolved')
-    const songs = await fetchSongs()
-    if (songs.length === 0) throw new Error('no songs fetched from iTunes')
+    const [apple, curated] = await Promise.all([
+      fetchAppleSongs(),
+      fetchCuratedSongs(),
+    ])
+    // Curated first so the very top of the feed shows the new players immediately.
+    const songs = interleave(curated, apple)
+    if (songs.length === 0) throw new Error('no songs fetched')
     console.log(
       `[seed] ${authors.length} authors, ${songs.length} songs:`,
       authors.map((a) => a.handle).join(', '),
@@ -247,13 +379,48 @@ async function main(): Promise<void> {
         // j=0 is recent (the "current jam"); later ones recede into the archive.
         const createdAt = new Date(now - (j * 38 + i * 5) * HOUR)
         const caption = j === 0 ? CAPTIONS[i % CAPTIONS.length]! : null
+
+        // Bandcamp can't embed from a bare URL — it needs the numeric trackId in
+        // provider_refs. Write a resolved `tracks` row and point the jam at it; the appview
+        // left-joins jams→tracks and reads provider_refs, so the player gets the embed.
+        let trackId: string | null = null
+        if (song.provider === 'bandcamp' && song.bandcampTrackId) {
+          trackId = `seedtrack-${song.bandcampTrackId}`
+          const refs = JSON.stringify({
+            bandcamp: { url: song.url, trackId: song.bandcampTrackId },
+          })
+          await db
+            .insertInto('tracks')
+            .values({
+              id: trackId,
+              isrc: null,
+              title: song.title,
+              artist: song.artist,
+              artwork_url: song.artwork,
+              provider_refs: refs,
+              resolution_status: 'self_contained',
+              resolved_at: new Date(),
+            })
+            .onConflict((oc) =>
+              oc.column('id').doUpdateSet({
+                title: song.title,
+                artist: song.artist,
+                artwork_url: song.artwork,
+                provider_refs: refs,
+                resolution_status: 'self_contained',
+                resolved_at: new Date(),
+              }),
+            )
+            .execute()
+        }
+
         const row = {
           uri,
           cid: fakeCid(uri),
           author_did: a.did,
-          track_id: null,
+          track_id: trackId,
           source_url: song.url,
-          source_provider: 'applemusic',
+          source_provider: song.provider,
           raw_title: song.title,
           raw_artist: song.artist,
           raw_artwork_url: song.artwork,
@@ -268,6 +435,7 @@ async function main(): Promise<void> {
           .onConflict((oc) =>
             oc.column('uri').doUpdateSet({
               cid: row.cid,
+              track_id: row.track_id,
               source_url: row.source_url,
               source_provider: row.source_provider,
               raw_title: row.raw_title,
