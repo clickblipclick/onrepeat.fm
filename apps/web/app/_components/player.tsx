@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Play } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
 import { type Embed } from '../../lib/embed'
 import { usePlayback } from './playback'
-import { YouTubeEmbed } from './youtube-embed'
 import { VinylPlaceholder } from './vinyl-placeholder'
+import { YouTubeEmbed } from './youtube-embed'
 
 // Reasonable embed dimensions per provider, sized inside the square cover frame:
 // "bar" players get a fixed height, video gets 16:9, everything else stays square.

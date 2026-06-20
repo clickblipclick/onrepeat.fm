@@ -1,7 +1,8 @@
+import { Agent } from '@atproto/api'
 import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import type { NextRequest, NextResponse } from 'next/server'
-import { Agent } from '@atproto/api'
+
 import { getOauthClient, getOauthSessionStore } from './oauth-client'
 import { sessionOptions, type SessionData } from './session-config'
 

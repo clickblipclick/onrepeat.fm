@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { TestNetworkNoAppView } from '@atproto/dev-env'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import { JAM_NSID, LIKE_NSID, validateRecord } from '@onrepeat/lexicons'
-import { postJam, likeJam, unlikeJam, reJam, deleteJam } from './write'
+
+import { deleteJam, likeJam, postJam, reJam, unlikeJam } from './write'
 
 let network: TestNetworkNoAppView
 let agent: any

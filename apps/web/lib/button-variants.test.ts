@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { buttonClassName } from './button-variants'
 
 describe('buttonClassName', () => {

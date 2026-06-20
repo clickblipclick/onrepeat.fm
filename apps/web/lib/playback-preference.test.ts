@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import {
   parseProvider,
-  playbackCookieString,
   PLAYBACK_PREF_COOKIE,
   PLAYBACK_PREF_MAX_AGE,
+  playbackCookieString,
   VALID_PROVIDERS,
 } from './playback-preference'
 

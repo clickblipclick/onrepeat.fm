@@ -6,10 +6,11 @@ import {
   fetchBandcampEmbed,
   fetchOembed,
 } from '@onrepeat/music'
-import { requireEnv, onShutdown } from '@onrepeat/service'
+import { onShutdown, requireEnv } from '@onrepeat/service'
+
+import { backfill } from './backfill'
 import type { ResolverDeps } from './resolve'
 import { startResolver } from './worker'
-import { backfill } from './backfill'
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')

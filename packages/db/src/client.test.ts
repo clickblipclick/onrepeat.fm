@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { createPool } from './client'
 
 // Pools are lazy (no connection until first acquire), so these assert configuration

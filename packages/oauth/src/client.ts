@@ -1,10 +1,11 @@
-import {
-  NodeOAuthClient,
-  type NodeSavedStateStore,
-  type NodeSavedSessionStore,
-} from '@atproto/oauth-client-node'
 import { safeFetchWrap } from '@atproto-labs/fetch-node'
 import type { JoseKey } from '@atproto/jwk-jose'
+import {
+  NodeOAuthClient,
+  type NodeSavedSessionStore,
+  type NodeSavedStateStore,
+} from '@atproto/oauth-client-node'
+
 import type { RuntimeLock } from './lock'
 
 // Least-privilege granular scope: identity + write access to ONLY our own

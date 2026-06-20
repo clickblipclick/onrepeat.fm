@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { relativeTime, isCurrentJam } from './format'
+import { describe, expect, it } from 'vitest'
+
+import { isCurrentJam, relativeTime } from './format'
 
 const ISO = (msAgo: number) => new Date(1_000_000_000_000 - msAgo).toISOString()
 const NOW = 1_000_000_000_000

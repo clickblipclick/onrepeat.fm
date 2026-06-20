@@ -1,5 +1,6 @@
 import { Kysely, PostgresDialect } from 'kysely'
 import pg from 'pg'
+
 import type { Database } from './schema'
 
 export type PoolConfig = Omit<pg.PoolConfig, 'connectionString'>

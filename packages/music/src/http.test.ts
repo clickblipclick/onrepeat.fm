@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { fetchWithRetry, failureReason } from './http'
+import { describe, expect, it } from 'vitest'
+
+import { failureReason, fetchWithRetry } from './http'
 
 type Res = { ok: boolean; status: number }
 const ok: Res = { ok: true, status: 200 }

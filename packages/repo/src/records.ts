@@ -1,8 +1,8 @@
 import {
-  validateRecord,
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
+  validateRecord,
   type JamRecord,
   type LikeRecord,
   type ProfileRecord,

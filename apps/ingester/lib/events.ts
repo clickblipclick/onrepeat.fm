@@ -1,4 +1,5 @@
 import type { Event } from '@atproto/sync'
+
 import type { ActorStatus, FailedEventInput } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
 

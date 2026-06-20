@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import {
-  parseBandcampEmbedId,
-  parseBandcampArtwork,
-  parseBandcampTitleArtist,
   fetchBandcampEmbed,
+  parseBandcampArtwork,
+  parseBandcampEmbedId,
+  parseBandcampTitleArtist,
 } from './bandcamp'
 
 const ART = 'https://f4.bcbits.com/img/a1234567890_10.jpg'

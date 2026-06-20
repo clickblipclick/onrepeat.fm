@@ -1,8 +1,10 @@
 import './globals.css'
+
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
-import { SiteNav } from './_components/site-nav'
+
 import { SiteFooter } from './_components/site-footer'
+import { SiteNav } from './_components/site-nav'
 import { UiProviders } from './_components/ui/providers'
 
 const mono = JetBrains_Mono({

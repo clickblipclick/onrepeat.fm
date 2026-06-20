@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+
 import { createDb } from './client'
+import { indexJam, indexLike, removeJam, removeLike } from './index-write'
 import { createMigrator } from './migrate'
-import { indexJam, removeJam, indexLike, removeLike } from './index-write'
 
 const url =
   process.env.DATABASE_URL ??

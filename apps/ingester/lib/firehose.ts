@@ -1,22 +1,24 @@
+import { IdResolver, MemoryCache } from '@atproto/identity'
 import {
   Firehose,
-  MemoryRunner,
   FirehoseValidationError,
+  MemoryRunner,
   type Event,
 } from '@atproto/sync'
-import { IdResolver, MemoryCache } from '@atproto/identity'
-import { type DB, recordFailedEvent } from '@onrepeat/db'
+
+import { recordFailedEvent, type DB } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
-import { ingestEventLabel, toFailedEventInput, toIngestEvent } from './events'
-import { handleIngestEvent } from './indexer'
-import { withRetry } from './retry'
-import { runWithDeadLetter } from './dead-letter'
+
 import {
   loadCursorState,
-  saveCursor,
   makeThrottledCursorWriter,
+  saveCursor,
 } from './cursor'
+import { runWithDeadLetter } from './dead-letter'
+import { ingestEventLabel, toFailedEventInput, toIngestEvent } from './events'
 import { defaultHooks, type IngesterHooks } from './hooks'
+import { handleIngestEvent } from './indexer'
+import { withRetry } from './retry'
 
 const SERVICE = 'firehose'
 const CURSOR_INTERVAL_MS = 5000

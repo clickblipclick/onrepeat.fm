@@ -1,9 +1,11 @@
 import type { PgBoss } from 'pg-boss' // v12 named export (NOT default)
-import type { DB } from '@onrepeat/db'
+
 import { trackIdentity } from '@onrepeat/core'
+import type { DB } from '@onrepeat/db'
 import type { JamRecord } from '@onrepeat/lexicons'
-import { enqueueResolve } from './queue'
+
 import { resolveLog } from './log'
+import { enqueueResolve } from './queue'
 
 export interface JamForResolve {
   /** the jam's at-uri (to link jams.track_id) */

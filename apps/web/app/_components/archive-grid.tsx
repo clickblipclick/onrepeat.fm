@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
+
 import type { HydratedJamView } from '@onrepeat/appview'
+
 import { rkeyFromUri } from '../../lib/at-uri'
 import { LoadMoreButton } from './load-more-button'
 

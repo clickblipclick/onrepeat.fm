@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+
 import { getJam, type ActorProfile } from '@onrepeat/appview'
+
+import { bsky, hydrate } from '../../../lib/appview'
 import { db } from '../../../lib/db'
-import { hydrate, bsky } from '../../../lib/appview'
 import { getSession } from '../../../lib/session'
 
 export async function GET(req: Request) {

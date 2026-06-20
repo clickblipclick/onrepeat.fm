@@ -1,21 +1,21 @@
 'use client'
 
-import { useRef, useState } from 'react'
 import {
-  useFloating,
-  offset,
-  flip,
-  shift,
   autoUpdate,
+  flip,
+  FloatingFocusManager,
+  FloatingPortal,
+  offset,
+  shift,
   useClick,
   useDismiss,
-  useRole,
-  useListNavigation,
+  useFloating,
   useInteractions,
-  FloatingPortal,
-  FloatingFocusManager,
+  useListNavigation,
+  useRole,
   type Placement,
 } from '@floating-ui/react'
+import { useRef, useState } from 'react'
 
 export interface MenuItem {
   label: string

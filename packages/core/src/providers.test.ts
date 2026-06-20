@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { providerTier, providerFromUrl } from './providers'
+import { describe, expect, it } from 'vitest'
+
+import { providerFromUrl, providerTier } from './providers'
 
 describe('providerTier', () => {
   it('classifies Odesli-graph providers as cross-resolvable', () => {

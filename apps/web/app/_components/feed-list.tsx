@@ -1,7 +1,8 @@
 import type { HydratedJamView } from '@onrepeat/appview'
+
+import { EmptyState } from './empty-state'
 import { JamCard } from './jam-card'
 import { LoadMore } from './load-more'
-import { EmptyState } from './empty-state'
 
 /** Server-rendered first page + a client LoadMore for the rest. */
 export function FeedList({

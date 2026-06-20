@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+
 import { jamRow, likeRow } from './index-write'
 
 describe('jamRow', () => {

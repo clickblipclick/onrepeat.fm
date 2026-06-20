@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
 import type { ThemeName } from '@onrepeat/core'
+
 import { themeAccent, titleFontSize } from '../../lib/share'
 
 export const OG_SIZE = { width: 1200, height: 630 }

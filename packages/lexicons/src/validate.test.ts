@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { validateRecord } from './validate'
+import { describe, expect, it } from 'vitest'
+
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from './types'
+import { validateRecord } from './validate'
 
 const validJam = {
   $type: JAM_NSID,

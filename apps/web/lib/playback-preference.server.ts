@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers'
+
 import {
-  PLAYBACK_PREF_COOKIE,
   parseProvider,
+  PLAYBACK_PREF_COOKIE,
   type PlaybackProvider,
 } from './playback-preference'
 

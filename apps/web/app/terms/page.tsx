@@ -1,5 +1,6 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
+import Link from 'next/link'
+
 import { linkInline } from '../../lib/link-variants'
 
 export const metadata: Metadata = {

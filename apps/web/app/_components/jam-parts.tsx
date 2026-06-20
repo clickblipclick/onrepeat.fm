@@ -1,13 +1,15 @@
-import Link from 'next/link'
 import { Repeat2 } from 'lucide-react'
+import Link from 'next/link'
+
 import type { HydratedJamView } from '@onrepeat/appview'
-import { Avatar, authorName } from './avatar'
-import { RelativeTime } from './relative-time'
+
+import { isCurrentJam } from '../../lib/format'
+import { authorName, Avatar } from './avatar'
+import { JamMenu } from './jam-menu'
 import { LikeButton } from './like-button'
 import { ReJamButton } from './rejam-button'
+import { RelativeTime } from './relative-time'
 import { ShareButton } from './share-button'
-import { JamMenu } from './jam-menu'
-import { isCurrentJam } from '../../lib/format'
 
 /** Shared jam chrome used by both the feed card (JamCard) and the jam detail page, so
  *  the two stay visually consistent instead of drifting via copy-paste. Each piece is a

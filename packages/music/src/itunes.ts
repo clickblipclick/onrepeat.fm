@@ -1,12 +1,13 @@
 import { providerFromUrl } from '@onrepeat/core'
-import type { TrackCandidate } from './track'
-import { createRateLimiter, type RateLimiter } from './rate-limit'
+
 import {
-  fetchWithRetry,
   failureReason,
-  type RetryOptions,
+  fetchWithRetry,
   type FetchResult,
+  type RetryOptions,
 } from './http'
+import { createRateLimiter, type RateLimiter } from './rate-limit'
+import type { TrackCandidate } from './track'
 
 const passthrough: RateLimiter = (fn) => fn()
 /** Standalone calls don't retry by default (keeps interactive web search snappy). */

@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { defaultThemeForDid } from '@onrepeat/core'
+
+import type { ActorProfile } from './bsky'
 import { hydrateAuthors } from './hydrate'
 import type { JamView } from './read'
-import type { ActorProfile } from './bsky'
 
 function jam(uri: string, authorDid: string): JamView {
   return {

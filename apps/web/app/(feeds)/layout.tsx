@@ -1,5 +1,5 @@
-import { getSession } from '../../lib/session'
 import { FeedTabs } from '../_components/feed-tabs'
+import { getSession } from '../../lib/session'
 
 /** Wraps the two feed routes (/ and /explore). Signed-in users get the FeedTabs
  *  segmented control (feed switching used to live in the header nav). Signed-out

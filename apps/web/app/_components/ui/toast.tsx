@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
+
 import { cn } from '../../../lib/cn'
 
 export type ToastVariant = 'default' | 'success' | 'error'

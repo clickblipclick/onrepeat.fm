@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
+import { LogOut, Settings, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { User, Settings, LogOut } from 'lucide-react'
+import { useRef } from 'react'
+
 import { Avatar } from './avatar'
 import { Menu } from './ui/menu'
 

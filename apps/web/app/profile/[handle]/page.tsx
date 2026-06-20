@@ -1,20 +1,22 @@
-import { cache, Suspense } from 'react'
-import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { cache, Suspense } from 'react'
+
 import { getActorJams, loadActorThemes } from '@onrepeat/appview'
 import { resolveTheme } from '@onrepeat/core'
-import { db } from '../../../lib/db'
-import { hydrate, bsky } from '../../../lib/appview'
-import { getSession } from '../../../lib/session'
-import { readPreferredProvider } from '../../../lib/playback-preference.server'
-import { JamCard } from '../../_components/jam-card'
+
 import { ArchiveGrid } from '../../_components/archive-grid'
 import { Avatar } from '../../_components/avatar'
-import { HtmlTheme } from '../../_components/html-theme'
-import { isCurrentJam } from '../../../lib/format'
-import { SectionLabel } from '../../_components/section-label'
 import { EmptyState } from '../../_components/empty-state'
+import { HtmlTheme } from '../../_components/html-theme'
+import { JamCard } from '../../_components/jam-card'
 import { JamCardSkeleton } from '../../_components/jam-card-skeleton'
+import { SectionLabel } from '../../_components/section-label'
+import { bsky, hydrate } from '../../../lib/appview'
+import { db } from '../../../lib/db'
+import { isCurrentJam } from '../../../lib/format'
+import { readPreferredProvider } from '../../../lib/playback-preference.server'
+import { getSession } from '../../../lib/session'
 
 // One bsky.getProfile call per request, shared by generateMetadata and the page
 // body (bsky's own ~30min TTL cache sits underneath, but cache() guarantees

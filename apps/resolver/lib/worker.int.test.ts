@@ -1,13 +1,15 @@
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
+  beforeAll,
   beforeEach,
+  describe,
+  expect,
+  it,
   vi,
 } from 'vitest'
+
 import { createDb, createMigrator } from '@onrepeat/db'
+
 import { type ResolverDeps } from './resolve'
 
 const url =
