@@ -10,6 +10,12 @@ updates:
       # @types/node must track the runtime (Node 22, see .nvmrc), not latest
       - dependency-name: '@types/node'
         versions: ['>=23']
+      # @atproto/dev-env 0.5.x bundles @atproto/bsky, which imports `atUri` from
+      # @atproto/lex — a symbol no published @atproto/lex (0.1.x) exports, breaking
+      # `import` at module load. Pin to the working 0.4.x line until upstream ships a
+      # self-consistent release. See packages/repo integration tests.
+      - dependency-name: '@atproto/dev-env'
+        versions: ['>=0.5.0']
     groups:
       # Batch routine non-major bumps into a single PR to cut noise
       minor-and-patch:
