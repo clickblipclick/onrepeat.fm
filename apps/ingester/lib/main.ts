@@ -1,11 +1,12 @@
 import { createDb } from '@onrepeat/db'
-import type { JamRecord } from '@onrepeat/lexicons'
 import {
   createBoss,
   createResolveQueue,
   enqueueResolveForJam,
 } from '@onrepeat/jobs'
-import { requireEnv, onShutdown } from '@onrepeat/service'
+import type { JamRecord } from '@onrepeat/lexicons'
+import { onShutdown, requireEnv } from '@onrepeat/service'
+
 import { createIngester } from './firehose'
 
 async function main(): Promise<void> {

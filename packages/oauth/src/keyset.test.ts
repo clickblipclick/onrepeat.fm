@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
 import { generateKeyPairSync } from 'node:crypto'
+import { describe, expect, it } from 'vitest'
+
 import { loadKeysetFromJson } from './keyset'
 
 function es256Pem(): string {

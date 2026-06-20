@@ -15,8 +15,8 @@
 // Import straight from package sources (this script lives outside any package, so the
 // workspace `@onrepeat/*` symlinks aren't on its resolution path). Each file's own
 // deps still resolve from its package's node_modules.
-import { createDb } from '../packages/db/src/client'
 import { THEMES } from '../packages/core/src/theme'
+import { createDb } from '../packages/db/src/client'
 
 const DB_URL =
   process.env.DATABASE_URL ??

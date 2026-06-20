@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+
 import { createDb, createMigrator } from '@onrepeat/db'
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
-import { handleIngestEvent } from './indexer'
+
 import type { IngestEvent, RecordIngestEvent } from './events'
+import { handleIngestEvent } from './indexer'
 
 const url =
   process.env.DATABASE_URL ??

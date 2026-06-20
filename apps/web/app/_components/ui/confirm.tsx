@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
+
 import { Button } from './button'
 
 export interface ConfirmOptions {

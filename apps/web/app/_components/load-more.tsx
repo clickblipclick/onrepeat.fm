@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+
 import type { HydratedJamView } from '@onrepeat/appview'
+
+import { readPreferredProviderClient } from '../../lib/playback-preference'
 import { JamCard } from './jam-card'
 import { LoadMoreButton } from './load-more-button'
-import { readPreferredProviderClient } from '../../lib/playback-preference'
 
 /** Appends pages fetched from an /api endpoint that returns { [itemsKey], cursor }. */
 export function LoadMore({

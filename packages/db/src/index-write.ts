@@ -1,7 +1,9 @@
 import type { Insertable } from 'kysely'
+
 import type { JamRecord, LikeRecord } from '@onrepeat/lexicons'
-import type { ActorStatus, JamsTable, LikesTable } from './schema'
+
 import type { DB } from './client'
+import type { ActorStatus, JamsTable, LikesTable } from './schema'
 
 /**
  * Build a `jams` insert row from a JamRecord. `track_id` starts null (the resolver links

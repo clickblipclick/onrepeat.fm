@@ -1,8 +1,9 @@
 import type { HydratedJamView } from '@onrepeat/appview'
-import { Player } from './player'
-import { PlaybackProvider, PlaybackSwitcher } from './playback'
-import { JamHeader, JamBody, JamActions } from './jam-parts'
+
 import { JamCardShell, MediaFrame } from './jam-card-shell'
+import { JamActions, JamBody, JamHeader } from './jam-parts'
+import { PlaybackProvider, PlaybackSwitcher } from './playback'
+import { Player } from './player'
 
 function rkeyOf(uri: string): string {
   return uri.split('/').pop() ?? ''

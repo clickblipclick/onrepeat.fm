@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import {
+  SESSION_COOKIE_NAME,
   sessionCookieOptions,
   sessionOptions,
-  SESSION_COOKIE_NAME,
   type SessionData,
 } from './session-config'
 

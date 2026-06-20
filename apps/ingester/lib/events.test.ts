@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
 import type { Event } from '@atproto/sync'
+import { describe, expect, it } from 'vitest'
+
 import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+
 import {
   ingestEventLabel,
   toFailedEventInput,

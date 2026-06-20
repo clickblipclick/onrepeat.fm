@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+
 import { getActorJams } from '@onrepeat/appview'
-import { db } from '../../../../lib/db'
+
 import { hydrate } from '../../../../lib/appview'
+import { db } from '../../../../lib/db'
 import { getSession } from '../../../../lib/session'
 
 export async function GET(

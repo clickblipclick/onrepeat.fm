@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import {
-  validateRecord,
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
+  validateRecord,
 } from '@onrepeat/lexicons'
+
 import { buildJamRecord, buildLikeRecord, buildProfileRecord } from './records'
 
 const baseJam = {

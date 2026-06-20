@@ -1,9 +1,10 @@
 import Link from 'next/link'
+
+import { SectionLabel } from '../_components/section-label'
+import { linkInline } from '../../lib/link-variants'
 import { getSession } from '../../lib/session'
 import { readViewerTheme } from '../../lib/viewer-theme'
-import { linkInline } from '../../lib/link-variants'
 import { PostFormPage } from './post-form-page'
-import { SectionLabel } from '../_components/section-label'
 
 export default async function PostPage() {
   const session = await getSession()

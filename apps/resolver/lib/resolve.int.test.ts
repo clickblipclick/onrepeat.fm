@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+
 import { createDb, createMigrator } from '@onrepeat/db'
 import type { ResolveJob } from '@onrepeat/jobs'
+
 import { resolveJob, type ResolverDeps } from './resolve'
 
 const url =

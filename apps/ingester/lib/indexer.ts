@@ -1,21 +1,22 @@
-import type { DB } from '@onrepeat/db'
 import {
   indexJam,
   indexLike,
   purgeActorContent,
-  removeLike,
   removeJam,
+  removeLike,
   setActorStatus,
   setActorTheme,
+  type DB,
 } from '@onrepeat/db'
 import {
-  validateRecord,
   JAM_NSID,
   PROFILE_NSID,
+  validateRecord,
   type JamRecord,
   type LikeRecord,
   type ProfileRecord,
 } from '@onrepeat/lexicons'
+
 import type { IngestEvent } from './events'
 import { defaultHooks, type IngesterHooks } from './hooks'
 

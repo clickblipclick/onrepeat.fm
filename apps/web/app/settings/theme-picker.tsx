@@ -1,9 +1,11 @@
 'use client'
 
 import { useActionState, useEffect } from 'react'
-import { THEMES, THEME_LABELS, type ThemeName } from '@onrepeat/core'
-import { saveThemeAction, type SaveThemeState } from '../actions'
+
+import { THEME_LABELS, THEMES, type ThemeName } from '@onrepeat/core'
+
 import { cn } from '../../lib/cn'
+import { saveThemeAction, type SaveThemeState } from '../actions'
 
 /** Theme gallery. Each swatch is a submit button scoped to its own `data-theme`, so the
  *  preview colors are the real palette (and flip light/dark with the device). Selecting one

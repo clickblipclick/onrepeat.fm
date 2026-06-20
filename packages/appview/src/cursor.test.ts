@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { encodeCursor, decodeCursor } from './cursor'
+import { describe, expect, it } from 'vitest'
+
+import { decodeCursor, encodeCursor } from './cursor'
 
 describe('cursor', () => {
   it('round-trips createdAt + uri', () => {

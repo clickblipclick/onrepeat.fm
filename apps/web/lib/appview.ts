@@ -2,9 +2,10 @@ import {
   createBskyClient,
   hydrateAuthors,
   loadActorThemes,
-  type JamView,
   type HydratedJamView,
+  type JamView,
 } from '@onrepeat/appview'
+
 import { db } from './db'
 
 const globalForBsky = globalThis as unknown as {

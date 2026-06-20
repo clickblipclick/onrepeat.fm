@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { sql } from 'kysely'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import { createDb } from './client'
 import { createMigrator } from './migrate'
 

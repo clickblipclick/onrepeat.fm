@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
+
+import { SectionLabel } from '../_components/section-label'
 import { getSession } from '../../lib/session'
 import { readViewerTheme } from '../../lib/viewer-theme'
 import { ThemePicker } from './theme-picker'
-import { SectionLabel } from '../_components/section-label'
 
 export const metadata = {
   title: 'Settings · onrepeat.fm',

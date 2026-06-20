@@ -1,32 +1,34 @@
-import { cache } from 'react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Metadata } from 'next'
+import { cache } from 'react'
+
 import { getJam } from '@onrepeat/appview'
-import { db } from '../../../../../lib/db'
-import { hydrate, bsky } from '../../../../../lib/appview'
-import { buildJamOgMeta } from '../../../../../lib/share'
-import { getSession } from '../../../../../lib/session'
-import { APP_URL } from '../../../../../lib/session-config'
-import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
-import { Player } from '../../../../_components/player'
-import {
-  PlaybackProvider,
-  PlaybackSwitcher,
-} from '../../../../_components/playback'
+
 import { authorName, type DisplayAuthor } from '../../../../_components/avatar'
-import { RelativeTime } from '../../../../_components/relative-time'
-import {
-  JamHeader,
-  JamBody,
-  JamActions,
-} from '../../../../_components/jam-parts'
 import {
   JamCardShell,
   MediaFrame,
 } from '../../../../_components/jam-card-shell'
-import { LikeProvider, LikedBy } from '../../../../_components/liked-by'
+import {
+  JamActions,
+  JamBody,
+  JamHeader,
+} from '../../../../_components/jam-parts'
+import { LikedBy, LikeProvider } from '../../../../_components/liked-by'
+import {
+  PlaybackProvider,
+  PlaybackSwitcher,
+} from '../../../../_components/playback'
+import { Player } from '../../../../_components/player'
+import { RelativeTime } from '../../../../_components/relative-time'
 import { SectionLabel } from '../../../../_components/section-label'
+import { bsky, hydrate } from '../../../../../lib/appview'
+import { db } from '../../../../../lib/db'
+import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
+import { getSession } from '../../../../../lib/session'
+import { APP_URL } from '../../../../../lib/session-config'
+import { buildJamOgMeta } from '../../../../../lib/share'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.

@@ -1,12 +1,14 @@
 import type { Agent } from '@atproto/api'
+
 import {
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
-  type StrongRef,
   type JamRecord,
   type LikeRecord,
+  type StrongRef,
 } from '@onrepeat/lexicons'
+
 import {
   buildJamRecord,
   buildLikeRecord,

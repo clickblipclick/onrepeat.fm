@@ -1,7 +1,8 @@
 import type { PgBoss } from 'pg-boss' // v12 named export (NOT default)
+
 import type { DB } from '@onrepeat/db'
+import { enqueueResolve, enqueueResolveForJam } from '@onrepeat/jobs'
 import { JAM_NSID, type JamRecord } from '@onrepeat/lexicons'
-import { enqueueResolveForJam, enqueueResolve } from '@onrepeat/jobs'
 
 /**
  * Reconstruct a JamRecord from a `jams` row's denormalized columns (enough for the producer).

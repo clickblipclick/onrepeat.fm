@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import { createDb } from '@onrepeat/db'
+
 import { createPgAdvisoryLock } from './lock'
 
 const url =

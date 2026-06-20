@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import {
-  THEMES,
-  THEME_LABELS,
+  defaultThemeForDid,
   FALLBACK_THEME,
   isThemeName,
-  defaultThemeForDid,
   resolveTheme,
+  THEME_LABELS,
+  THEMES,
 } from './theme'
 
 describe('isThemeName', () => {

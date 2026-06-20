@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { getOauthClient } from '../../lib/oauth-client'
 
 // Must not be prerendered: the metadata derives from runtime env, and evaluating the

@@ -1,11 +1,12 @@
 import type { Updateable } from 'kysely'
-import { type DB, type TracksTable, markTrackFailed } from '@onrepeat/db'
+
 import { providerFromUrl, providerTier } from '@onrepeat/core'
+import { markTrackFailed, type DB, type TracksTable } from '@onrepeat/db'
 import { resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import {
   resolveTrack,
-  type ResolveDeps,
   type BandcampFetcher,
+  type ResolveDeps,
 } from '@onrepeat/music'
 
 /** Source-cover fetcher (Spotify/YouTube/SoundCloud oEmbed); used as an artwork fallback. */

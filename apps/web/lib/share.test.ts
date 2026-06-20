@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import type { ThemeName } from '@onrepeat/core'
+
 import {
-  themeAccent,
-  titleFontSize,
   buildBlueskyShareUrl,
   buildJamOgMeta,
+  themeAccent,
+  titleFontSize,
 } from './share'
 
 describe('themeAccent', () => {

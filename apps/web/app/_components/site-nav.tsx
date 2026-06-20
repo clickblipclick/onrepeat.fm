@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { getSession } from '../../lib/session'
+
 import { bsky } from '../../lib/appview'
 import { buttonClassName } from '../../lib/button-variants'
+import { getSession } from '../../lib/session'
 import { PostNavLink } from './post-nav-link'
 import { UserMenu } from './user-menu'
 

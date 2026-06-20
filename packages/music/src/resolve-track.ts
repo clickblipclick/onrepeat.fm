@@ -1,8 +1,8 @@
 import type { ProviderRefs } from '@onrepeat/db'
+
 import type { ItunesClient } from './itunes'
-import type { YoutubeClient } from './youtube'
-import { youtubeVideoId } from './youtube'
 import { isConfidentMatch } from './match'
+import { youtubeVideoId, type YoutubeClient } from './youtube'
 
 export interface ResolveInput {
   sourceUrl: string

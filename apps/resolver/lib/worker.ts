@@ -1,6 +1,8 @@
-import type { PgBoss, JobWithMetadata, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
-import { type DB, markTrackFailed } from '@onrepeat/db'
+import type { JobWithMetadata, PgBoss, WorkWithMetadataHandler } from 'pg-boss' // v12 named exports
+
+import { markTrackFailed, type DB } from '@onrepeat/db'
 import { RESOLVE_QUEUE, resolveLog, type ResolveJob } from '@onrepeat/jobs'
+
 import { resolveJob, type ResolverDeps } from './resolve'
 
 type ResolveJobMeta = JobWithMetadata<ResolveJob>

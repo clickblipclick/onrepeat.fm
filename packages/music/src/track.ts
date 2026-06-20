@@ -1,9 +1,10 @@
 import { providerFromUrl } from '@onrepeat/core'
+
+import { parseBandcampArtwork, parseBandcampTitleArtist } from './bandcamp'
+import { failureReason } from './http'
 import { lookupTrackResult } from './itunes'
 import { fetchOembedResult } from './oembed'
-import { parseBandcampArtwork, parseBandcampTitleArtist } from './bandcamp'
 import { youtubeVideoId } from './youtube'
-import { failureReason } from './http'
 
 /** A normalized track the picker can post: enough to build a jam record. */
 export interface TrackCandidate {

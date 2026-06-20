@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { buildEmbed, embeddableProviders, resolvePreferredKey } from './embed'
+import { describe, expect, it } from 'vitest'
+
 import type { ProviderRefs } from '@onrepeat/db'
+
+import { buildEmbed, embeddableProviders, resolvePreferredKey } from './embed'
 
 const refs: ProviderRefs = {
   spotify: { url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC' },

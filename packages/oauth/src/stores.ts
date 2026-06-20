@@ -1,11 +1,13 @@
-import { sql, type SqlBool } from 'kysely'
 import type {
-  NodeSavedState,
-  NodeSavedStateStore,
   NodeSavedSession,
   NodeSavedSessionStore,
+  NodeSavedState,
+  NodeSavedStateStore,
 } from '@atproto/oauth-client-node'
+import { sql, type SqlBool } from 'kysely'
+
 import type { DB } from '@onrepeat/db'
+
 import type { StoreCipher } from './crypto'
 
 /** Authorization-request state is single-use and short-lived; flows complete in minutes.

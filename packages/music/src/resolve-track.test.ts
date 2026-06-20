@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { resolveTrack, type ResolveDeps } from './resolve-track'
 import type { TrackCandidate } from './track'
 

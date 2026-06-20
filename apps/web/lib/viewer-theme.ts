@@ -1,12 +1,13 @@
 import { loadActorThemes } from '@onrepeat/appview'
 import {
-  resolveTheme,
   defaultThemeForDid,
   FALLBACK_THEME,
+  resolveTheme,
   type ThemeName,
 } from '@onrepeat/core'
-import { getSession } from './session'
+
 import { db } from './db'
+import { getSession } from './session'
 
 /**
  * The signed-in user's resolved color theme — used by the settings page to highlight
