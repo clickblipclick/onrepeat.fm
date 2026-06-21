@@ -12,6 +12,9 @@ export interface NowPlaying {
   title: string
   artist: string
   artworkUrl: string | null
+  /** The jam author's color-theme slug, so the corner player (hosted outside the card's
+   *  themed subtree) can re-apply it via `data-theme` and match the card's accent. */
+  theme?: string
 }
 
 let current: NowPlaying | null = null

@@ -59,6 +59,7 @@ export function JamCard({
         title={jam.title}
         artist={jam.artist}
         artworkUrl={jam.artworkUrl}
+        theme={jam.author.theme}
       >
         {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
             framed object rather than a flush block. */}

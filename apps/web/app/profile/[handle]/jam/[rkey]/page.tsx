@@ -139,6 +139,7 @@ export default async function JamPage({
         title={jam.title}
         artist={jam.artist}
         artworkUrl={jam.artworkUrl}
+        theme={jam.author.theme}
       >
         <MediaFrame>
           <Player

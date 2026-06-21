@@ -35,7 +35,10 @@ export function PlayerHost() {
     <div
       role="region"
       aria-label="Active player"
-      className="fixed right-4 bottom-4 z-[60] rounded-xl shadow-2xl ring-1 ring-black/10"
+      // Re-apply the source jam's theme here (the host lives outside the card's themed
+      // subtree), so the accent frame matches the card it came from.
+      data-theme={nowPlaying.theme}
+      className="fixed right-4 bottom-4 z-[60] rounded-xl border-2 border-accent bg-surface p-1 shadow-2xl"
     >
       <button
         type="button"

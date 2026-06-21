@@ -56,6 +56,7 @@ export function PlaybackProvider({
   title,
   artist,
   artworkUrl,
+  theme,
   lazy = true,
   children,
 }: {
@@ -67,6 +68,7 @@ export function PlaybackProvider({
   title: string
   artist: string
   artworkUrl: string | null
+  theme?: string
   lazy?: boolean
   children: React.ReactNode
 }) {
@@ -90,7 +92,7 @@ export function PlaybackProvider({
   /** Desktop → set the corner host; mobile → open the in-card embed. */
   function start(embed: Embed) {
     if (isDesktop) {
-      playNowPlaying({ jamUri, embed, title, artist, artworkUrl })
+      playNowPlaying({ jamUri, embed, title, artist, artworkUrl, theme })
     } else {
       setActive(embed)
       setPlaying(true)
@@ -131,6 +133,7 @@ export function PlaybackProvider({
       title,
       artist,
       artworkUrl,
+      theme,
       sourceProvider,
       providerRefs,
       sourceUrl,
