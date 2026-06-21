@@ -98,12 +98,14 @@ export function Player({
           </div>
         </>
       ) : marker ? (
-        <span
-          aria-label="Now playing"
-          className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-accent"
-        >
-          <Equalizer />
-        </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 text-white">
+          <span className="text-accent">
+            <Equalizer className="h-9 gap-1" barClass="w-1.5" />
+          </span>
+          <span className="text-xs font-bold tracking-wide uppercase">
+            Now playing
+          </span>
+        </div>
       ) : (
         // The whole cover is the play target — plays the resolved service without touching
         // the stored preference (only an explicit switcher pick persists). Hovering anywhere
@@ -134,14 +136,21 @@ export function Player({
 }
 
 /** Animated equalizer bars — the "now playing" affordance. Inherits color via `currentColor`;
- *  bars hold still (full height) under prefers-reduced-motion. */
-function Equalizer() {
+ *  bars hold still (full height) under prefers-reduced-motion. Sized by `className` (container
+ *  height + gap) and `barClass` (bar width). */
+function Equalizer({
+  className = 'h-3.5 gap-[2px]',
+  barClass = 'w-[3px]',
+}: {
+  className?: string
+  barClass?: string
+}) {
   return (
-    <span aria-hidden className="flex h-3.5 items-end gap-[2px]">
+    <span aria-hidden className={`flex items-end ${className}`}>
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
-          className="h-full w-[3px] origin-bottom rounded-full bg-current motion-safe:animate-[eq_0.9s_ease-in-out_infinite]"
+          className={`h-full origin-bottom rounded-full bg-current motion-safe:animate-[eq_0.9s_ease-in-out_infinite] ${barClass}`}
           style={{ animationDelay: `${i * 0.15}s` }}
         />
       ))}
