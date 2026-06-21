@@ -34,7 +34,7 @@ export function PlayerHost() {
   return (
     <div
       role="region"
-      aria-label="Now playing"
+      aria-label="Active player"
       className="fixed right-4 bottom-4 z-[60] rounded-xl shadow-2xl ring-1 ring-black/10"
     >
       <button

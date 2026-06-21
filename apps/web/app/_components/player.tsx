@@ -103,7 +103,7 @@ export function Player({
             <Equalizer className="h-9 gap-1" barClass="w-1.5" />
           </span>
           <span className="text-xs font-bold tracking-wide uppercase">
-            Now playing
+            Active
           </span>
         </div>
       ) : (
