@@ -172,6 +172,53 @@ export async function purgeActorContent(db: DB, did: string): Promise<void> {
     .execute()
 }
 
+/** Profile fields mirrored from a bsky profile lookup. `null` means bsky has no
+ *  profile for the DID (a negative-cache result). Structurally satisfied by
+ *  @onrepeat/appview's `ActorProfile`. */
+export interface ActorProfileInput {
+  handle: string
+  displayName?: string
+  avatar?: string
+}
+
+/**
+ * Write-through the denormalized bsky profile cache for a batch of DIDs. Upsert by DID
+ * (an author can be hydrated before the ingester has seen any record from them — e.g. a
+ * re-jam `via` author or a liker). Touches ONLY the profile columns + `profile_updated_at`,
+ * never color_theme/status/last_seen. A null `profile` stores a negative-cache row
+ * (null fields + fresh stamp) so reads don't refetch a known-absent profile within the TTL.
+ * Empty-safe.
+ */
+export async function upsertActorProfiles(
+  db: DB,
+  entries: Array<{ did: string; profile: ActorProfileInput | null }>,
+  updatedAt: Date,
+): Promise<void> {
+  if (entries.length === 0) return
+  const rows = entries.map((e) => ({
+    did: e.did,
+    handle: e.profile?.handle ?? null,
+    display_name: e.profile?.displayName ?? null,
+    avatar: e.profile?.avatar ?? null,
+    profile_updated_at: updatedAt,
+  }))
+  await db
+    .insertInto('actors')
+    .values(rows)
+    // Multi-row upsert: the conflict set must reference the would-be-inserted row via
+    // `excluded.*` (NOT a fixed value like single-row upserts do), so each row updates to
+    // its own incoming values.
+    .onConflict((oc) =>
+      oc.column('did').doUpdateSet((eb) => ({
+        handle: eb.ref('excluded.handle'),
+        display_name: eb.ref('excluded.display_name'),
+        avatar: eb.ref('excluded.avatar'),
+        profile_updated_at: eb.ref('excluded.profile_updated_at'),
+      })),
+    )
+    .execute()
+}
+
 /**
  * Mark a track's resolution as permanently failed. Used both when a job's source URL
  * can't be resolved at all and when the resolver exhausts its retries — either way the
