@@ -2,6 +2,7 @@ import { sql, type SqlBool } from 'kysely'
 
 import type { DB, ProviderRefs, ResolutionStatus } from '@onrepeat/db'
 
+import type { ActorProfile } from './bsky'
 import { decodeCursor, encodeCursor, type Cursor } from './cursor'
 
 export interface JamView {
@@ -59,6 +60,41 @@ const authorActive = (
   col: 'jams.author_did' | 'likes.author_did',
 ): ReturnType<typeof sql<SqlBool>> =>
   sql<SqlBool>`not exists (select 1 from actors where actors.did = ${sql.ref(col)} and actors.status <> 'active')`
+
+/** A cached profile row: the profile (or null for a negative-cache hit) and its freshness
+ *  stamp (null ⇒ never hydrated / stale). */
+export interface CachedActorProfile {
+  profile: ActorProfile | null
+  updatedAt: Date | null
+}
+
+/** Denormalized bsky profiles per DID from our own index (the write-through cache).
+ *  Batched; empty-safe. Unknown DIDs are absent from the map. A row whose `handle` is null
+ *  is a negative-cache hit (→ profile: null); `updatedAt` null means never hydrated. */
+export async function loadActorProfiles(
+  db: DB,
+  dids: string[],
+): Promise<Map<string, CachedActorProfile>> {
+  const m = new Map<string, CachedActorProfile>()
+  if (dids.length === 0) return m
+  const rows = await db
+    .selectFrom('actors')
+    .select(['did', 'handle', 'display_name', 'avatar', 'profile_updated_at'])
+    .where('did', 'in', dids)
+    .execute()
+  for (const r of rows) {
+    const profile: ActorProfile | null = r.handle
+      ? {
+          did: r.did,
+          handle: r.handle,
+          displayName: r.display_name ?? undefined,
+          avatar: r.avatar ?? undefined,
+        }
+      : null
+    m.set(r.did, { profile, updatedAt: r.profile_updated_at })
+  }
+  return m
+}
 
 /** Stored color-theme slug per DID (null when unset). Batched; empty-safe. Unknown
  *  DIDs are simply absent from the map — callers resolve absent/null to a default. */
