@@ -16,6 +16,8 @@ export interface ActorsTable {
   handle: string | null
   display_name: string | null
   avatar: string | null
+  /** Freshness stamp for the bsky profile cache (handle/display_name/avatar). Null ⇒ stale. */
+  profile_updated_at: Timestamp | null
   last_seen: Timestamp | null
   /** Chosen profile color-theme slug; null → deterministic default (see @onrepeat/core). */
   color_theme: string | null
