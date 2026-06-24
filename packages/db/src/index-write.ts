@@ -157,19 +157,23 @@ export async function setActorStatus(
 export async function purgeActorContent(db: DB, did: string): Promise<void> {
   // at-uri authority prefix; escape LIKE wildcards (did:web may contain '%').
   const prefix = `at://${did.replace(/[\\%_]/g, (m) => `\\${m}`)}/%`
-  await db
-    .deleteFrom('likes')
-    .where((eb) =>
-      eb.or([eb('author_did', '=', did), eb('subject_uri', 'like', prefix)]),
-    )
-    .execute()
-  await db.deleteFrom('jams').where('author_did', '=', did).execute()
-  // Their profile record died with the repo; fall back to the default theme.
-  await db
-    .updateTable('actors')
-    .set({ color_theme: null })
-    .where('did', '=', did)
-    .execute()
+  // One transaction: a failure between the three statements would otherwise leave a
+  // half-purged "deleted" repo (e.g. jams gone but others' likes on them orphaned).
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .deleteFrom('likes')
+      .where((eb) =>
+        eb.or([eb('author_did', '=', did), eb('subject_uri', 'like', prefix)]),
+      )
+      .execute()
+    await trx.deleteFrom('jams').where('author_did', '=', did).execute()
+    // Their profile record died with the repo; fall back to the default theme.
+    await trx
+      .updateTable('actors')
+      .set({ color_theme: null })
+      .where('did', '=', did)
+      .execute()
+  })
 }
 
 /** Profile fields mirrored from a bsky profile lookup. `null` means bsky has no
@@ -222,19 +226,23 @@ export async function upsertActorProfiles(
 /**
  * Mark a track's resolution as permanently failed. Used both when a job's source URL
  * can't be resolved at all and when the resolver exhausts its retries — either way the
- * track must leave `pending` so reads stop waiting on it. Idempotent. Warns if the id
- * matched no row: the track was deleted (or never seeded) and the failed-mark would
- * otherwise be dropped silently.
+ * track must leave `pending` so reads stop waiting on it. Idempotent. Guards against
+ * clobbering a terminal success: a late failure callback (e.g. a retry that throws
+ * after another attempt already resolved the track) must NOT flip `resolved`/
+ * `self_contained` back to `failed`, so the write only applies to non-success rows.
+ * Warns when nothing was updated — either the track was deleted, or it had already
+ * resolved and the failed-mark was correctly skipped.
  */
 export async function markTrackFailed(db: DB, id: string): Promise<void> {
   const res = await db
     .updateTable('tracks')
     .set({ resolution_status: 'failed', resolved_at: new Date() })
     .where('id', '=', id)
+    .where('resolution_status', 'in', ['pending', 'failed'])
     .execute()
   if ((res[0]?.numUpdatedRows ?? 0n) === 0n)
     console.warn(
-      `[db] markTrackFailed: no track row for ${id} — update dropped`,
+      `[db] markTrackFailed: ${id} not marked — track deleted or already resolved`,
     )
 }
 

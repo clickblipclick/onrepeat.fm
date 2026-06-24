@@ -6,6 +6,7 @@ import { createDb } from './client'
 import {
   indexJam,
   indexLike,
+  markTrackFailed,
   removeJam,
   removeLike,
   upsertActorProfiles,
@@ -374,6 +375,53 @@ describe('upsertActorProfiles', () => {
       .where('did', 'in', [A, B])
       .executeTakeFirst()
     expect(Number(count!.n)).toBe(0)
+  })
+})
+
+describe('markTrackFailed', () => {
+  const ID = 'isrc:INTTESTMTF'
+
+  beforeEach(async () => {
+    await db.deleteFrom('tracks').where('id', '=', ID).execute()
+  })
+  afterAll(async () => {
+    await db.deleteFrom('tracks').where('id', '=', ID).execute()
+  })
+
+  const statusOf = async () =>
+    (
+      await db
+        .selectFrom('tracks')
+        .select('resolution_status')
+        .where('id', '=', ID)
+        .executeTakeFirst()
+    )?.resolution_status
+
+  it('marks a pending track failed', async () => {
+    await db
+      .insertInto('tracks')
+      .values({ id: ID, resolution_status: 'pending' })
+      .execute()
+    await markTrackFailed(db, ID)
+    expect(await statusOf()).toBe('failed')
+  })
+
+  it('does NOT clobber a resolved track back to failed (late-failure race)', async () => {
+    await db
+      .insertInto('tracks')
+      .values({ id: ID, resolution_status: 'resolved' })
+      .execute()
+    await markTrackFailed(db, ID)
+    expect(await statusOf()).toBe('resolved')
+  })
+
+  it('does NOT clobber a self_contained track', async () => {
+    await db
+      .insertInto('tracks')
+      .values({ id: ID, resolution_status: 'self_contained' })
+      .execute()
+    await markTrackFailed(db, ID)
+    expect(await statusOf()).toBe('self_contained')
   })
 })
 
