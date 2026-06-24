@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest'
+
+import { isTrustedArtworkUrl } from './artwork'
+
+describe('isTrustedArtworkUrl', () => {
+  it('accepts https URLs on known art CDNs', () => {
+    for (const url of [
+      'https://is1-ssl.mzstatic.com/image/thumb/abc.jpg',
+      'https://i.scdn.co/image/ab67616d0000b273',
+      'https://f4.bcbits.com/img/a1234567_10.jpg',
+      'https://i.ytimg.com/vi/abc/hqdefault.jpg',
+      'https://i1.sndcdn.com/artworks-abc-large.jpg',
+      'https://mzstatic.com/x.jpg', // exact apex host
+    ]) {
+      expect(isTrustedArtworkUrl(url)).toBe(true)
+    }
+  })
+
+  it('rejects SSRF targets and non-CDN hosts', () => {
+    for (const url of [
+      'http://169.254.169.254/latest/meta-data/', // cloud metadata
+      'http://localhost:6379/',
+      'http://127.0.0.1/',
+      'https://evil.com/x.jpg',
+      'https://evil-scdn.co/x.jpg', // not dot-anchored under scdn.co
+      'https://scdn.co.attacker.com/x.jpg', // suffix-spoof
+    ]) {
+      expect(isTrustedArtworkUrl(url)).toBe(false)
+    }
+  })
+
+  it('rejects http (non-https) even on an allowlisted host', () => {
+    expect(isTrustedArtworkUrl('http://i.scdn.co/image/abc')).toBe(false)
+  })
+
+  it('rejects empty / nullish / unparseable input', () => {
+    expect(isTrustedArtworkUrl(null)).toBe(false)
+    expect(isTrustedArtworkUrl(undefined)).toBe(false)
+    expect(isTrustedArtworkUrl('')).toBe(false)
+    expect(isTrustedArtworkUrl('not a url')).toBe(false)
+  })
+})

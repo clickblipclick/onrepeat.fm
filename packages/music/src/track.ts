@@ -1,7 +1,7 @@
 import { providerFromUrl } from '@onrepeat/core'
 
 import { parseBandcampArtwork, parseBandcampTitleArtist } from './bandcamp'
-import { failureReason } from './http'
+import { failureReason, readTextCapped } from './http'
 import { lookupTrackResult } from './itunes'
 import { fetchOembedResult } from './oembed'
 import { youtubeVideoId } from './youtube'
@@ -34,13 +34,18 @@ export interface DeriveTrackOptions {
 
 type FetchLike = (
   url: string,
-  init?: { signal?: AbortSignal },
+  init?: { signal?: AbortSignal; redirect?: 'follow' | 'error' | 'manual' },
 ) => Promise<{
   ok: boolean
   status: number
   json(): Promise<unknown>
   text(): Promise<string>
+  /** Present on real fetch; absent on lightweight test doubles. */
+  body?: ReadableStream<Uint8Array> | null
 }>
+
+/** Cap on the scraped HTML we'll buffer — track pages are a few hundred KB at most. */
+const MAX_HTML_BYTES = 1024 * 1024
 
 /**
  * Apple Music exposes a track id two ways: album-track URLs carry it in the `i` query
@@ -72,9 +77,16 @@ async function fetchSpotifyArtist(
   fetchFn: FetchLike,
 ): Promise<string> {
   try {
-    const res = await fetchFn(url, { signal: AbortSignal.timeout(8000) })
+    const res = await fetchFn(url, {
+      signal: AbortSignal.timeout(8000),
+      // The caller already constrained the host to spotify.com via providerFromUrl, but
+      // that only covers the first hop. `redirect: 'error'` makes an open redirect on the
+      // track page throw rather than bounce this fetch to an internal/metadata endpoint.
+      redirect: 'error',
+    })
     if (!res.ok) return ''
-    const html = await res.text()
+    const html = await readTextCapped(res, MAX_HTML_BYTES)
+    if (html == null) return ''
     const m =
       /<meta[^>]+name="music:musician_description"[^>]+content="([^"]+)"/.exec(
         html,

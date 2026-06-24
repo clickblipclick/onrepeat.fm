@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 import { getJam } from '@onrepeat/appview'
+import { isTrustedArtworkUrl } from '@onrepeat/core'
 
 import {
   loadOgFonts,
@@ -50,11 +51,18 @@ export default async function Image({
         const [hydrated] = await hydrate([detail.jam])
         // hydrate preserves array length, but the destructure type is `… | undefined`; guard narrows it.
         if (hydrated) {
+          // `artworkUrl` is attacker-controlled (any jam record, lexicon only enforces
+          // `format: uri`) and satori fetches it server-side at the Node runtime — so
+          // only pass it through when it's an https URL on a known art CDN, else the
+          // card renders its brand placeholder. Prevents SSRF via this public route.
+          const artworkUrl = isTrustedArtworkUrl(hydrated.artworkUrl)
+            ? hydrated.artworkUrl
+            : null
           card = (
             <RepeatJamCard
               title={hydrated.title}
               artist={hydrated.artist}
-              artworkUrl={hydrated.artworkUrl}
+              artworkUrl={artworkUrl}
               theme={hydrated.author.theme}
             />
           )
