@@ -81,8 +81,12 @@ function init(): OauthRuntime {
   // Encrypts oauth_state/oauth_session rows (refresh tokens + DPoP private keys) at
   // rest. Optional in dev so a fresh checkout works without extra setup; rows written
   // before a key existed stay readable (plaintext passthrough on read).
+  // Set OAUTH_REQUIRE_ENCRYPTED=true once every stored row has been re-encrypted
+  // (any write re-encrypts) so reads fail closed on a non-encrypted/tampered row.
   const storeCipher: StoreCipher | undefined = process.env.OAUTH_STORE_KEY
-    ? createStoreCipher(process.env.OAUTH_STORE_KEY)
+    ? createStoreCipher(process.env.OAUTH_STORE_KEY, {
+        requireEncrypted: process.env.OAUTH_REQUIRE_ENCRYPTED === 'true',
+      })
     : undefined
 
   const db = createDb(databaseUrl)

@@ -15,6 +15,12 @@ import type { StoreCipher } from './crypto'
  *  is dead weight — and each stale row holds a freshly-minted DPoP private key. */
 const STATE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
+/** Drop sessions untouched for this long. A live session is re-`set` on every token
+ *  refresh, so a row this stale belongs to an account that stopped using the app; its
+ *  encrypted refresh token + DPoP key are dead weight that only widens the blast radius
+ *  of a DB compromise. */
+const SESSION_MAX_IDLE_MS = 90 * 24 * 60 * 60 * 1000 // 90 days
+
 export interface StoreOptions {
   /** Encrypts rows at rest (they hold refresh tokens / DPoP private keys). Plaintext
    *  legacy rows remain readable; see {@link StoreCipher}. Omit only in local dev. */
@@ -104,9 +110,23 @@ export class KyselySessionStore implements NodeSavedSessionStore {
         oc.column('did').doUpdateSet({ session, updated_at: new Date() }),
       )
       .execute()
+    // Opportunistically drop long-idle sessions so abandoned accounts' credentials don't
+    // accumulate forever. Best-effort: never fail a refresh because cleanup hiccuped.
+    void this.deleteIdleSessions().catch(() => {})
   }
 
   async del(did: string): Promise<void> {
     await this.db.deleteFrom('oauth_session').where('did', '=', did).execute()
+  }
+
+  /** Delete sessions untouched for longer than the max-idle window. Returns the count
+   *  removed. Safe to also run from a periodic job. */
+  async deleteIdleSessions(now: Date = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - SESSION_MAX_IDLE_MS)
+    const res = await this.db
+      .deleteFrom('oauth_session')
+      .where(sql<SqlBool>`updated_at < ${cutoff}`)
+      .executeTakeFirst()
+    return Number(res.numDeletedRows ?? 0n)
   }
 }
