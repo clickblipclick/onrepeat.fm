@@ -1,10 +1,14 @@
 import {
   createBskyClient,
+  getCachedProfiles,
   hydrateAuthors,
+  loadActorProfiles,
   loadActorThemes,
+  type ActorProfile,
   type HydratedJamView,
   type JamView,
 } from '@onrepeat/appview'
+import { upsertActorProfiles } from '@onrepeat/db'
 
 import { db } from './db'
 
@@ -13,6 +17,24 @@ const globalForBsky = globalThis as unknown as {
 }
 export const bsky = globalForBsky.__onrepeatBsky ?? createBskyClient()
 if (process.env.NODE_ENV !== 'production') globalForBsky.__onrepeatBsky = bsky
+
+/**
+ * Resolve profiles for a set of DIDs through the DB write-through cache (24h TTL): serve
+ * fresh rows from our index, fetch only stale/missing DIDs from bsky, write them through,
+ * and fall back to last-known rows on a bsky outage. Never throws.
+ */
+export function cachedProfiles(
+  dids: string[],
+): Promise<Map<string, ActorProfile | null>> {
+  return getCachedProfiles(
+    {
+      load: (d) => loadActorProfiles(db, d),
+      fetch: (d) => bsky.getProfiles(d),
+      save: (entries, at) => upsertActorProfiles(db, entries, at),
+    },
+    dids,
+  )
+}
 
 /**
  * Hydrate a list of views' authors via the shared (cached) bsky client.
@@ -30,8 +52,12 @@ export async function hydrate(jams: JamView[]): Promise<HydratedJamView[]> {
   // Themes come from our own index (cheap, local): load them regardless of whether the
   // upstream bsky profile lookup succeeds, so author cards stay themed even on a bsky outage.
   const themes = await loadActorThemes(db, [...dids]).catch(() => new Map())
+  // Profiles come from the DB write-through cache (bsky behind a 24h TTL). getCachedProfiles
+  // already degrades internally (bsky outage → last-known row, unknown DID → null) and never
+  // throws, but keep the try/catch as a belt-and-suspenders backstop so hydration can never
+  // fail a page.
   try {
-    const profiles = await bsky.getProfiles([...dids])
+    const profiles = await cachedProfiles([...dids])
     return hydrateAuthors(jams, profiles, themes)
   } catch (err) {
     console.error(

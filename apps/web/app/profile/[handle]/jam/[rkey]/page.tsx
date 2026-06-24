@@ -23,7 +23,7 @@ import {
 import { Player } from '../../../../_components/player'
 import { RelativeTime } from '../../../../_components/relative-time'
 import { SectionLabel } from '../../../../_components/section-label'
-import { bsky, hydrate } from '../../../../../lib/appview'
+import { bsky, cachedProfiles, hydrate } from '../../../../../lib/appview'
 import { db } from '../../../../../lib/db'
 import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
 import { getSession } from '../../../../../lib/session'
@@ -114,7 +114,7 @@ export default async function JamPage({
     const dids = session.did
       ? [...detail.likerDids, session.did]
       : detail.likerDids
-    for (const [did, p] of await bsky.getProfiles(dids)) {
+    for (const [did, p] of await cachedProfiles(dids)) {
       if (p) likerProfiles[did] = p
     }
   } catch {

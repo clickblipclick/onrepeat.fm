@@ -3,7 +3,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
 
 import { createDb } from './client'
-import { indexJam, indexLike, removeJam, removeLike } from './index-write'
+import {
+  indexJam,
+  indexLike,
+  removeJam,
+  removeLike,
+  upsertActorProfiles,
+} from './index-write'
 import { createMigrator } from './migrate'
 
 const url =
@@ -283,6 +289,91 @@ describe('indexLike / removeLike', () => {
       .where('uri', '=', LIKE_URI)
       .executeTakeFirst()
     expect(row).toBeUndefined()
+  })
+})
+
+describe('upsertActorProfiles', () => {
+  const A = 'did:plc:profcacheA'
+  const B = 'did:plc:profcacheB'
+
+  beforeEach(async () => {
+    await db.deleteFrom('actors').where('did', 'in', [A, B]).execute()
+  })
+  afterAll(async () => {
+    await db.deleteFrom('actors').where('did', 'in', [A, B]).execute()
+  })
+
+  it('inserts positive and negative (null-profile) rows with the timestamp', async () => {
+    const at = new Date('2026-06-22T00:00:00.000Z')
+    await upsertActorProfiles(
+      db,
+      [
+        {
+          did: A,
+          profile: { handle: 'a.test', displayName: 'Ay', avatar: 'av.jpg' },
+        },
+        { did: B, profile: null },
+      ],
+      at,
+    )
+    const rows = await db
+      .selectFrom('actors')
+      .select(['did', 'handle', 'display_name', 'avatar', 'profile_updated_at'])
+      .where('did', 'in', [A, B])
+      .execute()
+    const byDid = new Map(rows.map((r) => [r.did, r]))
+    expect(byDid.get(A)).toMatchObject({
+      handle: 'a.test',
+      display_name: 'Ay',
+      avatar: 'av.jpg',
+    })
+    expect(byDid.get(A)!.profile_updated_at?.toISOString()).toBe(
+      at.toISOString(),
+    )
+    expect(byDid.get(B)).toMatchObject({
+      handle: null,
+      display_name: null,
+      avatar: null,
+    })
+    expect(byDid.get(B)!.profile_updated_at?.toISOString()).toBe(
+      at.toISOString(),
+    )
+  })
+
+  it('updates an existing row and preserves color_theme + status', async () => {
+    await db
+      .insertInto('actors')
+      .values({ did: A, color_theme: 'plum', status: 'suspended' })
+      .execute()
+
+    await upsertActorProfiles(
+      db,
+      [{ did: A, profile: { handle: 'new.test', displayName: 'New' } }],
+      new Date('2026-06-22T12:00:00.000Z'),
+    )
+
+    const row = await db
+      .selectFrom('actors')
+      .select(['handle', 'display_name', 'avatar', 'color_theme', 'status'])
+      .where('did', '=', A)
+      .executeTakeFirst()
+    expect(row).toMatchObject({
+      handle: 'new.test',
+      display_name: 'New',
+      avatar: null,
+      color_theme: 'plum',
+      status: 'suspended',
+    })
+  })
+
+  it('is a no-op on empty input', async () => {
+    await upsertActorProfiles(db, [], new Date())
+    const count = await db
+      .selectFrom('actors')
+      .select((eb) => eb.fn.countAll().as('n'))
+      .where('did', 'in', [A, B])
+      .executeTakeFirst()
+    expect(Number(count!.n)).toBe(0)
   })
 })
 

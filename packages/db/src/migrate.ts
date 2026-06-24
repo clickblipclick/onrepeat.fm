@@ -8,6 +8,7 @@ import * as jamArtwork004 from './migrations/004_jam_artwork'
 import * as failedEvents005 from './migrations/005_failed_events'
 import * as actorTheme006 from './migrations/006_actor_theme'
 import * as actorStatus007 from './migrations/007_actor_status'
+import * as actorProfileCache008 from './migrations/008_actor_profile_cache'
 
 const migrations: Record<string, Migration> = {
   '001_init': init001,
@@ -17,6 +18,7 @@ const migrations: Record<string, Migration> = {
   '005_failed_events': failedEvents005,
   '006_actor_theme': actorTheme006,
   '007_actor_status': actorStatus007,
+  '008_actor_profile_cache': actorProfileCache008,
 }
 
 export function createMigrator(db: Kysely<any>): Migrator {
