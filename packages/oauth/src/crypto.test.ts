@@ -26,6 +26,13 @@ describe('createStoreCipher', () => {
     expect(cipher.open(plaintext)).toBe(plaintext)
   })
 
+  it('with requireEncrypted, rejects non-encrypted rows but still opens sealed ones', () => {
+    const cipher = createStoreCipher(key, { requireEncrypted: true })
+    const sealed = cipher.seal('{"did":"did:plc:abc"}')
+    expect(cipher.open(sealed)).toBe('{"did":"did:plc:abc"}')
+    expect(() => cipher.open('{"did":"did:plc:abc"}')).toThrow(/un-encrypted/)
+  })
+
   it('rejects tampered ciphertext', () => {
     const cipher = createStoreCipher(key)
     const sealed = cipher.seal('secret')

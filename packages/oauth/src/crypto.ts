@@ -17,14 +17,29 @@ const PREFIX = 'enc1.'
 const IV_LEN = 12 // AES-GCM standard nonce size
 const TAG_LEN = 16
 
+export interface StoreCipherOptions {
+  /**
+   * Reject rows lacking the `enc1.` prefix on `open()` instead of returning them
+   * verbatim. Leave false while migrating a deployment that still has plaintext
+   * legacy rows; once every row has been re-encrypted (any write re-encrypts),
+   * turn this on so a DB writer can no longer smuggle in attacker-chosen plaintext
+   * that bypasses the AES-GCM integrity check. Default false (migration-safe).
+   */
+  requireEncrypted?: boolean
+}
+
 /**
  * AES-256-GCM cipher over a base64-encoded 32-byte key (`openssl rand -base64 32`).
- * Output format: `enc1.` + base64(iv ‖ ciphertext ‖ tag). `open` passes through
- * values without the prefix unchanged, so enabling encryption on an existing
- * deployment is safe: old plaintext rows stay readable and are re-encrypted on
- * their next write.
+ * Output format: `enc1.` + base64(iv ‖ ciphertext ‖ tag). By default `open` passes
+ * through values without the prefix unchanged, so enabling encryption on an existing
+ * deployment is safe: old plaintext rows stay readable and are re-encrypted on their
+ * next write. Once migration is complete, pass `requireEncrypted` to fail closed on
+ * any non-encrypted row.
  */
-export function createStoreCipher(keyBase64: string): StoreCipher {
+export function createStoreCipher(
+  keyBase64: string,
+  opts: StoreCipherOptions = {},
+): StoreCipher {
   const key = Buffer.from(keyBase64, 'base64')
   if (key.length !== 32) {
     throw new Error(
@@ -43,7 +58,16 @@ export function createStoreCipher(keyBase64: string): StoreCipher {
       return PREFIX + Buffer.concat([iv, ciphertext, tag]).toString('base64')
     },
     open(stored: string): string {
-      if (!stored.startsWith(PREFIX)) return stored // legacy plaintext row
+      if (!stored.startsWith(PREFIX)) {
+        // A non-prefixed row is either a legacy plaintext write or — once migration
+        // is done — a tamper attempt that omits the prefix to dodge AES-GCM integrity.
+        if (opts.requireEncrypted) {
+          throw new Error(
+            'StoreCipher.open: refusing un-encrypted stored value',
+          )
+        }
+        return stored // legacy plaintext row
+      }
       const buf = Buffer.from(stored.slice(PREFIX.length), 'base64')
       if (buf.length < IV_LEN + TAG_LEN) {
         throw new Error('StoreCipher.open: ciphertext too short')
