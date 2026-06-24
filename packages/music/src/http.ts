@@ -9,6 +9,46 @@ export interface RetryOptions {
   jitter?: () => number
 }
 
+/**
+ * Read a response body as text, aborting once it exceeds `maxBytes`. Without a cap a
+ * hostile (or compromised) host could stream an unbounded response and OOM the single
+ * worker — the request timeout bounds duration, not volume. Returns null when the cap
+ * is exceeded. Test doubles omit `body` and just resolve `text()` (small, trusted).
+ */
+export async function readTextCapped(
+  res: {
+    text(): Promise<string>
+    body?: ReadableStream<Uint8Array> | null
+  },
+  maxBytes: number,
+): Promise<string | null> {
+  if (!res.body) return res.text()
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel()
+        return null
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const out = new Uint8Array(total)
+  let offset = 0
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+  return new TextDecoder().decode(out)
+}
+
 /** Transient HTTP statuses worth retrying: rate-limit + server errors. */
 export function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500

@@ -1,3 +1,5 @@
+import { readTextCapped } from './http'
+
 type FetchLike = (
   url: string,
   init?: { signal?: AbortSignal; redirect?: 'follow' | 'error' | 'manual' },
@@ -84,46 +86,6 @@ function isBandcampUrl(raw: string): boolean {
   if (u.protocol !== 'https:') return false
   const h = u.hostname.toLowerCase()
   return h === 'bandcamp.com' || h.endsWith('.bandcamp.com')
-}
-
-/**
- * Read a response body as text, aborting once it exceeds `maxBytes`. Without a cap, a
- * hostile host could stream an unbounded response and OOM the single resolver worker
- * (the 8s timeout bounds duration, not volume). Test doubles omit `body` and just
- * resolve `text()` — fine, their payloads are small and trusted.
- */
-async function readTextCapped(
-  res: {
-    text(): Promise<string>
-    body?: ReadableStream<Uint8Array> | null
-  },
-  maxBytes: number,
-): Promise<string | null> {
-  if (!res.body) return res.text()
-  const reader = res.body.getReader()
-  const chunks: Uint8Array[] = []
-  let total = 0
-  try {
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      total += value.byteLength
-      if (total > maxBytes) {
-        await reader.cancel()
-        return null
-      }
-      chunks.push(value)
-    }
-  } finally {
-    reader.releaseLock()
-  }
-  const out = new Uint8Array(total)
-  let offset = 0
-  for (const c of chunks) {
-    out.set(c, offset)
-    offset += c.byteLength
-  }
-  return new TextDecoder().decode(out)
 }
 
 /** Fetch a Bandcamp track page and extract its embed track id + cover art (one request).
