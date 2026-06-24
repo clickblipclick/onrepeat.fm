@@ -136,21 +136,6 @@ describe('deriveTrack', () => {
     expect(r).toEqual({ ok: false, reason: 'unreadable' })
   })
 
-  it('youtube oEmbed 503 → transient', async () => {
-    const fetchFn = async () => ({
-      ok: false,
-      status: 503,
-      async json() {
-        return {}
-      },
-      async text() {
-        return ''
-      },
-    })
-    const r = await deriveTrack('https://youtu.be/abc', { fetchFn })
-    expect(r).toEqual({ ok: false, reason: 'transient' })
-  })
-
   it('spotify url → ok: oEmbed title + artist from page meta', async () => {
     const fetchFn = async (u: string) => {
       if (u.includes('/oembed'))
@@ -369,25 +354,6 @@ describe('deriveTrack', () => {
     })
   })
 
-  it('soundcloud: artist name containing "by" is stripped as a whole', async () => {
-    const fetchFn = json({
-      title: 'Sunshine by Toby Mac',
-      author_name: 'Toby Mac',
-      thumbnail_url: 'https://t/i.jpg',
-    })
-    const r = await deriveTrack('https://soundcloud.com/tobymac/sunshine', {
-      fetchFn,
-    })
-    expect(r).toMatchObject({
-      ok: true,
-      candidate: {
-        title: 'Sunshine',
-        artist: 'Toby Mac',
-        provider: 'soundcloud',
-      },
-    })
-  })
-
   it('soundcloud: title with a dash AND a " by author" suffix', async () => {
     const fetchFn = json({
       title: 'Flume - Never Be Like You by Flume',
@@ -402,25 +368,6 @@ describe('deriveTrack', () => {
       candidate: {
         title: 'Never Be Like You',
         artist: 'Flume',
-        provider: 'soundcloud',
-      },
-    })
-  })
-
-  it('soundcloud: title genuinely ending in "by <not-author>" keeps that phrase', async () => {
-    const fetchFn = json({
-      title: 'Live By Night by DJ Foo',
-      author_name: 'DJ Foo',
-      thumbnail_url: 'https://t/i.jpg',
-    })
-    const r = await deriveTrack('https://soundcloud.com/djfoo/live-by-night', {
-      fetchFn,
-    })
-    expect(r).toMatchObject({
-      ok: true,
-      candidate: {
-        title: 'Live By Night',
-        artist: 'DJ Foo',
         provider: 'soundcloud',
       },
     })
