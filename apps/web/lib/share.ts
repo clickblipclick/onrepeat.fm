@@ -26,14 +26,15 @@ export function titleFontSize(title: string): number {
   return 38
 }
 
-/** Bluesky composer intent. The pasted URL unfurls into the per-jam OG card. */
-export function buildBlueskyShareUrl(args: {
+/** Web Share API payload. The url unfurls into the per-jam OG card on platforms
+ *  that render link previews; `text` is used by targets that ignore `url`. */
+export function buildShareData(args: {
   title: string
   artist: string
   url: string
-}): string {
-  const text = `🔁 ${args.title} — ${args.artist}\n${args.url}`
-  return `https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`
+}): { title: string; text: string; url: string } {
+  const label = `🔁 ${args.title} — ${args.artist}`
+  return { title: label, text: label, url: args.url }
 }
 
 /** OG/Twitter text fields (rendered by the platform, not baked into the image). */

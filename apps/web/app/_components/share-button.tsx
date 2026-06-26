@@ -1,6 +1,9 @@
-import { Send } from 'lucide-react'
+'use client'
 
-import { buildBlueskyShareUrl } from '../../lib/share'
+import { Check, Send } from 'lucide-react'
+import { useState } from 'react'
+
+import { buildShareData } from '../../lib/share'
 
 export function ShareButton({
   title,
@@ -11,16 +14,47 @@ export function ShareButton({
   artist: string
   jamUrl: string
 }) {
-  const href = buildBlueskyShareUrl({ title, artist, url: jamUrl })
+  const [copied, setCopied] = useState(false)
+
+  async function onShare() {
+    // Accept either an absolute URL (detail page) or a root-relative path (feed
+    // cards) — resolve against the current origin at click time.
+    const url = new URL(jamUrl, window.location.origin).href
+    const data = buildShareData({ title, artist, url })
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share(data)
+      } catch {
+        // User dismissed the share sheet (AbortError) or it failed — no-op.
+      }
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard unavailable (insecure context / denied) — nothing to fall back to.
+    }
+  }
+
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
+      onClick={onShare}
       className="inline-flex cursor-pointer items-center gap-1 hover:text-accent"
     >
-      <Send size={16} aria-hidden />
-      Share
-    </a>
+      {copied ? (
+        <>
+          <Check size={16} aria-hidden />
+          Copied
+        </>
+      ) : (
+        <>
+          <Send size={16} aria-hidden />
+          Share
+        </>
+      )}
+    </button>
   )
 }
