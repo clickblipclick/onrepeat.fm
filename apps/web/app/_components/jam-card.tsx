@@ -72,7 +72,9 @@ export function JamCard({
             <PlaybackSwitcher />
           </div>
           <div className="mt-3 flex items-center gap-4 border-t border-border pt-2 text-sm text-muted">
-            {actions ?? <JamActions jam={jam} loggedIn={loggedIn} />}
+            {actions ?? (
+              <JamActions jam={jam} loggedIn={loggedIn} jamUrl={jamHref} />
+            )}
           </div>
         </div>
       </PlaybackProvider>

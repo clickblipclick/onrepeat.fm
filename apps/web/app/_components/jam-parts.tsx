@@ -145,8 +145,9 @@ export function JamActions({
 }: {
   jam: HydratedJamView
   loggedIn?: boolean
-  /** Absolute URL for the share-on-Bluesky button (detail page only); omit to hide. */
-  jamUrl?: string
+  /** Link to the jam permalink for the Share button — absolute (detail page) or
+   *  root-relative (feed cards); resolved against the origin at click time. */
+  jamUrl: string
 }) {
   return (
     <>
@@ -170,9 +171,7 @@ export function JamActions({
           authorName: authorName(jam.author),
         }}
       />
-      {jamUrl && (
-        <ShareButton title={jam.title} artist={jam.artist} jamUrl={jamUrl} />
-      )}
+      <ShareButton title={jam.title} artist={jam.artist} jamUrl={jamUrl} />
     </>
   )
 }

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { ThemeName } from '@onrepeat/core'
 
 import {
-  buildBlueskyShareUrl,
   buildJamOgMeta,
+  buildShareData,
   themeAccent,
   titleFontSize,
 } from './share'
@@ -36,18 +36,17 @@ describe('titleFontSize', () => {
   })
 })
 
-describe('buildBlueskyShareUrl', () => {
-  it('builds a compose intent with text + url, encoded', () => {
-    const u = buildBlueskyShareUrl({
+describe('buildShareData', () => {
+  it('builds Web Share API payload with title, text, and url', () => {
+    const d = buildShareData({
       title: 'Such Great Heights',
       artist: 'The Postal Service',
       url: 'https://onrepeat.fm/profile/ben/jam/abc',
     })
-    expect(u.startsWith('https://bsky.app/intent/compose?text=')).toBe(true)
-    const text = new URL(u).searchParams.get('text')!
-    expect(text).toContain('🔁')
-    expect(text).toContain('Such Great Heights — The Postal Service')
-    expect(text).toContain('https://onrepeat.fm/profile/ben/jam/abc')
+    expect(d.url).toBe('https://onrepeat.fm/profile/ben/jam/abc')
+    expect(d.title).toContain('🔁')
+    expect(d.title).toContain('Such Great Heights — The Postal Service')
+    expect(d.text).toContain('Such Great Heights — The Postal Service')
   })
 })
 
