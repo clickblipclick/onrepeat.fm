@@ -39,7 +39,10 @@ describe('failed_events dead-letter', () => {
     expect(rows[0]!.seq).toBe('42') // bigint comes back as a string from pg
     expect(rows[0]!.uri).toBe('at://did:plc:a/fm.onrepeat.feed.jam/1')
     expect(rows[0]!.error).toContain('boom')
-    expect(rows[0]!.record).toEqual({ $type: 'fm.onrepeat.feed.jam', title: 'X' })
+    expect(rows[0]!.record).toEqual({
+      $type: 'fm.onrepeat.feed.jam',
+      title: 'X',
+    })
   })
 
   it('stores a null record for delete events', async () => {

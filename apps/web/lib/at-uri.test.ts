@@ -18,7 +18,9 @@ describe('rkeyFromUri', () => {
     expect(rkeyFromUri('at://did:plc:abc/fm.onrepeat.feed.jam/xyz')).toBe('xyz')
   })
   it('tolerates a trailing slash', () => {
-    expect(rkeyFromUri('at://did:plc:abc/fm.onrepeat.feed.jam/xyz/')).toBe('xyz')
+    expect(rkeyFromUri('at://did:plc:abc/fm.onrepeat.feed.jam/xyz/')).toBe(
+      'xyz',
+    )
   })
   it('returns empty string for an empty input', () => {
     expect(rkeyFromUri('')).toBe('')
