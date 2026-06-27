@@ -19,7 +19,7 @@ const url =
 
 const db = createDb(url)
 
-const TEST_URI = 'at://did:plc:test/fm.onrepeat.jam/inttest1'
+const TEST_URI = 'at://did:plc:test/fm.onrepeat.feed.jam/inttest1'
 const TEST_CID = 'bafytest1'
 const TEST_DID = 'did:plc:test'
 
@@ -107,7 +107,7 @@ describe('indexJam', () => {
   })
 
   it('persists and refreshes raw_artwork_url', async () => {
-    const uri = 'at://did:plc:a/fm.onrepeat.jam/art'
+    const uri = 'at://did:plc:a/fm.onrepeat.feed.jam/art'
     await db.deleteFrom('jams').where('uri', '=', uri).execute()
     try {
       await indexJam(db, {
@@ -156,7 +156,7 @@ describe('indexJam', () => {
   })
 
   it('keeps the original created_at on re-index (immutable)', async () => {
-    const uri = 'at://did:plc:a/fm.onrepeat.jam/ts'
+    const uri = 'at://did:plc:a/fm.onrepeat.feed.jam/ts'
     const first = '2026-05-01T00:00:00.000Z'
     const second = '2026-05-30T00:00:00.000Z'
 
@@ -235,7 +235,7 @@ describe('removeJam', () => {
   })
 })
 
-const LIKE_URI = 'at://did:plc:liker/fm.onrepeat.like/intlike1'
+const LIKE_URI = 'at://did:plc:liker/fm.onrepeat.feed.like/intlike1'
 const LIKE_DID = 'did:plc:liker'
 
 const likeRecord = {

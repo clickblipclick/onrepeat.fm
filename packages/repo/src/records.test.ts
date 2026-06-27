@@ -56,7 +56,7 @@ describe('buildJamRecord', () => {
 describe('buildLikeRecord', () => {
   it('builds a valid like pointing at a jam strongRef', () => {
     const r = buildLikeRecord({
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     })
     expect(r.$type).toBe(LIKE_NSID)

@@ -72,13 +72,13 @@ describe('getLatest', () => {
       })
       .execute()
     await insertJam({
-      uri: 'at://did:plc:a/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:a/fm.onrepeat.feed.jam/1',
       did: 'did:plc:a',
       createdAt: '2026-05-30T00:00:00.000Z',
       trackId: 't1',
     })
     await insertJam({
-      uri: 'at://did:plc:b/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:b/fm.onrepeat.feed.jam/1',
       did: 'did:plc:b',
       createdAt: '2026-05-30T01:00:00.000Z',
     }) // unresolved, newer
@@ -86,15 +86,15 @@ describe('getLatest', () => {
       .insertInto('likes')
       .values([
         {
-          uri: 'at://did:plc:x/fm.onrepeat.like/1',
+          uri: 'at://did:plc:x/fm.onrepeat.feed.like/1',
           author_did: 'did:plc:viewer',
-          subject_uri: 'at://did:plc:a/fm.onrepeat.jam/1',
+          subject_uri: 'at://did:plc:a/fm.onrepeat.feed.jam/1',
           created_at: '2026-05-30T02:00:00.000Z',
         },
         {
-          uri: 'at://did:plc:y/fm.onrepeat.like/1',
+          uri: 'at://did:plc:y/fm.onrepeat.feed.like/1',
           author_did: 'did:plc:z',
-          subject_uri: 'at://did:plc:a/fm.onrepeat.jam/1',
+          subject_uri: 'at://did:plc:a/fm.onrepeat.feed.jam/1',
           created_at: '2026-05-30T02:00:00.000Z',
         },
       ])
@@ -102,11 +102,11 @@ describe('getLatest', () => {
 
     const page = await getLatest(db, { viewerDid: 'did:plc:viewer', limit: 10 })
     expect(page.jams.map((j) => j.uri)).toEqual([
-      'at://did:plc:b/fm.onrepeat.jam/1', // newest first
-      'at://did:plc:a/fm.onrepeat.jam/1',
+      'at://did:plc:b/fm.onrepeat.feed.jam/1', // newest first
+      'at://did:plc:a/fm.onrepeat.feed.jam/1',
     ])
     const resolved = page.jams.find(
-      (j) => j.uri === 'at://did:plc:a/fm.onrepeat.jam/1',
+      (j) => j.uri === 'at://did:plc:a/fm.onrepeat.feed.jam/1',
     )!
     expect(resolved.title).toBe('Canon Title') // canonical from track
     expect(resolved.providerRefs).toEqual({
@@ -116,7 +116,7 @@ describe('getLatest', () => {
     expect(resolved.likeCount).toBe(2)
     expect(resolved.likedByYou).toBe(true)
     const unresolved = page.jams.find(
-      (j) => j.uri === 'at://did:plc:b/fm.onrepeat.jam/1',
+      (j) => j.uri === 'at://did:plc:b/fm.onrepeat.feed.jam/1',
     )!
     expect(unresolved.title).toBe('Raw Title') // falls back to raw
     expect(unresolved.providerRefs).toEqual({})
@@ -126,7 +126,7 @@ describe('getLatest', () => {
   it('paginates by cursor', async () => {
     for (let i = 0; i < 3; i++) {
       await insertJam({
-        uri: `at://did:plc:a/fm.onrepeat.jam/${i}`,
+        uri: `at://did:plc:a/fm.onrepeat.feed.jam/${i}`,
         did: 'did:plc:a',
         createdAt: `2026-05-30T0${i}:00:00.000Z`,
       })
@@ -145,23 +145,23 @@ describe('getLatest', () => {
     // Same millisecond, different microseconds — node-postgres truncates timestamptz to a
     // millisecond JS Date, so a ms-precision cursor would skip the second row at the boundary.
     await insertJam({
-      uri: 'at://did:plc:a/fm.onrepeat.jam/hi',
+      uri: 'at://did:plc:a/fm.onrepeat.feed.jam/hi',
       did: 'did:plc:a',
       createdAt: '2026-05-30T00:00:00.000789Z',
     })
     await insertJam({
-      uri: 'at://did:plc:a/fm.onrepeat.jam/lo',
+      uri: 'at://did:plc:a/fm.onrepeat.feed.jam/lo',
       did: 'did:plc:a',
       createdAt: '2026-05-30T00:00:00.000456Z',
     })
     const first = await getLatest(db, { limit: 1 })
     expect(first.jams.map((j) => j.uri)).toEqual([
-      'at://did:plc:a/fm.onrepeat.jam/hi', // newer microsecond first
+      'at://did:plc:a/fm.onrepeat.feed.jam/hi', // newer microsecond first
     ])
     expect(first.cursor).toBeTruthy()
     const second = await getLatest(db, { limit: 1, cursor: first.cursor })
     expect(second.jams.map((j) => j.uri)).toEqual([
-      'at://did:plc:a/fm.onrepeat.jam/lo', // not skipped
+      'at://did:plc:a/fm.onrepeat.feed.jam/lo', // not skipped
     ])
     const all = [...first.jams, ...second.jams].map((j) => j.uri)
     expect(new Set(all).size).toBe(2) // no skip, no duplicate
@@ -180,14 +180,14 @@ describe('getLatest', () => {
       })
       .execute()
     await insertJam({
-      uri: 'at://did:plc:a/fm.onrepeat.jam/r',
+      uri: 'at://did:plc:a/fm.onrepeat.feed.jam/r',
       did: 'did:plc:a',
       createdAt: '2026-06-01T00:00:00.000Z',
       trackId: 't1',
       artworkUrl: 'raw-art.jpg',
     })
     await insertJam({
-      uri: 'at://did:plc:b/fm.onrepeat.jam/r',
+      uri: 'at://did:plc:b/fm.onrepeat.feed.jam/r',
       did: 'did:plc:b',
       createdAt: '2026-06-01T01:00:00.000Z',
       artworkUrl: 'raw-art.jpg',
@@ -212,7 +212,7 @@ describe('getLatest', () => {
       })
       .execute()
     await insertJam({
-      uri: 'at://did:plc:c/fm.onrepeat.jam/r',
+      uri: 'at://did:plc:c/fm.onrepeat.feed.jam/r',
       did: 'did:plc:c',
       createdAt: '2026-06-01T02:00:00.000Z',
       trackId: 't2',
@@ -226,12 +226,12 @@ describe('getLatest', () => {
 
   it('hides jams and likes from actors whose account is not active', async () => {
     await insertJam({
-      uri: 'at://did:plc:gone/fm.onrepeat.jam/r1',
+      uri: 'at://did:plc:gone/fm.onrepeat.feed.jam/r1',
       did: 'did:plc:gone',
       createdAt: '2026-06-01T00:00:00.000Z',
     })
     await insertJam({
-      uri: 'at://did:plc:here/fm.onrepeat.jam/r1',
+      uri: 'at://did:plc:here/fm.onrepeat.feed.jam/r1',
       did: 'did:plc:here',
       createdAt: '2026-06-01T01:00:00.000Z',
     })
@@ -239,9 +239,9 @@ describe('getLatest', () => {
     await db
       .insertInto('likes')
       .values({
-        uri: 'at://did:plc:gone/fm.onrepeat.like/r1',
+        uri: 'at://did:plc:gone/fm.onrepeat.feed.like/r1',
         author_did: 'did:plc:gone',
-        subject_uri: 'at://did:plc:here/fm.onrepeat.jam/r1',
+        subject_uri: 'at://did:plc:here/fm.onrepeat.feed.jam/r1',
         created_at: '2026-06-01T01:30:00.000Z',
       })
       .execute()
@@ -280,7 +280,7 @@ describe('getLatest', () => {
         resolution_status: 'resolved',
       })
       .execute()
-    const uri = 'at://did:plc:cdntest/fm.onrepeat.jam/1'
+    const uri = 'at://did:plc:cdntest/fm.onrepeat.feed.jam/1'
     await insertJam({
       uri,
       did: 'did:plc:cdntest',

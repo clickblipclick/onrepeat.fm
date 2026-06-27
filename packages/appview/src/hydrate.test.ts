@@ -74,7 +74,7 @@ describe('hydrateAuthors', () => {
     ])
     const reJam: JamView = {
       ...jam('at://x/1', 'did:plc:a'),
-      via: { uri: 'at://did:plc:o/fm.onrepeat.jam/9', did: 'did:plc:o' },
+      via: { uri: 'at://did:plc:o/fm.onrepeat.feed.jam/9', did: 'did:plc:o' },
     }
     const out = hydrateAuthors([reJam, jam('at://x/2', 'did:plc:a')], profiles)
     expect(out[0]!.viaAuthor).toEqual({

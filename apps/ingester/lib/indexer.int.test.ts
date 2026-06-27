@@ -15,7 +15,7 @@ const db = createDb(url)
 function jamEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
   return {
     action: 'create',
-    uri: 'at://did:plc:author/fm.onrepeat.jam/1',
+    uri: 'at://did:plc:author/fm.onrepeat.feed.jam/1',
     cid: 'bafyjam1',
     did: 'did:plc:author',
     collection: JAM_NSID,
@@ -35,14 +35,14 @@ function jamEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
 function likeEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
   return {
     action: 'create',
-    uri: 'at://did:plc:author/fm.onrepeat.like/1',
+    uri: 'at://did:plc:author/fm.onrepeat.feed.like/1',
     cid: 'bafylike1',
     did: 'did:plc:author',
     collection: LIKE_NSID,
     record: {
       $type: LIKE_NSID,
       subject: {
-        uri: 'at://did:plc:other/fm.onrepeat.jam/1',
+        uri: 'at://did:plc:other/fm.onrepeat.feed.jam/1',
         cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
       },
       createdAt: '2026-05-30T00:00:00.000Z',
@@ -57,7 +57,7 @@ function profileEvent(
 ): RecordIngestEvent {
   return {
     action: 'create',
-    uri: 'at://did:plc:author/fm.onrepeat.profile/self',
+    uri: 'at://did:plc:author/fm.onrepeat.actor.profile/self',
     cid: 'bafyprofile1',
     did: 'did:plc:author',
     collection: PROFILE_NSID,
@@ -187,7 +187,7 @@ describe('handleIngestEvent', () => {
       .selectAll()
       .where('uri', '=', likeEvent().uri)
       .executeTakeFirst()
-    expect(like?.subject_uri).toBe('at://did:plc:other/fm.onrepeat.jam/1')
+    expect(like?.subject_uri).toBe('at://did:plc:other/fm.onrepeat.feed.jam/1')
   })
 
   it('fires onJamIndexed for jam create and update, but not for likes', async () => {
@@ -326,7 +326,7 @@ describe('handleIngestEvent', () => {
     await handleIngestEvent(
       db,
       likeEvent({
-        uri: 'at://did:plc:fan/fm.onrepeat.like/1',
+        uri: 'at://did:plc:fan/fm.onrepeat.feed.like/1',
         did: 'did:plc:fan',
         record: {
           $type: LIKE_NSID,
