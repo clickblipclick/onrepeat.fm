@@ -31,7 +31,7 @@ function ownCdnHosts(): string[] {
 const OWN_CDN_HOSTS = ownCdnHosts()
 
 // Inlined to match page.tsx (canonical source: JAM_NSID in @onrepeat/lexicons).
-const JAM_NSID = 'fm.onrepeat.jam'
+const JAM_NSID = 'fm.onrepeat.feed.jam'
 
 export default async function Image({
   params,
