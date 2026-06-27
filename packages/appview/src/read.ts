@@ -173,6 +173,7 @@ export async function loadJamsByUris(
       'tracks.title as track_title',
       'tracks.artist as track_artist',
       'tracks.artwork_url as track_artwork',
+      'tracks.cdn_artwork_url as track_cdn_artwork',
       'tracks.provider_refs as provider_refs',
       'tracks.resolution_status as resolution_status',
     ])
@@ -193,7 +194,8 @@ export async function loadJamsByUris(
       caption: r.caption,
       title: r.track_title ?? r.raw_title ?? '',
       artist: r.track_artist ?? r.raw_artist ?? '',
-      artworkUrl: r.track_artwork ?? r.raw_artwork_url ?? null,
+      artworkUrl:
+        r.track_cdn_artwork ?? r.track_artwork ?? r.raw_artwork_url ?? null,
       sourceUrl: r.source_url,
       sourceProvider: r.source_provider,
       providerRefs: (r.provider_refs as ProviderRefs | null) ?? {},
