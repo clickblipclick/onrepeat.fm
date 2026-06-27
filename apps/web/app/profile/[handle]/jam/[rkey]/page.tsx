@@ -32,7 +32,7 @@ import { buildJamOgMeta } from '../../../../../lib/share'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
-const JAM_NSID = 'fm.onrepeat.jam'
+const JAM_NSID = 'fm.onrepeat.feed.jam'
 
 // `handle` is a handle (pretty links) or a DID (older/shared links); resolve once
 // per request for both generateMetadata and the page body.

@@ -162,7 +162,7 @@ export function JamActions({
         loggedIn={loggedIn}
         jam={{
           uri: jam.uri,
-          did: jam.authorDid,
+          cid: jam.cid,
           sourceUrl: jam.sourceUrl,
           sourceProvider: jam.sourceProvider,
           title: jam.title,

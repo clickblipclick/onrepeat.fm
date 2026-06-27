@@ -211,7 +211,7 @@ export async function unlikeJamAction(
 
 export interface ReJamArgs {
   uri: string
-  did: string
+  cid: string
   sourceUrl: string
   sourceProvider: string | null
   title: string
@@ -229,7 +229,7 @@ export async function reJamAction(jam: ReJamArgs): Promise<ActionResult> {
   const agent = res.agent
   try {
     const { uri, cid, record } = await reJam(agent, {
-      sourceJam: { uri: jam.uri, did: jam.did },
+      sourceJam: { uri: jam.uri, cid: jam.cid },
       track: {
         sourceUrl: jam.sourceUrl,
         sourceProvider: jam.sourceProvider ?? 'unknown',
