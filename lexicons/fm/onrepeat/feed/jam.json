@@ -9,7 +9,13 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["sourceUrl", "sourceProvider", "title", "artist", "createdAt"],
+        "required": [
+          "sourceUrl",
+          "sourceProvider",
+          "title",
+          "artist",
+          "createdAt"
+        ],
         "properties": {
           "sourceUrl": { "type": "string", "format": "uri", "maxLength": 2048 },
           "sourceProvider": {
@@ -28,9 +34,21 @@
             ]
           },
           "title": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
-          "artist": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
-          "artworkUrl": { "type": "string", "format": "uri", "maxLength": 2048 },
-          "caption": { "type": "string", "maxGraphemes": 140, "maxLength": 1400 },
+          "artist": {
+            "type": "string",
+            "maxGraphemes": 300,
+            "maxLength": 3000
+          },
+          "artworkUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "caption": {
+            "type": "string",
+            "maxGraphemes": 140,
+            "maxLength": 1400
+          },
           "via": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",

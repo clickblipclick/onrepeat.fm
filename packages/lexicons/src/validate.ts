@@ -3,9 +3,9 @@ import { Lexicons } from '@atproto/lexicon'
 // Vendored verbatim from bluesky-social/atproto (lexicons/com/atproto/repo/strongRef.json)
 // so the catalog can resolve like.json's external ref — do not hand-edit.
 import strongRefDoc from '../../../lexicons/com/atproto/repo/strongRef.json'
+import profileDoc from '../../../lexicons/fm/onrepeat/actor/profile.json'
 import jamDoc from '../../../lexicons/fm/onrepeat/feed/jam.json'
 import likeDoc from '../../../lexicons/fm/onrepeat/feed/like.json'
-import profileDoc from '../../../lexicons/fm/onrepeat/actor/profile.json'
 
 export const lexicons = new Lexicons([
   jamDoc as any,

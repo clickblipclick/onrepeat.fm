@@ -73,12 +73,28 @@ describe('getActorJams + getFollowFeed', () => {
 
   it('getFollowFeed returns one current jam per followed author, <7 days, newest-first', async () => {
     // author a: an old jam + a recent jam -> only the recent (current) one
-    await insertJam('at://did:plc:a/fm.onrepeat.feed.jam/old', 'did:plc:a', old())
-    await insertJam('at://did:plc:a/fm.onrepeat.feed.jam/cur', 'did:plc:a', recent())
+    await insertJam(
+      'at://did:plc:a/fm.onrepeat.feed.jam/old',
+      'did:plc:a',
+      old(),
+    )
+    await insertJam(
+      'at://did:plc:a/fm.onrepeat.feed.jam/cur',
+      'did:plc:a',
+      recent(),
+    )
     // author b: only an expired jam -> excluded (no current jam)
-    await insertJam('at://did:plc:b/fm.onrepeat.feed.jam/old', 'did:plc:b', old())
+    await insertJam(
+      'at://did:plc:b/fm.onrepeat.feed.jam/old',
+      'did:plc:b',
+      old(),
+    )
     // author c: a current jam, but NOT followed -> excluded
-    await insertJam('at://did:plc:c/fm.onrepeat.feed.jam/cur', 'did:plc:c', recent())
+    await insertJam(
+      'at://did:plc:c/fm.onrepeat.feed.jam/cur',
+      'did:plc:c',
+      recent(),
+    )
 
     const page = await getFollowFeed(db, {
       followedDids: ['did:plc:a', 'did:plc:b'],
