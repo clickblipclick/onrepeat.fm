@@ -50,8 +50,8 @@ describe('createOAuthClient', () => {
       sessionStore,
     })
     const scope = client.clientMetadata.scope ?? ''
-    expect(scope).toContain('repo:fm.onrepeat.jam')
-    expect(scope).toContain('repo:fm.onrepeat.like')
+    expect(scope).toContain('repo:fm.onrepeat.feed.jam')
+    expect(scope).toContain('repo:fm.onrepeat.feed.like')
     expect(scope).not.toContain('transition:generic')
   })
 
