@@ -1,6 +1,7 @@
 {
   "lexicon": 1,
-  "id": "fm.onrepeat.profile",
+  "id": "fm.onrepeat.actor.profile",
+  "revision": 1,
   "defs": {
     "main": {
       "type": "record",
