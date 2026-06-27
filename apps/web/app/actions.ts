@@ -250,7 +250,7 @@ export interface SaveThemeState {
   error?: string
 }
 
-/** Persist the user's chosen profile color theme: write the fm.onrepeat.profile record,
+/** Persist the user's chosen profile color theme: write the fm.onrepeat.actor.profile record,
  *  then write-through the denormalized index copy and refresh the themed views. */
 export async function saveThemeAction(
   _prevState: SaveThemeState | null,

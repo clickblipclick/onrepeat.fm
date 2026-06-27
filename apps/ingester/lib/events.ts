@@ -10,7 +10,7 @@ export type IngestCollection =
 
 export interface RecordIngestEvent {
   action: 'create' | 'update' | 'delete'
-  /** at-uri of the record, e.g. at://did/fm.onrepeat.jam/rkey */
+  /** at-uri of the record, e.g. at://did/fm.onrepeat.feed.jam/rkey */
   uri: string
   /** record CID as a string; null on delete */
   cid: string | null
