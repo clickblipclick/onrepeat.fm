@@ -47,6 +47,8 @@ export interface TracksTable {
   title: string | null
   artist: string | null
   artwork_url: string | null
+  /** Self-hosted (R2/CDN) copy of artwork_url; null until persisted. */
+  cdn_artwork_url: string | null
   // jsonb: object on read, JSON string on write
   provider_refs: ColumnType<ProviderRefs, string | undefined, string>
   resolution_status: ColumnType<ResolutionStatus, string | undefined, string>
