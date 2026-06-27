@@ -21,9 +21,20 @@ describe('validateRecord (jam)', () => {
     const r = {
       ...validJam,
       caption: 'on repeat all week',
-      via: { uri: 'at://did:plc:x/fm.onrepeat.jam/123', did: 'did:plc:x' },
+      via: {
+        uri: 'at://did:plc:x/fm.onrepeat.feed.jam/123',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+      },
     }
     expect(validateRecord(JAM_NSID, r).success).toBe(true)
+  })
+
+  it('rejects the legacy {uri, did} via shape (cid now required)', () => {
+    const r = {
+      ...validJam,
+      via: { uri: 'at://did:plc:x/fm.onrepeat.feed.jam/123', did: 'did:plc:x' },
+    }
+    expect(validateRecord(JAM_NSID, r).success).toBe(false)
   })
 
   it('rejects a jam missing a required field', () => {

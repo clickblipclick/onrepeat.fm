@@ -1,6 +1,7 @@
 {
   "lexicon": 1,
-  "id": "fm.onrepeat.like",
+  "id": "fm.onrepeat.feed.like",
+  "revision": 1,
   "defs": {
     "main": {
       "type": "record",
