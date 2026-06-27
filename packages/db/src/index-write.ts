@@ -5,6 +5,12 @@ import type { JamRecord, LikeRecord } from '@onrepeat/lexicons'
 import type { DB } from './client'
 import type { ActorStatus, JamsTable, LikesTable } from './schema'
 
+/** The repo DID is the authority of an at-uri: at://<did>/<collection>/<rkey>. */
+function didFromAtUri(uri: string): string | null {
+  const match = uri.match(/^at:\/\/([^/]+)\//)
+  return match ? (match[1] ?? null) : null
+}
+
 /**
  * Build a `jams` insert row from a JamRecord. `track_id` starts null (the resolver links
  * it later). `raw_artwork_url` is denormalized at post time as a fallback; the resolver's
@@ -28,7 +34,7 @@ export function jamRow(
     raw_artwork_url: record.artworkUrl ?? null,
     caption: record.caption ?? null,
     via_uri: record.via?.uri ?? null,
-    via_did: record.via?.did ?? null,
+    via_did: record.via?.uri ? didFromAtUri(record.via.uri) : null,
     created_at: record.createdAt,
   }
 }

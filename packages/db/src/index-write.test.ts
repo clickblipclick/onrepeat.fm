@@ -58,7 +58,7 @@ describe('jamRow', () => {
   it('maps artworkUrl to raw_artwork_url (null when absent)', () => {
     expect(
       jamRow('at://x/1', 'c', 'did:plc:a', {
-        $type: 'fm.onrepeat.jam',
+        $type: 'fm.onrepeat.feed.jam',
         sourceUrl: 'u',
         sourceProvider: 'spotify',
         title: 'T',
@@ -69,7 +69,7 @@ describe('jamRow', () => {
     ).toBe('art.jpg')
     expect(
       jamRow('at://x/2', 'c', 'did:plc:a', {
-        $type: 'fm.onrepeat.jam',
+        $type: 'fm.onrepeat.feed.jam',
         sourceUrl: 'u',
         sourceProvider: 'spotify',
         title: 'T',
@@ -79,23 +79,26 @@ describe('jamRow', () => {
     ).toBeNull()
   })
 
-  it('maps re-jam via attribution when present', () => {
+  it('derives via_did from the via uri authority', () => {
     const row = jamRow(
-      'at://did:plc:x/fm.onrepeat.jam/2',
-      'bafy',
-      'did:plc:x',
+      'at://did:plc:author/fm.onrepeat.feed.jam/1',
+      'bafyjam',
+      'did:plc:author',
       {
         $type: JAM_NSID,
-        sourceUrl: 'u',
-        sourceProvider: 'youtube',
-        title: 't',
-        artist: 'a',
-        createdAt: '2026-05-30T00:00:00.000Z',
-        via: { uri: 'at://did:plc:y/fm.onrepeat.jam/9', did: 'did:plc:y' },
+        sourceUrl: 'https://open.spotify.com/track/abc',
+        sourceProvider: 'spotify',
+        title: 'T',
+        artist: 'A',
+        via: {
+          uri: 'at://did:plc:src/fm.onrepeat.feed.jam/9',
+          cid: 'bafyreih7777777777777777777777777777777777777777777777',
+        },
+        createdAt: '2026-06-27T00:00:00.000Z',
       },
     )
-    expect(row.via_uri).toBe('at://did:plc:y/fm.onrepeat.jam/9')
-    expect(row.via_did).toBe('did:plc:y')
+    expect(row.via_uri).toBe('at://did:plc:src/fm.onrepeat.feed.jam/9')
+    expect(row.via_did).toBe('did:plc:src')
   })
 })
 
