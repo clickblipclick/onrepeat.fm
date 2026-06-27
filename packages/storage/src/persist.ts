@@ -85,7 +85,9 @@ export async function persistArtwork(
   }
   if (!res.ok) return null
 
-  const contentType = ((res.headers.get('content-type') ?? '').split(';')[0] ?? '')
+  const contentType = (
+    (res.headers.get('content-type') ?? '').split(';')[0] ?? ''
+  )
     .trim()
     .toLowerCase()
   if (!isImageContentType(contentType)) return null
