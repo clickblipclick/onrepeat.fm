@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb, createMigrator } from '@onrepeat/db'
 
-import { getLatest } from './read'
+import { getLatest, loadJamsByUris } from './read'
 
 const url =
   process.env.DATABASE_URL ??
@@ -265,5 +265,31 @@ describe('getLatest', () => {
     expect(
       after.jams.find((j) => j.authorDid === 'did:plc:here')!.likeCount,
     ).toBe(1)
+  })
+
+  it('prefers cdn_artwork_url over the provider artwork_url', async () => {
+    await db
+      .insertInto('tracks')
+      .values({
+        id: 'ta:cdn|test',
+        title: 'T',
+        artist: 'A',
+        artwork_url: 'https://provider.example/a.jpg',
+        cdn_artwork_url: 'https://cdn.test/art/abc.jpg',
+        provider_refs: JSON.stringify({}),
+        resolution_status: 'resolved',
+      })
+      .execute()
+    const uri = 'at://did:plc:cdntest/fm.onrepeat.jam/1'
+    await insertJam({
+      uri,
+      did: 'did:plc:cdntest',
+      createdAt: '2026-06-01T00:00:00.000Z',
+      trackId: 'ta:cdn|test',
+      artworkUrl: 'https://provider.example/raw.jpg',
+    })
+
+    const [jam] = await loadJamsByUris(db, [uri])
+    expect(jam?.artworkUrl).toBe('https://cdn.test/art/abc.jpg')
   })
 })

@@ -7,10 +7,36 @@ import {
   fetchOembed,
 } from '@onrepeat/music'
 import { onShutdown, requireEnv } from '@onrepeat/service'
+import { createR2Store, persistArtwork } from '@onrepeat/storage'
 
 import { backfill } from './backfill'
+import { backfillArtwork } from './backfill-artwork'
 import type { ResolverDeps } from './resolve'
 import { startResolver } from './worker'
+
+/** Build the R2 artwork store from env, or null when any required var is unset. */
+function buildArtworkStore(): ReturnType<typeof createR2Store> | null {
+  const accountId = process.env.R2_ACCOUNT_ID
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+  const bucket = process.env.R2_BUCKET
+  const publicBaseUrl = process.env.ARTWORK_CDN_BASE_URL
+  if (
+    !accountId ||
+    !accessKeyId ||
+    !secretAccessKey ||
+    !bucket ||
+    !publicBaseUrl
+  )
+    return null
+  return createR2Store({
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    publicBaseUrl,
+  })
+}
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')
@@ -19,9 +45,27 @@ async function main(): Promise<void> {
   await boss.start()
   await createResolveQueue(boss)
 
+  const store = buildArtworkStore()
+
   if (process.argv.includes('--backfill')) {
     const n = await backfill(db, boss)
     console.log(`[resolver] backfill complete (${n})`)
+    await boss.stop({ graceful: true })
+    await db.destroy()
+    process.exit(0)
+  }
+
+  if (process.argv.includes('--backfill-artwork')) {
+    if (!store) {
+      console.error(
+        '[resolver] --backfill-artwork requires R2_* + ARTWORK_CDN_BASE_URL env',
+      )
+      await boss.stop({ graceful: true })
+      await db.destroy()
+      process.exit(1)
+    }
+    const n = await backfillArtwork(db, store)
+    console.log(`[resolver] artwork backfill complete (${n} persisted)`)
     await boss.stop({ graceful: true })
     await db.destroy()
     process.exit(0)
@@ -45,6 +89,15 @@ async function main(): Promise<void> {
   } else {
     console.warn(
       '[resolver] YOUTUBE_API_KEY not set — YouTube cross-links disabled',
+    )
+  }
+
+  if (store) {
+    deps.persistArtwork = (artworkUrl) => persistArtwork(artworkUrl, store)
+    console.log('[resolver] artwork persistence enabled (R2)')
+  } else {
+    console.warn(
+      '[resolver] R2 env not set — album art will not be self-hosted',
     )
   }
 

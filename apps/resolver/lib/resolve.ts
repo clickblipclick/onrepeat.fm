@@ -18,6 +18,12 @@ export type OembedFetcher = (
 export type ResolverDeps = ResolveDeps & {
   bandcamp?: BandcampFetcher
   oembed?: OembedFetcher
+  /**
+   * Persist a provider artwork URL to our own CDN, returning the CDN URL (or null on
+   * failure / when unconfigured). Injected so the worker owns the R2 store; absent in
+   * tests and when R2 env is unset (art then stays hotlinked).
+   */
+  persistArtwork?: (artworkUrl: string) => Promise<string | null>
 }
 
 /**
@@ -41,6 +47,26 @@ async function applyTrackUpdate(
       identity,
       'track row missing — resolution update dropped',
     )
+}
+
+/**
+ * If artwork persistence is configured and this update sets an `artwork_url`, copy that
+ * image to our CDN and mirror the result in `cdn_artwork_url`: set it on success, clear it
+ * to null on failure. Best-effort — a null result (fetch/upload failure, untrusted host, or
+ * no store) leaves the row hotlinking the freshly (re)written provider URL rather than a
+ * stale CDN object from a previous cover.
+ */
+async function withCdnArtwork(
+  deps: ResolverDeps,
+  update: Updateable<TracksTable>,
+): Promise<void> {
+  const url = update.artwork_url
+  if (!deps.persistArtwork || typeof url !== 'string' || !url) return
+  const cdn = await deps.persistArtwork(url)
+  // Keep cdn_artwork_url in lockstep with the (re)written artwork_url: set it on success,
+  // clear it on failure so reads fall back to the fresh provider URL instead of a stale
+  // CDN object from a previous cover.
+  update.cdn_artwork_url = cdn ?? null
 }
 
 /** Resolve one queue job onto its tracks row. Idempotent (keyed by job.identity). */
@@ -85,6 +111,7 @@ export async function resolveJob(
       resolved_at: now,
     }
     if (artworkUrl) update.artwork_url = artworkUrl
+    await withCdnArtwork(deps, update)
     await applyTrackUpdate(db, job.identity, update)
     resolveLog(
       'resolved',
@@ -149,6 +176,7 @@ export async function resolveJob(
   }
   if (artworkUrl) update.artwork_url = artworkUrl
 
+  await withCdnArtwork(deps, update)
   await applyTrackUpdate(db, job.identity, update)
   resolveLog(
     'resolved',

@@ -27,7 +27,7 @@ describe('mapItunes', () => {
       {
         title: 'Teardrop',
         artist: 'Massive Attack',
-        artworkUrl: 'https://is1.mzstatic.com/img/aaa/300x300bb.jpg',
+        artworkUrl: 'https://is1.mzstatic.com/img/aaa/600x600bb.jpg',
         sourceUrl: 'https://music.apple.com/us/album/teardrop/1?i=2',
         provider: 'applemusic',
       },
@@ -118,7 +118,7 @@ describe('lookupTrack', () => {
     expect(await lookupTrack('2', { fetchFn })).toEqual({
       title: 'T',
       artist: 'A',
-      artworkUrl: 'https://x/300x300bb.jpg',
+      artworkUrl: 'https://x/600x600bb.jpg',
       sourceUrl: 'https://music.apple.com/us/album/t/1?i=2',
       provider: 'applemusic',
     })

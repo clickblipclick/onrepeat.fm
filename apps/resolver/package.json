@@ -7,6 +7,7 @@
     "dev": "tsx watch --env-file-if-exists=.env.local lib/main.ts",
     "start": "tsx --env-file-if-exists=.env.local lib/main.ts",
     "backfill": "tsx --env-file-if-exists=.env.local lib/main.ts --backfill",
+    "backfill:artwork": "tsx --env-file-if-exists=.env.local lib/main.ts --backfill-artwork",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
+    "@onrepeat/storage": "workspace:*",
     "kysely": "^0.29.0",
     "pg-boss": "^12.19.1"
   },

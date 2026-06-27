@@ -20,7 +20,10 @@ const ARTWORK_CDN_HOSTS = [
  * untrusted `artworkUrl` server-side (e.g. when rendering an OG image); fall back to a
  * brand placeholder when it returns false.
  */
-export function isTrustedArtworkUrl(raw: string | null | undefined): boolean {
+export function isTrustedArtworkUrl(
+  raw: string | null | undefined,
+  extraHosts: string[] = [],
+): boolean {
   if (!raw) return false
   let u: URL
   try {
@@ -30,8 +33,10 @@ export function isTrustedArtworkUrl(raw: string | null | undefined): boolean {
   }
   if (u.protocol !== 'https:') return false
   const host = u.hostname.toLowerCase()
+  const hosts = [
+    ...ARTWORK_CDN_HOSTS,
+    ...extraHosts.map((h) => h.toLowerCase()),
+  ]
   // exact host or a dot-anchored subdomain (so "evil-scdn.co" does not match "scdn.co")
-  return ARTWORK_CDN_HOSTS.some(
-    (domain) => host === domain || host.endsWith('.' + domain),
-  )
+  return hosts.some((domain) => host === domain || host.endsWith('.' + domain))
 }
