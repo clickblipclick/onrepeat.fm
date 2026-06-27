@@ -1,6 +1,6 @@
 /**
  * Cover-art CDN hosts we'll fetch server-side. `artworkUrl` on a jam record is
- * attacker-controlled — anyone can write a `fm.onrepeat.jam` to their own PDS, and the
+ * attacker-controlled — anyone can write a `fm.onrepeat.feed.jam` to their own PDS, and the
  * lexicon only checks `format: uri`, which permits `http://169.254.169.254/…`,
  * `http://localhost/…`, etc. Anything that fetches it server-side (the OG-image route)
  * must therefore allowlist the host, or it becomes an SSRF. These are the CDNs our own
