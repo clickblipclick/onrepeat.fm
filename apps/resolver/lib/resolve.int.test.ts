@@ -274,4 +274,29 @@ describe('resolveJob (v2)', () => {
       .executeTakeFirst()
     expect(row?.cdn_artwork_url ?? null).toBeNull()
   })
+
+  it('clears a stale cdn_artwork_url when re-resolve persist fails', async () => {
+    const id = 'ta:cdnart|stale'
+    await db
+      .insertInto('tracks')
+      .values({
+        id,
+        title: 'Canonical',
+        artist: 'Artist',
+        cdn_artwork_url: 'https://cdn.test/art/OLD.jpg',
+        resolution_status: 'pending',
+      })
+      .execute()
+    await resolveJob(
+      db,
+      { ...okDeps, persistArtwork: async () => null },
+      { identity: id, sourceUrl: apple.sourceUrl, provider: 'applemusic' },
+    )
+    const row = await db
+      .selectFrom('tracks')
+      .select('cdn_artwork_url')
+      .where('id', '=', id)
+      .executeTakeFirst()
+    expect(row?.cdn_artwork_url ?? null).toBeNull()
+  })
 })

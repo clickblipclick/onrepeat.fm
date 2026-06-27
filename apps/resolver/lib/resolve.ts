@@ -51,8 +51,10 @@ async function applyTrackUpdate(
 
 /**
  * If artwork persistence is configured and this update sets an `artwork_url`, copy that
- * image to our CDN and record the result in `cdn_artwork_url`. Best-effort: a null result
- * (fetch/upload failure, untrusted host, or no store) leaves the row hotlinking the provider.
+ * image to our CDN and mirror the result in `cdn_artwork_url`: set it on success, clear it
+ * to null on failure. Best-effort — a null result (fetch/upload failure, untrusted host, or
+ * no store) leaves the row hotlinking the freshly (re)written provider URL rather than a
+ * stale CDN object from a previous cover.
  */
 async function withCdnArtwork(
   deps: ResolverDeps,
@@ -61,7 +63,10 @@ async function withCdnArtwork(
   const url = update.artwork_url
   if (!deps.persistArtwork || typeof url !== 'string' || !url) return
   const cdn = await deps.persistArtwork(url)
-  if (cdn) update.cdn_artwork_url = cdn
+  // Keep cdn_artwork_url in lockstep with the (re)written artwork_url: set it on success,
+  // clear it on failure so reads fall back to the fresh provider URL instead of a stale
+  // CDN object from a previous cover.
+  update.cdn_artwork_url = cdn ?? null
 }
 
 /** Resolve one queue job onto its tracks row. Idempotent (keyed by job.identity). */
