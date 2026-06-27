@@ -25,9 +25,9 @@ interface ItunesBody {
   results?: ItunesResult[]
 }
 
-/** iTunes serves 100x100 art; swap the size token for a crisper ~300px image. */
+/** iTunes serves 100x100 art; swap the size token for a crisper ~600px image. */
 function upsizeArt(url: string | undefined): string | undefined {
-  return url?.replace('100x100bb', '300x300bb')
+  return url?.replace('100x100bb', '600x600bb')
 }
 
 /** Pure: map an iTunes Search response to track candidates (drops malformed rows). */
