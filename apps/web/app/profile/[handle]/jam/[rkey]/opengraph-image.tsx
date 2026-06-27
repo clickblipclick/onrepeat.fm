@@ -17,6 +17,19 @@ export const size = OG_SIZE
 export const contentType = 'image/png'
 export const alt = 'A jam on onrepeat.fm'
 
+// Our own art CDN is configured at runtime; trust it (in addition to the provider
+// allowlist) so satori will fetch self-hosted covers for the OG card.
+function ownCdnHosts(): string[] {
+  const base = process.env.ARTWORK_CDN_BASE_URL
+  if (!base) return []
+  try {
+    return [new URL(base).hostname]
+  } catch {
+    return []
+  }
+}
+const OWN_CDN_HOSTS = ownCdnHosts()
+
 // Inlined to match page.tsx (canonical source: JAM_NSID in @onrepeat/lexicons).
 const JAM_NSID = 'fm.onrepeat.jam'
 
@@ -55,7 +68,10 @@ export default async function Image({
           // `format: uri`) and satori fetches it server-side at the Node runtime — so
           // only pass it through when it's an https URL on a known art CDN, else the
           // card renders its brand placeholder. Prevents SSRF via this public route.
-          const artworkUrl = isTrustedArtworkUrl(hydrated.artworkUrl)
+          const artworkUrl = isTrustedArtworkUrl(
+            hydrated.artworkUrl,
+            OWN_CDN_HOSTS,
+          )
             ? hydrated.artworkUrl
             : null
           card = (

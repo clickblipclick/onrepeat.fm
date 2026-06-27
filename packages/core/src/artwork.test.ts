@@ -40,3 +40,25 @@ describe('isTrustedArtworkUrl', () => {
     expect(isTrustedArtworkUrl('not a url')).toBe(false)
   })
 })
+
+describe('isTrustedArtworkUrl extraHosts', () => {
+  it('trusts an explicitly allowed extra host', () => {
+    expect(
+      isTrustedArtworkUrl('https://art.onrepeat.fm/art/abc.jpg', [
+        'art.onrepeat.fm',
+      ]),
+    ).toBe(true)
+  })
+
+  it('still rejects unknown hosts when extraHosts is given', () => {
+    expect(
+      isTrustedArtworkUrl('https://evil.example/a.jpg', ['art.onrepeat.fm']),
+    ).toBe(false)
+  })
+
+  it('rejects our CDN host over http', () => {
+    expect(
+      isTrustedArtworkUrl('http://art.onrepeat.fm/a.jpg', ['art.onrepeat.fm']),
+    ).toBe(false)
+  })
+})
