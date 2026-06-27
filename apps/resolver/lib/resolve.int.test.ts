@@ -242,4 +242,36 @@ describe('resolveJob (v2)', () => {
       applemusic: { url: 'https://music.apple.com/us/album/t/1?i=2' },
     })
   })
+
+  it('writes cdn_artwork_url when persistArtwork returns a url', async () => {
+    const id = 'ta:cdnart|one'
+    await seedPending(id)
+    await resolveJob(
+      db,
+      { ...okDeps, persistArtwork: async () => 'https://cdn.test/art/abc.jpg' },
+      { identity: id, sourceUrl: apple.sourceUrl, provider: 'applemusic' },
+    )
+    const row = await db
+      .selectFrom('tracks')
+      .select('cdn_artwork_url')
+      .where('id', '=', id)
+      .executeTakeFirst()
+    expect(row?.cdn_artwork_url).toBe('https://cdn.test/art/abc.jpg')
+  })
+
+  it('leaves cdn_artwork_url null when persistArtwork returns null', async () => {
+    const id = 'ta:cdnart|two'
+    await seedPending(id)
+    await resolveJob(
+      db,
+      { ...okDeps, persistArtwork: async () => null },
+      { identity: id, sourceUrl: apple.sourceUrl, provider: 'applemusic' },
+    )
+    const row = await db
+      .selectFrom('tracks')
+      .select('cdn_artwork_url')
+      .where('id', '=', id)
+      .executeTakeFirst()
+    expect(row?.cdn_artwork_url ?? null).toBeNull()
+  })
 })
