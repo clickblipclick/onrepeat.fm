@@ -24,7 +24,7 @@ const TEST_CID = 'bafytest1'
 const TEST_DID = 'did:plc:test'
 
 const baseRecord = {
-  $type: JAM_NSID as 'fm.onrepeat.jam',
+  $type: JAM_NSID as 'fm.onrepeat.feed.jam',
   sourceUrl: 'https://open.spotify.com/track/inttest',
   sourceProvider: 'spotify',
   title: 'Integration Song',
@@ -115,7 +115,7 @@ describe('indexJam', () => {
         cid: 'c1',
         did: 'did:plc:a',
         record: {
-          $type: JAM_NSID as 'fm.onrepeat.jam',
+          $type: JAM_NSID as 'fm.onrepeat.feed.jam',
           sourceUrl: 'u',
           sourceProvider: 'spotify',
           title: 'T',
@@ -135,7 +135,7 @@ describe('indexJam', () => {
         cid: 'c2',
         did: 'did:plc:a',
         record: {
-          $type: JAM_NSID as 'fm.onrepeat.jam',
+          $type: JAM_NSID as 'fm.onrepeat.feed.jam',
           sourceUrl: 'u',
           sourceProvider: 'spotify',
           title: 'T',
@@ -167,7 +167,7 @@ describe('indexJam', () => {
         cid: 'c1',
         did: 'did:plc:a',
         record: {
-          $type: JAM_NSID as 'fm.onrepeat.jam',
+          $type: JAM_NSID as 'fm.onrepeat.feed.jam',
           sourceUrl: 'u',
           sourceProvider: 'spotify',
           title: 'T',
@@ -180,7 +180,7 @@ describe('indexJam', () => {
         cid: 'c2',
         did: 'did:plc:a',
         record: {
-          $type: JAM_NSID as 'fm.onrepeat.jam',
+          $type: JAM_NSID as 'fm.onrepeat.feed.jam',
           sourceUrl: 'u',
           sourceProvider: 'spotify',
           title: 'T',
@@ -239,7 +239,7 @@ const LIKE_URI = 'at://did:plc:liker/fm.onrepeat.like/intlike1'
 const LIKE_DID = 'did:plc:liker'
 
 const likeRecord = {
-  $type: LIKE_NSID as 'fm.onrepeat.like',
+  $type: LIKE_NSID as 'fm.onrepeat.feed.like',
   subject: { uri: TEST_URI, cid: TEST_CID },
   createdAt: '2026-06-10T00:00:00.000Z',
 }
