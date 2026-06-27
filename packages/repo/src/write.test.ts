@@ -89,24 +89,24 @@ describe('reJam', () => {
     const { agent, calls } = fakeAgent()
     const res = await reJam(agent, {
       sourceJam: {
-        uri: 'at://did:plc:src/fm.onrepeat.jam/9',
-        did: 'did:plc:src',
+        uri: 'at://did:plc:src/fm.onrepeat.feed.jam/9',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
       },
       track: baseJam,
     })
     const rec = calls[0]!.params.record
     expect(rec.$type).toBe(JAM_NSID)
     expect(rec.via).toEqual({
-      uri: 'at://did:plc:src/fm.onrepeat.jam/9',
-      did: 'did:plc:src',
+      uri: 'at://did:plc:src/fm.onrepeat.feed.jam/9',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     })
     expect(res.uri).toContain(JAM_NSID)
     expect(res.cid).toBe('cid1')
     expect(res.record.title).toBe(baseJam.title)
     expect(res.record.sourceUrl).toBe(baseJam.sourceUrl)
     expect(res.record.via).toEqual({
-      uri: 'at://did:plc:src/fm.onrepeat.jam/9',
-      did: 'did:plc:src',
+      uri: 'at://did:plc:src/fm.onrepeat.feed.jam/9',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     })
   })
 })

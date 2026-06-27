@@ -16,7 +16,7 @@ export interface JamInput {
   artist: string
   artworkUrl?: string
   caption?: string
-  via?: { uri: string; did: string }
+  via?: StrongRef
   /** Defaults to now() if omitted. */
   createdAt?: string
 }
