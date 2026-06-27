@@ -53,7 +53,7 @@ describe('validateRecord (like)', () => {
     const like = {
       $type: LIKE_NSID,
       subject: {
-        uri: 'at://did:plc:x/fm.onrepeat.jam/123',
+        uri: 'at://did:plc:x/fm.onrepeat.feed.jam/123',
         cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
       },
       createdAt: '2026-05-29T12:00:00.000Z',
@@ -97,7 +97,7 @@ describe('regression pins (pre-publication)', () => {
     const res = validateRecord(LIKE_NSID, {
       $type: LIKE_NSID,
       subject: {
-        uri: 'at://did:plc:x/fm.onrepeat.jam/abc',
+        uri: 'at://did:plc:x/fm.onrepeat.feed.jam/abc',
         cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
       },
       createdAt: '2026-06-10T00:00:00.000Z',

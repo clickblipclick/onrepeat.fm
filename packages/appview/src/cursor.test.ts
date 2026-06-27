@@ -6,12 +6,12 @@ describe('cursor', () => {
   it('round-trips createdAt + uri', () => {
     const c = encodeCursor({
       createdAt: '2026-05-30T00:00:00.000Z',
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
     })
     expect(typeof c).toBe('string')
     expect(decodeCursor(c)).toEqual({
       createdAt: '2026-05-30T00:00:00.000Z',
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
     })
   })
 
@@ -23,7 +23,7 @@ describe('cursor', () => {
   })
 
   it('round-trips a uri containing a pipe (splits on first | only)', () => {
-    const uri = 'at://did:plc:x/fm.onrepeat.jam/pipe|test'
+    const uri = 'at://did:plc:x/fm.onrepeat.feed.jam/pipe|test'
     const c = encodeCursor({ createdAt: '2026-05-30T00:00:00.000Z', uri })
     expect(decodeCursor(c)).toEqual({
       createdAt: '2026-05-30T00:00:00.000Z',
@@ -34,12 +34,12 @@ describe('cursor', () => {
   it('round-trips an optional snapshot timestamp', () => {
     const c = encodeCursor({
       createdAt: '2026-05-30T00:00:00.000Z',
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       snap: '2026-05-30T00:05:00.000Z',
     })
     expect(decodeCursor(c)).toEqual({
       createdAt: '2026-05-30T00:00:00.000Z',
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       snap: '2026-05-30T00:05:00.000Z',
     })
   })

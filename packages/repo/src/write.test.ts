@@ -67,7 +67,7 @@ describe('likeJam / unlikeJam', () => {
   it('likeJam creates a like pointing at the subject', async () => {
     const { agent, calls } = fakeAgent()
     const subject = {
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     }
     await likeJam(agent, subject)
@@ -153,7 +153,7 @@ describe('write error classification', () => {
   it('classifies a 429 as rate-limit', async () => {
     const err = Object.assign(new Error('RateLimitExceeded'), { status: 429 })
     const subject = {
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     }
     await expect(likeJam(throwingAgent(err), subject)).rejects.toMatchObject({

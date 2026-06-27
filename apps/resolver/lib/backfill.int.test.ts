@@ -35,7 +35,7 @@ describe('backfill', () => {
       .insertInto('jams')
       .values([
         {
-          uri: 'at://did:plc:a/fm.onrepeat.jam/1',
+          uri: 'at://did:plc:a/fm.onrepeat.feed.jam/1',
           cid: 'c1',
           author_did: 'did:plc:a',
           source_url: 'https://open.spotify.com/track/1',
@@ -45,7 +45,7 @@ describe('backfill', () => {
           created_at: '2026-05-30T00:00:00.000Z',
         },
         {
-          uri: 'at://did:plc:a/fm.onrepeat.jam/2',
+          uri: 'at://did:plc:a/fm.onrepeat.feed.jam/2',
           cid: 'c2',
           author_did: 'did:plc:a',
           source_url: 'https://open.spotify.com/track/2',
@@ -64,7 +64,7 @@ describe('backfill', () => {
     const j1 = await db
       .selectFrom('jams')
       .select('track_id')
-      .where('uri', '=', 'at://did:plc:a/fm.onrepeat.jam/1')
+      .where('uri', '=', 'at://did:plc:a/fm.onrepeat.feed.jam/1')
       .executeTakeFirst()
     expect(j1?.track_id).toBe('ta:b|a') // identity from raw_artist|raw_title (no isrc)
   })
@@ -82,7 +82,7 @@ describe('backfill', () => {
     await db
       .insertInto('jams')
       .values({
-        uri: 'at://did:plc:a/fm.onrepeat.jam/3',
+        uri: 'at://did:plc:a/fm.onrepeat.feed.jam/3',
         cid: 'c3',
         author_did: 'did:plc:a',
         source_url: 'https://open.spotify.com/track/3',
@@ -111,7 +111,7 @@ describe('backfill', () => {
     await db
       .insertInto('jams')
       .values({
-        uri: 'at://did:plc:a/fm.onrepeat.jam/9',
+        uri: 'at://did:plc:a/fm.onrepeat.feed.jam/9',
         cid: 'c9',
         author_did: 'did:plc:a',
         source_url: 'https://x.bandcamp.com/track/y',

@@ -17,7 +17,7 @@ function jam(over: Partial<JamRecord> = {}): {
   record: JamRecord
 } {
   return {
-    uri: 'at://did:plc:author/fm.onrepeat.jam/1',
+    uri: 'at://did:plc:author/fm.onrepeat.feed.jam/1',
     record: {
       $type: JAM_NSID,
       sourceUrl: 'https://open.spotify.com/track/1',

@@ -7,7 +7,7 @@ import { jamRow, likeRow } from './index-write'
 describe('jamRow', () => {
   it('maps a jam record to a row with track_id null', () => {
     const row = jamRow(
-      'at://did:plc:x/fm.onrepeat.jam/1',
+      'at://did:plc:x/fm.onrepeat.feed.jam/1',
       'bafyjam',
       'did:plc:x',
       {
@@ -21,7 +21,7 @@ describe('jamRow', () => {
       },
     )
     expect(row).toMatchObject({
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
       cid: 'bafyjam',
       author_did: 'did:plc:x',
       track_id: null,
@@ -38,7 +38,7 @@ describe('jamRow', () => {
 
   it('defaults caption and via to null when absent', () => {
     const row = jamRow(
-      'at://did:plc:x/fm.onrepeat.jam/3',
+      'at://did:plc:x/fm.onrepeat.feed.jam/3',
       'bafy',
       'did:plc:x',
       {
@@ -104,15 +104,15 @@ describe('jamRow', () => {
 
 describe('likeRow', () => {
   it('maps a like record to a row', () => {
-    const row = likeRow('at://did:plc:x/fm.onrepeat.like/1', 'did:plc:x', {
+    const row = likeRow('at://did:plc:x/fm.onrepeat.feed.like/1', 'did:plc:x', {
       $type: LIKE_NSID,
-      subject: { uri: 'at://did:plc:y/fm.onrepeat.jam/1', cid: 'bafyjam' },
+      subject: { uri: 'at://did:plc:y/fm.onrepeat.feed.jam/1', cid: 'bafyjam' },
       createdAt: '2026-05-30T00:00:00.000Z',
     })
     expect(row).toMatchObject({
-      uri: 'at://did:plc:x/fm.onrepeat.like/1',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.like/1',
       author_did: 'did:plc:x',
-      subject_uri: 'at://did:plc:y/fm.onrepeat.jam/1',
+      subject_uri: 'at://did:plc:y/fm.onrepeat.feed.jam/1',
       created_at: '2026-05-30T00:00:00.000Z',
     })
   })

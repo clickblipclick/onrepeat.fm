@@ -50,7 +50,7 @@ describe('toIngestEvent', () => {
     )
     expect(evt).toEqual({
       action: 'create',
-      uri: 'at://did:plc:author/fm.onrepeat.jam/rkey1',
+      uri: 'at://did:plc:author/fm.onrepeat.feed.jam/rkey1',
       cid: 'bafyrecord',
       did: 'did:plc:author',
       collection: JAM_NSID,
@@ -152,7 +152,7 @@ describe('dead-letter shaping', () => {
     expect(toFailedEventInput(record)).toMatchObject({
       collection: JAM_NSID,
       action: 'create',
-      uri: 'at://did:plc:author/fm.onrepeat.jam/rkey1',
+      uri: 'at://did:plc:author/fm.onrepeat.feed.jam/rkey1',
     })
     const account = toIngestEvent({
       event: 'account',

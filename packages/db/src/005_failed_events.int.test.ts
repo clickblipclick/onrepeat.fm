@@ -26,20 +26,20 @@ describe('failed_events dead-letter', () => {
       {
         seq: 42,
         did: 'did:plc:a',
-        collection: 'fm.onrepeat.jam',
+        collection: 'fm.onrepeat.feed.jam',
         action: 'create',
-        uri: 'at://did:plc:a/fm.onrepeat.jam/1',
+        uri: 'at://did:plc:a/fm.onrepeat.feed.jam/1',
         cid: 'bafyabc',
-        record: { $type: 'fm.onrepeat.jam', title: 'X' },
+        record: { $type: 'fm.onrepeat.feed.jam', title: 'X' },
       },
       'boom: constraint violation',
     )
     const rows = await db.selectFrom('failed_events').selectAll().execute()
     expect(rows).toHaveLength(1)
     expect(rows[0]!.seq).toBe('42') // bigint comes back as a string from pg
-    expect(rows[0]!.uri).toBe('at://did:plc:a/fm.onrepeat.jam/1')
+    expect(rows[0]!.uri).toBe('at://did:plc:a/fm.onrepeat.feed.jam/1')
     expect(rows[0]!.error).toContain('boom')
-    expect(rows[0]!.record).toEqual({ $type: 'fm.onrepeat.jam', title: 'X' })
+    expect(rows[0]!.record).toEqual({ $type: 'fm.onrepeat.feed.jam', title: 'X' })
   })
 
   it('stores a null record for delete events', async () => {
@@ -48,9 +48,9 @@ describe('failed_events dead-letter', () => {
       {
         seq: 43,
         did: 'did:plc:a',
-        collection: 'fm.onrepeat.like',
+        collection: 'fm.onrepeat.feed.like',
         action: 'delete',
-        uri: 'at://did:plc:a/fm.onrepeat.like/1',
+        uri: 'at://did:plc:a/fm.onrepeat.feed.like/1',
         cid: null,
         record: undefined,
       },
