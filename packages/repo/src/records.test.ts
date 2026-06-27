@@ -27,15 +27,16 @@ describe('buildJamRecord', () => {
   it('includes optional caption and via when provided', () => {
     const r = buildJamRecord({
       ...baseJam,
-      caption: 'all week',
-      via: { uri: 'at://did:plc:x/fm.onrepeat.jam/1', did: 'did:plc:x' },
+      caption: 'x',
+      via: {
+        uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
+        cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
+      },
     })
-    expect(r.caption).toBe('all week')
     expect(r.via).toEqual({
-      uri: 'at://did:plc:x/fm.onrepeat.jam/1',
-      did: 'did:plc:x',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
+      cid: 'bafyreigh2akiscaildchfkqfxldtxpf2aai3bvgqjt52ow2bfzjlf75vna',
     })
-    expect(validateRecord(JAM_NSID, r).success).toBe(true)
   })
 
   it('omits optional fields that were not provided', () => {

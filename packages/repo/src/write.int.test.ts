@@ -74,10 +74,11 @@ describe('write ops against a real PDS', () => {
   })
 
   it('reJam writes a jam with via attribution the PDS accepts and reads back with via', async () => {
-    const sourceUri = 'at://did:plc:src/fm.onrepeat.jam/9'
-    const sourceDid = 'did:plc:src'
+    const source = await postJam(agent, baseJam)
+    const sourceUri = source.uri
+    const sourceCid = source.cid
     const res = await reJam(agent, {
-      sourceJam: { uri: sourceUri, did: sourceDid },
+      sourceJam: { uri: sourceUri, cid: sourceCid },
       track: {
         sourceUrl: baseJam.sourceUrl,
         sourceProvider: baseJam.sourceProvider,
@@ -88,7 +89,7 @@ describe('write ops against a real PDS', () => {
     expect(res.uri).toContain(JAM_NSID)
     expect(res.cid).toBeTruthy()
     expect(res.record.title).toBe(baseJam.title)
-    expect(res.record.via).toEqual({ uri: sourceUri, did: sourceDid })
+    expect(res.record.via).toEqual({ uri: sourceUri, cid: sourceCid })
 
     const rkey = res.uri.split('/').pop()!
     const got = await agent.com.atproto.repo.getRecord({
@@ -99,7 +100,7 @@ describe('write ops against a real PDS', () => {
     expect(validateRecord(JAM_NSID, got.data.value).success).toBe(true)
     expect((got.data.value as any).via).toEqual({
       uri: sourceUri,
-      did: sourceDid,
+      cid: sourceCid,
     })
   })
 

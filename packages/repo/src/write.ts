@@ -196,7 +196,7 @@ export async function deleteJam(agent: Agent, rkey: string): Promise<void> {
 }
 
 export interface ReJamInput {
-  sourceJam: { uri: string; did: string }
+  sourceJam: { uri: string; cid: string }
   track: JamInput
 }
 
@@ -207,6 +207,6 @@ export async function reJam(
 ): Promise<PostJamResult> {
   return postJam(agent, {
     ...input.track,
-    via: { uri: input.sourceJam.uri, did: input.sourceJam.did },
+    via: { uri: input.sourceJam.uri, cid: input.sourceJam.cid },
   })
 }
