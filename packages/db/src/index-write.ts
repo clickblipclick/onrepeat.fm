@@ -1,9 +1,9 @@
 import type { Insertable } from 'kysely'
 
-import type { JamRecord, LikeRecord } from '@onrepeat/lexicons'
+import type { FollowRecord, JamRecord, LikeRecord } from '@onrepeat/lexicons'
 
 import type { DB } from './client'
-import type { ActorStatus, JamsTable, LikesTable } from './schema'
+import type { ActorStatus, FollowsTable, JamsTable, LikesTable } from './schema'
 
 /** The repo DID is the authority of an at-uri: at://<did>/<collection>/<rkey>. */
 function didFromAtUri(uri: string): string | null {
@@ -120,6 +120,50 @@ export async function removeLike(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('likes').where('uri', '=', uri).execute()
 }
 
+/** Build a follows insert row. */
+export function followRow(
+  uri: string,
+  did: string,
+  record: FollowRecord,
+): Insertable<FollowsTable> {
+  return {
+    uri,
+    author_did: did,
+    subject_did: record.subject,
+    created_at: record.createdAt,
+  }
+}
+
+/**
+ * Upsert a follow row into the index. Idempotent by at-uri. Shared by the firehose
+ * ingester and the web app's write-through (read-your-writes) path. Self-follows
+ * (subject === author) are skipped — representable in the lexicon but never indexed,
+ * so they can't pollute the graph or the feed.
+ */
+export async function indexFollow(
+  db: DB,
+  args: { uri: string; did: string; record: FollowRecord },
+): Promise<void> {
+  if (args.record.subject === args.did) return // skip self-follow
+  const row = followRow(args.uri, args.did, args.record)
+  await db
+    .insertInto('follows')
+    .values(row)
+    .onConflict((oc) =>
+      oc.column('uri').doUpdateSet({
+        author_did: row.author_did,
+        subject_did: row.subject_did,
+        created_at: row.created_at,
+      }),
+    )
+    .execute()
+}
+
+/** Remove a follow row from the index by at-uri. Idempotent (no-op if absent). */
+export async function removeFollow(db: DB, uri: string): Promise<void> {
+  await db.deleteFrom('follows').where('uri', '=', uri).execute()
+}
+
 /**
  * Set (or clear, with null) an actor's denormalized color theme. Upserts by DID so it
  * works whether or not the actor row already exists, and touches ONLY color_theme —
@@ -173,6 +217,14 @@ export async function purgeActorContent(db: DB, did: string): Promise<void> {
       )
       .execute()
     await trx.deleteFrom('jams').where('author_did', '=', did).execute()
+    // A deleted repo's follow edges go too — both who they followed and who
+    // followed them (their identity as a subject is gone).
+    await trx
+      .deleteFrom('follows')
+      .where((eb) =>
+        eb.or([eb('author_did', '=', did), eb('subject_did', '=', did)]),
+      )
+      .execute()
     // Their profile record died with the repo; fall back to the default theme.
     await trx
       .updateTable('actors')
