@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { linkInline } from '../../lib/link-variants'
@@ -50,7 +51,7 @@ export default async function LoginPage({
         people and post a song.
       </p>
       <LoginForm />
-      <p className="mt-4 text-center text-sm text-muted">
+      <p className="mt-4 text-sm text-muted">
         New to Bluesky?{' '}
         <a
           href="https://bsky.app"
@@ -60,6 +61,15 @@ export default async function LoginPage({
         >
           Create an account →
         </a>
+      </p>
+      <p className="mt-6 text-xs text-muted">
+        <Link href="/terms" className="hover:text-accent">
+          Terms
+        </Link>
+        {' · '}
+        <Link href="/privacy" className="hover:text-accent">
+          Privacy
+        </Link>
       </p>
     </div>
   )
