@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache, Suspense } from 'react'
 
-import { getActorJams, loadActorThemes } from '@onrepeat/appview'
+import { getActorJams, getFollowCounts, isFollowing, loadActorThemes } from '@onrepeat/appview'
 import { resolveTheme } from '@onrepeat/core'
 
 import { ArchiveGrid } from '../../_components/archive-grid'
@@ -12,6 +12,7 @@ import { HtmlTheme } from '../../_components/html-theme'
 import { JamCard } from '../../_components/jam-card'
 import { JamCardSkeleton } from '../../_components/jam-card-skeleton'
 import { SectionLabel } from '../../_components/section-label'
+import { FollowButton } from '../../_components/follow-button'
 import { bsky, hydrate } from '../../../lib/appview'
 import { db } from '../../../lib/db'
 import { isCurrentJam } from '../../../lib/format'
@@ -102,6 +103,14 @@ export default async function ProfilePage({
   const themes = await loadActorThemes(db, [profile.did])
   const ownerTheme = resolveTheme(themes.get(profile.did), profile.did)
 
+  const isOwnProfile = session.did === profile.did
+  const [counts, viewerFollows] = await Promise.all([
+    getFollowCounts(db, profile.did),
+    session.did && !isOwnProfile
+      ? isFollowing(db, session.did, profile.did)
+      : Promise.resolve(false),
+  ])
+
   return (
     <>
       {/* Theme <html> with the owner's color while this profile is open (nav, background,
@@ -109,10 +118,23 @@ export default async function ProfilePage({
       <HtmlTheme theme={ownerTheme} />
       <div className="flex items-center gap-3">
         <Avatar author={profile} size={52} />
-        <div>
+        <div className="flex-1">
           <h1 className="font-bold">{profile.displayName ?? profile.handle}</h1>
           <div className="text-sm text-muted">@{profile.handle}</div>
+          <div className="mt-1 text-sm text-muted">
+            <span className="font-medium">{counts.followers}</span>{' '}
+            followers ·{' '}
+            <span className="font-medium">{counts.following}</span>{' '}
+            following
+          </div>
         </div>
+        {!isOwnProfile && (
+          <FollowButton
+            subjectDid={profile.did}
+            initialFollowing={viewerFollows}
+            loggedIn={!!session.did}
+          />
+        )}
       </div>
 
       <Suspense fallback={<JamCardSkeleton />}>
