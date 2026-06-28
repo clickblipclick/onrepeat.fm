@@ -39,7 +39,7 @@ export default function RootLayout({
   // Color themes apply only on profile pages and individual jam cards.
   return (
     <html lang="en" className={mono.variable}>
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-dvh flex-col">
         <UiProviders>
           <ChromeGate nav={<SiteNav />} footer={<SiteFooter />}>
             {children}
