@@ -1,7 +1,9 @@
 import {
+  indexFollow,
   indexJam,
   indexLike,
   purgeActorContent,
+  removeFollow,
   removeJam,
   removeLike,
   setActorStatus,
@@ -9,9 +11,11 @@ import {
   type DB,
 } from '@onrepeat/db'
 import {
+  FOLLOW_NSID,
   JAM_NSID,
   PROFILE_NSID,
   validateRecord,
+  type FollowRecord,
   type JamRecord,
   type LikeRecord,
   type ProfileRecord,
@@ -55,6 +59,8 @@ export async function handleIngestEvent(
     } else if (evt.collection === PROFILE_NSID) {
       // Profile gone → fall back to the deterministic default on read.
       await setActorTheme(db, evt.did, null)
+    } else if (evt.collection === FOLLOW_NSID) {
+      await removeFollow(db, evt.uri)
     } else {
       await removeLike(db, evt.uri)
     }
@@ -87,6 +93,12 @@ export async function handleIngestEvent(
   } else if (evt.collection === PROFILE_NSID) {
     const record = evt.record as ProfileRecord
     await setActorTheme(db, evt.did, record.colorTheme ?? null)
+  } else if (evt.collection === FOLLOW_NSID) {
+    await indexFollow(db, {
+      uri: evt.uri,
+      did: evt.did,
+      record: evt.record as FollowRecord,
+    })
   } else {
     await indexLike(db, {
       uri: evt.uri,

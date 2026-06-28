@@ -1,7 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb, createMigrator } from '@onrepeat/db'
-import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 import type { IngestEvent, RecordIngestEvent } from './events'
 import { handleIngestEvent } from './indexer'
@@ -71,6 +76,23 @@ function profileEvent(
   }
 }
 
+function followEvent(over: Partial<RecordIngestEvent> = {}): RecordIngestEvent {
+  return {
+    action: 'create',
+    uri: 'at://did:plc:author/fm.onrepeat.graph.follow/1',
+    cid: 'bafyfollow1',
+    did: 'did:plc:author',
+    collection: FOLLOW_NSID,
+    record: {
+      $type: FOLLOW_NSID,
+      subject: 'did:plc:subject',
+      createdAt: '2026-06-27T00:00:00.000Z',
+    },
+    seq: 1,
+    ...over,
+  }
+}
+
 describe('handleIngestEvent', () => {
   beforeAll(async () => {
     const { error } = await createMigrator(db).migrateToLatest()
@@ -87,7 +109,6 @@ describe('handleIngestEvent', () => {
     await db.deleteFrom('jams').execute()
     await db.deleteFrom('likes').execute()
     await db.deleteFrom('actors').execute()
-    await db.destroy()
   })
 
   it('indexes a jam create with track_id null and records the actor', async () => {
@@ -352,4 +373,48 @@ describe('handleIngestEvent', () => {
       .executeTakeFirst()
     expect(actor?.status).toBe('deleted')
   })
+})
+
+describe('follow ingest', () => {
+  beforeEach(async () => {
+    await db.deleteFrom('follows').execute()
+  })
+
+  it('indexes a follow create', async () => {
+    await handleIngestEvent(db, followEvent())
+    const rows = await db.selectFrom('follows').selectAll().execute()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.subject_did).toBe('did:plc:subject')
+  })
+
+  it('removes a follow on delete', async () => {
+    await handleIngestEvent(db, followEvent())
+    await handleIngestEvent(
+      db,
+      followEvent({ action: 'delete', cid: null, record: undefined }),
+    )
+    const rows = await db.selectFrom('follows').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('skips a self-follow create', async () => {
+    await handleIngestEvent(
+      db,
+      followEvent({
+        record: {
+          $type: FOLLOW_NSID,
+          subject: 'did:plc:author',
+          createdAt: '2026-06-27T00:00:00.000Z',
+        },
+      }),
+    )
+    const rows = await db.selectFrom('follows').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+})
+
+// Shared db is torn down once after all describe blocks (not per-describe, which
+// would close the connection before later blocks run).
+afterAll(async () => {
+  await db.destroy()
 })
