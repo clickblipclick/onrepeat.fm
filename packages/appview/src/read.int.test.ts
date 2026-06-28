@@ -2,7 +2,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb, createMigrator } from '@onrepeat/db'
 
-import { getLatest, loadJamsByUris } from './read'
+import {
+  getFollowCounts,
+  getFollowRecord,
+  getFollowingDids,
+  isFollowing,
+  getLatest,
+  loadJamsByUris,
+} from './read'
 
 const url =
   process.env.DATABASE_URL ??
@@ -53,7 +60,6 @@ describe('getLatest', () => {
     await db.deleteFrom('likes').execute()
     await db.deleteFrom('jams').execute()
     await db.deleteFrom('tracks').execute()
-    await db.destroy()
   })
 
   it('returns newest-first with resolved track refs, like count, and likedByYou', async () => {
@@ -292,4 +298,54 @@ describe('getLatest', () => {
     const [jam] = await loadJamsByUris(db, [uri])
     expect(jam?.artworkUrl).toBe('https://cdn.test/art/abc.jpg')
   })
+})
+
+async function insertFollow(o: {
+  uri: string
+  author: string
+  subject: string
+  createdAt?: string
+}) {
+  await db
+    .insertInto('follows')
+    .values({
+      uri: o.uri,
+      author_did: o.author,
+      subject_did: o.subject,
+      created_at: o.createdAt ?? '2026-06-27T00:00:00.000Z',
+    })
+    .execute()
+}
+
+describe('follow reads', () => {
+  beforeEach(async () => {
+    await db.deleteFrom('follows').execute()
+  })
+
+  it('getFollowingDids returns deduped subjects', async () => {
+    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
+    await insertFollow({ uri: 'at://did:plc:a/x/2', author: 'did:plc:a', subject: 'did:plc:c' })
+    const dids = await getFollowingDids(db, 'did:plc:a')
+    expect(dids.sort()).toEqual(['did:plc:b', 'did:plc:c'])
+  })
+
+  it('getFollowCounts counts both directions and dedups', async () => {
+    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
+    // duplicate edge from the same author → must NOT double-count (proves COUNT DISTINCT)
+    await insertFollow({ uri: 'at://did:plc:a/x/2', author: 'did:plc:a', subject: 'did:plc:b' })
+    await insertFollow({ uri: 'at://did:plc:c/x/1', author: 'did:plc:c', subject: 'did:plc:b' })
+    await insertFollow({ uri: 'at://did:plc:b/x/1', author: 'did:plc:b', subject: 'did:plc:a' })
+    expect(await getFollowCounts(db, 'did:plc:b')).toEqual({ followers: 2, following: 1 })
+  })
+
+  it('getFollowRecord / isFollowing reflect the edge', async () => {
+    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
+    expect(await isFollowing(db, 'did:plc:a', 'did:plc:b')).toBe(true)
+    expect(await isFollowing(db, 'did:plc:a', 'did:plc:z')).toBe(false)
+    expect((await getFollowRecord(db, 'did:plc:a', 'did:plc:b'))?.uri).toBe('at://did:plc:a/x/1')
+  })
+})
+
+afterAll(async () => {
+  await db.destroy()
 })
