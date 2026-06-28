@@ -9,33 +9,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function fakeAgent(
   over: {
-    graph?: BskyAgentLike['app']['bsky']['graph']
     actor?: Partial<BskyAgentLike['app']['bsky']['actor']>
   } = {},
 ): BskyAgentLike {
   return {
     app: {
       bsky: {
-        graph: {
-          getFollows: vi.fn(
-            async ({
-              cursor,
-            }: {
-              actor: string
-              limit?: number
-              cursor?: string
-            }) =>
-              cursor
-                ? {
-                    data: {
-                      follows: [{ did: 'did:plc:b' }],
-                      cursor: undefined,
-                    },
-                  }
-                : { data: { follows: [{ did: 'did:plc:a' }], cursor: 'next' } },
-          ),
-          ...over.graph,
-        },
         actor: {
           getProfiles: vi.fn(async ({ actors }: { actors: string[] }) => ({
             data: {
@@ -63,21 +42,6 @@ function fakeAgent(
 }
 
 describe('createBskyClient', () => {
-  it('getFollows paginates and returns all DIDs, cached within TTL', async () => {
-    const agent = fakeAgent()
-    const c = createBskyClient({ agent, followsTtlMs: 50 })
-    expect(await c.getFollows('did:plc:viewer')).toEqual([
-      'did:plc:a',
-      'did:plc:b',
-    ])
-    expect(agent.app.bsky.graph.getFollows).toHaveBeenCalledTimes(2) // two pages
-    await c.getFollows('did:plc:viewer') // cached
-    expect(agent.app.bsky.graph.getFollows).toHaveBeenCalledTimes(2)
-    await sleep(120) // TTL expired
-    await c.getFollows('did:plc:viewer')
-    expect(agent.app.bsky.graph.getFollows).toHaveBeenCalledTimes(4)
-  })
-
   it('getProfiles batches by 25, caches per DID, negative-caches misses', async () => {
     const agent = fakeAgent({
       actor: {
