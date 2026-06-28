@@ -12,7 +12,7 @@ import type { RuntimeLock } from './lock'
 // record collections (omitting an action qualifier grants create/update/delete
 // on just those collections). No blob/read/preferences access is requested.
 export const DEFAULT_SCOPE =
-  'atproto repo:fm.onrepeat.feed.jam repo:fm.onrepeat.feed.like repo:fm.onrepeat.actor.profile'
+  'atproto repo:fm.onrepeat.feed.jam repo:fm.onrepeat.feed.like repo:fm.onrepeat.actor.profile repo:fm.onrepeat.graph.follow'
 
 export interface CreateOAuthClientOptions {
   mode: 'dev' | 'prod'
