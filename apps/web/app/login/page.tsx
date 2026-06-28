@@ -1,9 +1,11 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { buttonClassName } from '../../lib/button-variants'
-import { inputClassName } from '../../lib/input-variants'
 import { linkInline } from '../../lib/link-variants'
+import { pickLoginTheme } from '../../lib/login-theme'
 import { getSession } from '../../lib/session'
+import { LoginForm } from './login-form'
+import { RepeatRings } from './repeat-rings'
 
 const LOGIN_ERRORS: Record<string, string> = {
   handle: "Couldn't sign in with that handle — double-check it and try again.",
@@ -23,9 +25,17 @@ export default async function LoginPage({
       'Something went wrong signing in — please try again.')
     : null
 
+  // Re-rolled per request (this page is dynamic — it reads the session cookie), so the
+  // accent (ring arc, Sign in button, input focus ring) varies on each visit. Scoped to
+  // this subtree so the rest of the app chrome stays neutral mono.
+  const theme = pickLoginTheme()
+
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-2 text-lg font-bold">Sign in</h1>
+    <div data-theme={theme} className="w-full max-w-sm">
+      <RepeatRings />
+      <h1 className="mb-2 text-center text-lg font-bold">
+        Sign in to onrepeat
+      </h1>
       {expired && (
         <p className="mb-4 rounded border border-accent bg-surface px-3 py-2 text-sm text-accent">
           Your session expired — please sign in again.
@@ -36,24 +46,11 @@ export default async function LoginPage({
           {errorMsg}
         </p>
       )}
-      <p className="mb-4 text-sm text-muted">
+      <p className="mb-4 text-center text-sm text-muted">
         The song you&apos;ve got on repeat. Sign in with Bluesky to follow
         people and post a song.
       </p>
-      <form action="/oauth/login" method="post" className="flex gap-2">
-        <input
-          name="handle"
-          placeholder="you.bsky.social"
-          autoCapitalize="off"
-          autoCorrect="off"
-          autoComplete="username"
-          required
-          className={inputClassName('flex-1')}
-        />
-        <button type="submit" className={buttonClassName()}>
-          Sign in
-        </button>
-      </form>
+      <LoginForm />
       <p className="mt-4 text-sm text-muted">
         New to Bluesky?{' '}
         <a
@@ -64,6 +61,15 @@ export default async function LoginPage({
         >
           Create an account →
         </a>
+      </p>
+      <p className="mt-6 text-xs text-muted">
+        <Link href="/terms" className="hover:text-accent">
+          Terms
+        </Link>
+        {' · '}
+        <Link href="/privacy" className="hover:text-accent">
+          Privacy
+        </Link>
       </p>
     </div>
   )
