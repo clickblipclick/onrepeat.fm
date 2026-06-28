@@ -32,6 +32,8 @@ export function RepeatRings() {
         viewBox="0 0 100 100"
         className="absolute inset-0 h-full w-full animate-spin text-accent [animation-duration:8s] motion-reduce:animate-none"
       >
+        {/* r=46 circumference ≈ 289; dasharray 72/217 draws ~a quarter arc. This svg
+            fills the square container, so animate-spin rotates the arc about its center. */}
         <circle
           cx="50"
           cy="50"
