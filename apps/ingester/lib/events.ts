@@ -1,7 +1,12 @@
 import type { Event } from '@atproto/sync'
 
 import type { ActorStatus, FailedEventInput } from '@onrepeat/db'
-import { FOLLOW_NSID, JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 export type IngestCollection =
   | typeof JAM_NSID

@@ -4,10 +4,10 @@ import { createDb, createMigrator } from '@onrepeat/db'
 
 import {
   getFollowCounts,
-  getFollowRecord,
   getFollowingDids,
-  isFollowing,
+  getFollowRecord,
   getLatest,
+  isFollowing,
   loadJamsByUris,
 } from './read'
 
@@ -323,26 +323,59 @@ describe('follow reads', () => {
   })
 
   it('getFollowingDids returns deduped subjects', async () => {
-    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
-    await insertFollow({ uri: 'at://did:plc:a/x/2', author: 'did:plc:a', subject: 'did:plc:c' })
+    await insertFollow({
+      uri: 'at://did:plc:a/x/1',
+      author: 'did:plc:a',
+      subject: 'did:plc:b',
+    })
+    await insertFollow({
+      uri: 'at://did:plc:a/x/2',
+      author: 'did:plc:a',
+      subject: 'did:plc:c',
+    })
     const dids = await getFollowingDids(db, 'did:plc:a')
     expect(dids.sort()).toEqual(['did:plc:b', 'did:plc:c'])
   })
 
   it('getFollowCounts counts both directions and dedups', async () => {
-    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
+    await insertFollow({
+      uri: 'at://did:plc:a/x/1',
+      author: 'did:plc:a',
+      subject: 'did:plc:b',
+    })
     // duplicate edge from the same author → must NOT double-count (proves COUNT DISTINCT)
-    await insertFollow({ uri: 'at://did:plc:a/x/2', author: 'did:plc:a', subject: 'did:plc:b' })
-    await insertFollow({ uri: 'at://did:plc:c/x/1', author: 'did:plc:c', subject: 'did:plc:b' })
-    await insertFollow({ uri: 'at://did:plc:b/x/1', author: 'did:plc:b', subject: 'did:plc:a' })
-    expect(await getFollowCounts(db, 'did:plc:b')).toEqual({ followers: 2, following: 1 })
+    await insertFollow({
+      uri: 'at://did:plc:a/x/2',
+      author: 'did:plc:a',
+      subject: 'did:plc:b',
+    })
+    await insertFollow({
+      uri: 'at://did:plc:c/x/1',
+      author: 'did:plc:c',
+      subject: 'did:plc:b',
+    })
+    await insertFollow({
+      uri: 'at://did:plc:b/x/1',
+      author: 'did:plc:b',
+      subject: 'did:plc:a',
+    })
+    expect(await getFollowCounts(db, 'did:plc:b')).toEqual({
+      followers: 2,
+      following: 1,
+    })
   })
 
   it('getFollowRecord / isFollowing reflect the edge', async () => {
-    await insertFollow({ uri: 'at://did:plc:a/x/1', author: 'did:plc:a', subject: 'did:plc:b' })
+    await insertFollow({
+      uri: 'at://did:plc:a/x/1',
+      author: 'did:plc:a',
+      subject: 'did:plc:b',
+    })
     expect(await isFollowing(db, 'did:plc:a', 'did:plc:b')).toBe(true)
     expect(await isFollowing(db, 'did:plc:a', 'did:plc:z')).toBe(false)
-    expect((await getFollowRecord(db, 'did:plc:a', 'did:plc:b'))?.uri).toBe('at://did:plc:a/x/1')
+    expect((await getFollowRecord(db, 'did:plc:a', 'did:plc:b'))?.uri).toBe(
+      'at://did:plc:a/x/1',
+    )
   })
 })
 

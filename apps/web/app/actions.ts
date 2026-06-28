@@ -362,7 +362,9 @@ export async function followAction(subjectDid: string): Promise<ActionResult> {
   }
 }
 
-export async function unfollowAction(subjectDid: string): Promise<ActionResult> {
+export async function unfollowAction(
+  subjectDid: string,
+): Promise<ActionResult> {
   const res = await getSessionAgent()
   if (!res.agent)
     return {

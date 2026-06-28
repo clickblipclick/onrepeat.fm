@@ -7,7 +7,12 @@ import {
 } from '@atproto/sync'
 
 import { recordFailedEvent, type DB } from '@onrepeat/db'
-import { FOLLOW_NSID, JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 import {
   loadCursorState,

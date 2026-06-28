@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { FOLLOW_NSID, JAM_NSID, LIKE_NSID, type FollowRecord } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  type FollowRecord,
+} from '@onrepeat/lexicons'
 
 import { createDb } from './client'
 import {
@@ -459,7 +464,11 @@ describe('follows index ops', () => {
 
   it('removeFollow deletes by uri', async () => {
     const uri = 'at://did:plc:a/fm.onrepeat.graph.follow/3'
-    await indexFollow(db, { uri, did: 'did:plc:a', record: followRecord('did:plc:b') })
+    await indexFollow(db, {
+      uri,
+      did: 'did:plc:a',
+      record: followRecord('did:plc:b'),
+    })
     await removeFollow(db, uri)
     expect(await db.selectFrom('follows').selectAll().execute()).toHaveLength(0)
   })
