@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 
+import { ChromeGate } from './_components/chrome-gate'
 import { SiteFooter } from './_components/site-footer'
 import { SiteNav } from './_components/site-nav'
 import { UiProviders } from './_components/ui/providers'
@@ -40,11 +41,9 @@ export default function RootLayout({
     <html lang="en" className={mono.variable}>
       <body className="flex min-h-screen flex-col">
         <UiProviders>
-          <SiteNav />
-          <main className="mx-auto w-full max-w-2xl grow px-4 py-6">
+          <ChromeGate nav={<SiteNav />} footer={<SiteFooter />}>
             {children}
-          </main>
-          <SiteFooter />
+          </ChromeGate>
           {modal}
         </UiProviders>
       </body>

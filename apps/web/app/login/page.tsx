@@ -30,7 +30,7 @@ export default async function LoginPage({
   const theme = pickLoginTheme()
 
   return (
-    <div data-theme={theme} className="mx-auto max-w-sm">
+    <div data-theme={theme} className="w-full max-w-sm">
       <RepeatRings />
       <h1 className="mb-2 text-center text-lg font-bold">
         Sign in to onrepeat
