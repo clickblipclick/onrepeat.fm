@@ -12,15 +12,6 @@ export interface ActorProfile {
 export interface BskyAgentLike {
   app: {
     bsky: {
-      graph: {
-        getFollows(params: {
-          actor: string
-          limit?: number
-          cursor?: string
-        }): Promise<{
-          data: { follows: { did: string }[]; cursor?: string }
-        }>
-      }
       actor: {
         getProfiles(params: { actors: string[] }): Promise<{
           data: {
@@ -46,7 +37,6 @@ export interface BskyAgentLike {
 }
 
 export interface BskyClient {
-  getFollows(viewerDid: string): Promise<string[]>
   /** Returns a map of did -> profile (or null when bsky has no profile for that did). */
   getProfiles(dids: string[]): Promise<Map<string, ActorProfile | null>>
   /** Resolve a single actor (handle or DID) to a profile, or null if not found. */
@@ -55,12 +45,7 @@ export interface BskyClient {
 
 export interface BskyClientOptions {
   agent?: BskyAgentLike
-  followsTtlMs?: number
   profileTtlMs?: number
-  /** Memory bound for the follows cache, measured in total cached DIDs across all
-   *  follow-lists (a single list can hold ~50k) rather than entry count, since an
-   *  entry cap is a poor proxy for memory here. Default 500_000. */
-  followsCacheMaxSize?: number
   /** Max cached profiles (small fixed-size objects) before LRU eviction. Default 50_000. */
   profileCacheMax?: number
 }
@@ -77,22 +62,12 @@ const PUBLIC_API = 'https://public.api.bsky.app'
 export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
   const agent: BskyAgentLike =
     opts.agent ?? new AtpAgent({ service: PUBLIC_API })
-  const followsTtl = opts.followsTtlMs ?? 60_000
   const profileTtl = opts.profileTtlMs ?? 30 * 60_000
 
   // The maps these replace were unbounded — every DID/handle ever looked up stayed
   // resident for the life of the long-lived appview process. lru-cache bounds them with
   // TTL expiry (lazy: a stale entry reads as a miss; ttlAutopurge is left off because a
   // timer-per-entry is too costly at this scale) plus LRU eviction.
-  //
-  // Follow-lists are bounded by total cached DIDs (maxSize), not entry count: one list
-  // can hold ~50k DIDs (the MAX_PAGES cap below), so a flat entry cap would be a poor
-  // memory proxy. Default maxSize leaves ~10x headroom over a single max-size list.
-  const followsCache = new LRUCache<string, string[]>({
-    ttl: followsTtl,
-    maxSize: opts.followsCacheMaxSize ?? 500_000,
-    sizeCalculation: (dids) => Math.max(1, dids.length),
-  })
   const profileCache = new LRUCache<string, CachedProfile>({
     ttl: profileTtl,
     max: opts.profileCacheMax ?? 50_000,
@@ -105,28 +80,6 @@ export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
   })
 
   return {
-    async getFollows(viewerDid) {
-      const hit = followsCache.get(viewerDid)
-      if (hit !== undefined) return hit
-      // No in-flight de-duplication: concurrent cold-cache calls for the same viewer
-      // will each paginate independently. Acceptable at MVP scale.
-      const dids: string[] = []
-      let cursor: string | undefined
-      let pages = 0
-      const MAX_PAGES = 500 // safety cap (~50k follows) against a non-terminating cursor
-      do {
-        const res = await agent.app.bsky.graph.getFollows({
-          actor: viewerDid,
-          limit: 100,
-          cursor,
-        })
-        for (const f of res.data.follows) dids.push(f.did)
-        cursor = res.data.cursor
-      } while (cursor && ++pages < MAX_PAGES)
-      followsCache.set(viewerDid, dids)
-      return dids
-    },
-
     async getProfiles(dids) {
       const result = new Map<string, ActorProfile | null>()
       const misses: string[] = []
