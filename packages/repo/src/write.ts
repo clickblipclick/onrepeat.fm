@@ -1,15 +1,18 @@
 import type { Agent } from '@atproto/api'
 
 import {
+  FOLLOW_NSID,
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
+  type FollowRecord,
   type JamRecord,
   type LikeRecord,
   type StrongRef,
 } from '@onrepeat/lexicons'
 
 import {
+  buildFollowRecord,
   buildJamRecord,
   buildLikeRecord,
   buildProfileRecord,
@@ -209,4 +212,43 @@ export async function reJam(
     ...input.track,
     via: { uri: input.sourceJam.uri, cid: input.sourceJam.cid },
   })
+}
+
+export interface FollowResult extends WriteResult {
+  record: FollowRecord
+}
+
+/** Follow an actor by writing a follow record referencing their DID. */
+export async function follow(
+  agent: Agent,
+  subjectDid: string,
+): Promise<FollowResult> {
+  const record = buildFollowRecord(subjectDid)
+  const res = await tryWrite(() =>
+    agent.com.atproto.repo.createRecord({
+      repo: agent.assertDid,
+      collection: FOLLOW_NSID,
+      record: record as unknown as Record<string, unknown>,
+    }),
+  )
+  return {
+    uri: res.data.uri,
+    cid: res.data.cid,
+    validationStatus: res.data.validationStatus as
+      | 'valid'
+      | 'unknown'
+      | undefined,
+    record,
+  }
+}
+
+/** Unfollow by deleting the follow record (rkey must be known by the caller). */
+export async function unfollow(agent: Agent, rkey: string): Promise<void> {
+  await tryWrite(() =>
+    agent.com.atproto.repo.deleteRecord({
+      repo: agent.assertDid,
+      collection: FOLLOW_NSID,
+      rkey,
+    }),
+  )
 }
