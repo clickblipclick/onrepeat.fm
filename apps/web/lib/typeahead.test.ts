@@ -11,7 +11,12 @@ describe('mapTypeahead', () => {
         displayName: 'Alice',
         avatar: 'https://cdn/a.jpg',
         description: 'ignored',
-      } as { did: string; handle: string; displayName?: string; avatar?: string },
+      } as {
+        did: string
+        handle: string
+        displayName?: string
+        avatar?: string
+      },
     ])
     expect(out).toEqual([
       {

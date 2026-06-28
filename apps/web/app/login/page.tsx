@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation'
 
-import { buttonClassName } from '../../lib/button-variants'
-import { inputClassName } from '../../lib/input-variants'
 import { linkInline } from '../../lib/link-variants'
 import { getSession } from '../../lib/session'
+import { LoginForm } from './login-form'
 
 const LOGIN_ERRORS: Record<string, string> = {
   handle: "Couldn't sign in with that handle — double-check it and try again.",
@@ -40,20 +39,7 @@ export default async function LoginPage({
         The song you&apos;ve got on repeat. Sign in with Bluesky to follow
         people and post a song.
       </p>
-      <form action="/oauth/login" method="post" className="flex gap-2">
-        <input
-          name="handle"
-          placeholder="you.bsky.social"
-          autoCapitalize="off"
-          autoCorrect="off"
-          autoComplete="username"
-          required
-          className={inputClassName('flex-1')}
-        />
-        <button type="submit" className={buttonClassName()}>
-          Sign in
-        </button>
-      </form>
+      <LoginForm />
       <p className="mt-4 text-sm text-muted">
         New to Bluesky?{' '}
         <a
