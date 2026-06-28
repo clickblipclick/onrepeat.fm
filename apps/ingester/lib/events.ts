@@ -1,12 +1,18 @@
 import type { Event } from '@atproto/sync'
 
 import type { ActorStatus, FailedEventInput } from '@onrepeat/db'
-import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 export type IngestCollection =
   | typeof JAM_NSID
   | typeof LIKE_NSID
   | typeof PROFILE_NSID
+  | typeof FOLLOW_NSID
 
 export interface RecordIngestEvent {
   action: 'create' | 'update' | 'delete'
@@ -35,7 +41,9 @@ export interface AccountIngestEvent {
 export type IngestEvent = RecordIngestEvent | AccountIngestEvent
 
 function isIngestCollection(c: string): c is IngestCollection {
-  return c === JAM_NSID || c === LIKE_NSID || c === PROFILE_NSID
+  return (
+    c === JAM_NSID || c === LIKE_NSID || c === PROFILE_NSID || c === FOLLOW_NSID
+  )
 }
 
 const KNOWN_INACTIVE: readonly ActorStatus[] = [

@@ -7,7 +7,12 @@ import {
 } from '@atproto/sync'
 
 import { recordFailedEvent, type DB } from '@onrepeat/db'
-import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 import {
   loadCursorState,
@@ -104,7 +109,7 @@ export async function createIngester(
     // are set. MemoryRunner already seeds its cursor from startCursor, so runner alone
     // resumes correctly (and advances as events complete).
     runner,
-    filterCollections: [JAM_NSID, LIKE_NSID, PROFILE_NSID],
+    filterCollections: [JAM_NSID, LIKE_NSID, PROFILE_NSID, FOLLOW_NSID],
     // Identity events stay excluded ON PURPOSE: @atproto/sync resolves the DID
     // document for EVERY identity event before handing it to us — network-wide,
     // that's a PLC round-trip per event for repos we mostly don't track, and it

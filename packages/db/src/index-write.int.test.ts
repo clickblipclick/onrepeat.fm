@@ -1,12 +1,20 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { JAM_NSID, LIKE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  type FollowRecord,
+} from '@onrepeat/lexicons'
 
 import { createDb } from './client'
 import {
+  indexFollow,
   indexJam,
   indexLike,
   markTrackFailed,
+  purgeActorContent,
+  removeFollow,
   removeJam,
   removeLike,
   upsertActorProfiles,
@@ -422,6 +430,62 @@ describe('markTrackFailed', () => {
       .execute()
     await markTrackFailed(db, ID)
     expect(await statusOf()).toBe('self_contained')
+  })
+})
+
+function followRecord(subject: string): FollowRecord {
+  return { $type: FOLLOW_NSID, subject, createdAt: '2026-06-27T00:00:00.000Z' }
+}
+
+describe('follows index ops', () => {
+  beforeEach(async () => {
+    await db.deleteFrom('follows').execute()
+  })
+
+  it('indexFollow inserts a row', async () => {
+    await indexFollow(db, {
+      uri: 'at://did:plc:a/fm.onrepeat.graph.follow/1',
+      did: 'did:plc:a',
+      record: followRecord('did:plc:b'),
+    })
+    const rows = await db.selectFrom('follows').selectAll().execute()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.subject_did).toBe('did:plc:b')
+  })
+
+  it('indexFollow skips a self-follow', async () => {
+    await indexFollow(db, {
+      uri: 'at://did:plc:a/fm.onrepeat.graph.follow/2',
+      did: 'did:plc:a',
+      record: followRecord('did:plc:a'),
+    })
+    expect(await db.selectFrom('follows').selectAll().execute()).toHaveLength(0)
+  })
+
+  it('removeFollow deletes by uri', async () => {
+    const uri = 'at://did:plc:a/fm.onrepeat.graph.follow/3'
+    await indexFollow(db, {
+      uri,
+      did: 'did:plc:a',
+      record: followRecord('did:plc:b'),
+    })
+    await removeFollow(db, uri)
+    expect(await db.selectFrom('follows').selectAll().execute()).toHaveLength(0)
+  })
+
+  it('purgeActorContent clears follows in both directions', async () => {
+    await indexFollow(db, {
+      uri: 'at://did:plc:gone/fm.onrepeat.graph.follow/1',
+      did: 'did:plc:gone',
+      record: followRecord('did:plc:b'),
+    })
+    await indexFollow(db, {
+      uri: 'at://did:plc:c/fm.onrepeat.graph.follow/1',
+      did: 'did:plc:c',
+      record: followRecord('did:plc:gone'),
+    })
+    await purgeActorContent(db, 'did:plc:gone')
+    expect(await db.selectFrom('follows').selectAll().execute()).toHaveLength(0)
   })
 })
 

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 
-import { getFollowFeed } from '@onrepeat/appview'
+import { getFollowFeed, getFollowingDids } from '@onrepeat/appview'
 
-import { bsky, hydrate } from '../../../lib/appview'
+import { hydrate } from '../../../lib/appview'
 import { db } from '../../../lib/db'
 import { getSession } from '../../../lib/session'
 
@@ -13,17 +13,8 @@ export async function GET(req: Request) {
   if (!session.did)
     return NextResponse.json({ error: 'login required' }, { status: 401 })
 
-  // The follow graph comes from the upstream bsky service; if it's unavailable the feed
-  // genuinely cannot be assembled → 502 (bad gateway), distinct from a local failure.
-  let followedDids: string[]
   try {
-    followedDids = await bsky.getFollows(session.did)
-  } catch (err) {
-    console.error('[web] /api/feed getFollows failed', err)
-    return NextResponse.json({ error: 'failed to build feed' }, { status: 502 })
-  }
-
-  try {
+    const followedDids = await getFollowingDids(db, session.did)
     const page = await getFollowFeed(db, {
       followedDids,
       viewerDid: session.did,

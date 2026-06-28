@@ -430,3 +430,62 @@ export async function getFollowFeed(
   }))
   return { jams, cursor: buildCursor(cursorItems, hasMore, snap) }
 }
+
+/** DIDs the given actor follows (deduped). Feeds getFollowFeed's `followedDids`. */
+export async function getFollowingDids(db: DB, did: string): Promise<string[]> {
+  const rows = await db
+    .selectFrom('follows')
+    .select('subject_did')
+    .distinct()
+    .where('author_did', '=', did)
+    .execute()
+  return rows.map((r) => r.subject_did)
+}
+
+/** Follower + following counts for a profile (DISTINCT so duplicate follow records
+ *  from the tid-keyed graph don't double-count). */
+export async function getFollowCounts(
+  db: DB,
+  did: string,
+): Promise<{ followers: number; following: number }> {
+  const followers = await db
+    .selectFrom('follows')
+    .select((eb) => eb.fn.count<number>('author_did').distinct().as('n'))
+    .where('subject_did', '=', did)
+    .executeTakeFirst()
+  const following = await db
+    .selectFrom('follows')
+    .select((eb) => eb.fn.count<number>('subject_did').distinct().as('n'))
+    .where('author_did', '=', did)
+    .executeTakeFirst()
+  return {
+    followers: Number(followers?.n ?? 0),
+    following: Number(following?.n ?? 0),
+  }
+}
+
+/** The viewer's follow record on a subject, if any — returns its at-uri so an
+ *  unfollow can delete by rkey without a second lookup. Null when not following. */
+export async function getFollowRecord(
+  db: DB,
+  viewerDid: string,
+  subjectDid: string,
+): Promise<{ uri: string } | null> {
+  const row = await db
+    .selectFrom('follows')
+    .select('uri')
+    .where('author_did', '=', viewerDid)
+    .where('subject_did', '=', subjectDid)
+    .orderBy('created_at', 'asc')
+    .executeTakeFirst()
+  return row ?? null
+}
+
+/** Whether viewer follows subject. */
+export async function isFollowing(
+  db: DB,
+  viewerDid: string,
+  subjectDid: string,
+): Promise<boolean> {
+  return (await getFollowRecord(db, viewerDid, subjectDid)) !== null
+}

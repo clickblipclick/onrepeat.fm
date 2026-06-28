@@ -1,11 +1,11 @@
 import Link from 'next/link'
 
-import { getFollowFeed, getLatest } from '@onrepeat/appview'
+import { getFollowFeed, getFollowingDids, getLatest } from '@onrepeat/appview'
 
 import { EmptyState } from '../_components/empty-state'
 import { FeedList } from '../_components/feed-list'
 import { SectionLabel } from '../_components/section-label'
-import { bsky, hydrate } from '../../lib/appview'
+import { hydrate } from '../../lib/appview'
 import { buttonClassName } from '../../lib/button-variants'
 import { db } from '../../lib/db'
 import { linkInline } from '../../lib/link-variants'
@@ -47,10 +47,9 @@ export default async function Home() {
     )
   }
 
-  // Logged-in: the follow feed. getFollows hits the upstream bsky graph; if that
-  // (or the feed query) fails, degrade to an empty state rather than erroring the page.
+  // Logged-in: the follow feed reads our native graph (the follows table), not bsky's.
   try {
-    const followedDids = await bsky.getFollows(session.did)
+    const followedDids = await getFollowingDids(db, session.did)
     const page = await getFollowFeed(db, {
       followedDids,
       viewerDid: session.did,

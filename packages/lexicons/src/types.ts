@@ -32,3 +32,12 @@ export interface LikeRecord {
 export const JAM_NSID = 'fm.onrepeat.feed.jam'
 export const LIKE_NSID = 'fm.onrepeat.feed.like'
 export const PROFILE_NSID = 'fm.onrepeat.actor.profile'
+
+export interface FollowRecord {
+  $type: 'fm.onrepeat.graph.follow'
+  /** DID of the followed actor — must satisfy the lexicon's `format: "did"`. */
+  subject: string
+  createdAt: string
+}
+
+export const FOLLOW_NSID = 'fm.onrepeat.graph.follow'

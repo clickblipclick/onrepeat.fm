@@ -2,10 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { getFollowRecord } from '@onrepeat/appview'
 import { isThemeName, providerFromUrl } from '@onrepeat/core'
 import {
+  indexFollow,
   indexJam,
   indexLike,
+  removeFollow,
   removeJam,
   removeLike,
   setActorTheme,
@@ -18,11 +21,13 @@ import {
 } from '@onrepeat/music'
 import {
   deleteJam,
+  follow,
   likeJam,
   postJam,
   putProfile,
   reJam,
   RepoWriteError,
+  unfollow,
   unlikeJam,
   type PostJamResult,
 } from '@onrepeat/repo'
@@ -321,6 +326,67 @@ export async function deleteJamAction(uri: string): Promise<ActionResult> {
     revalidatePath('/explore')
     revalidatePath('/profile/[handle]', 'page')
     revalidatePath('/profile/[handle]/jam/[rkey]', 'page')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export async function followAction(subjectDid: string): Promise<ActionResult> {
+  const res = await getSessionAgent()
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
+  const agent = res.agent
+  if (subjectDid === agent.assertDid)
+    return { ok: false, error: 'cannot-follow-self' }
+
+  try {
+    const { uri, record } = await follow(agent, subjectDid)
+    // Write-through for read-your-writes (the firehose re-applies idempotently if this fails).
+    try {
+      await indexFollow(db, { uri, did: agent.assertDid, record })
+    } catch (e) {
+      console.error(
+        '[web] follow: write-through index failed (firehose will backfill)',
+        e,
+      )
+    }
+    revalidatePath('/')
+    revalidatePath('/profile/[handle]', 'page')
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+export async function unfollowAction(
+  subjectDid: string,
+): Promise<ActionResult> {
+  const res = await getSessionAgent()
+  if (!res.agent)
+    return {
+      ok: false,
+      error: res.reason === 'transient' ? 'temporary' : 'session-expired',
+    }
+  const agent = res.agent
+
+  try {
+    const existing = await getFollowRecord(db, agent.assertDid, subjectDid)
+    if (!existing) return { ok: false, error: 'follow-not-found' }
+    await unfollow(agent, rkeyFromUri(existing.uri))
+    try {
+      await removeFollow(db, existing.uri)
+    } catch (e) {
+      console.error(
+        '[web] unfollow: write-through removal failed (firehose will backfill)',
+        e,
+      )
+    }
+    revalidatePath('/')
+    revalidatePath('/profile/[handle]', 'page')
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }

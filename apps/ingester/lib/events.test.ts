@@ -1,7 +1,12 @@
 import type { Event } from '@atproto/sync'
 import { describe, expect, it } from 'vitest'
 
-import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from '@onrepeat/lexicons'
+import {
+  FOLLOW_NSID,
+  JAM_NSID,
+  LIKE_NSID,
+  PROFILE_NSID,
+} from '@onrepeat/lexicons'
 
 import {
   ingestEventLabel,
@@ -80,6 +85,19 @@ describe('toIngestEvent', () => {
       }),
     ) as RecordIngestEvent | null
     expect(evt?.collection).toBe(PROFILE_NSID)
+    expect(evt?.record).toEqual(record)
+  })
+
+  it('normalizes a follow create (so the social graph indexes off the firehose)', () => {
+    const record = { $type: FOLLOW_NSID, subject: 'did:plc:subject' }
+    const evt = toIngestEvent(
+      fakeCommit({
+        event: 'create',
+        collection: FOLLOW_NSID,
+        record,
+      }),
+    ) as RecordIngestEvent | null
+    expect(evt?.collection).toBe(FOLLOW_NSID)
     expect(evt?.record).toEqual(record)
   })
 

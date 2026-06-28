@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { JAM_NSID, LIKE_NSID, PROFILE_NSID } from './types'
+import { FOLLOW_NSID, JAM_NSID, LIKE_NSID, PROFILE_NSID } from './types'
 import { validateRecord } from './validate'
 
 const validJam = {
@@ -103,6 +103,34 @@ describe('regression pins (pre-publication)', () => {
       createdAt: '2026-06-10T00:00:00.000Z',
     })
     expect(res.success).toBe(true)
+  })
+})
+
+describe('fm.onrepeat.graph.follow validation', () => {
+  const valid = {
+    $type: FOLLOW_NSID,
+    subject: 'did:plc:abc123',
+    createdAt: '2026-06-27T00:00:00.000Z',
+  }
+
+  it('accepts a valid follow record', () => {
+    expect(validateRecord(FOLLOW_NSID, valid)).toEqual({ success: true })
+  })
+
+  it('rejects a missing subject', () => {
+    const { subject, ...noSubject } = valid
+    expect(validateRecord(FOLLOW_NSID, noSubject).success).toBe(false)
+  })
+
+  it('rejects a subject that is not a DID', () => {
+    expect(
+      validateRecord(FOLLOW_NSID, { ...valid, subject: 'not-a-did' }).success,
+    ).toBe(false)
+  })
+
+  it('rejects a missing createdAt', () => {
+    const { createdAt, ...noCreatedAt } = valid
+    expect(validateRecord(FOLLOW_NSID, noCreatedAt).success).toBe(false)
   })
 })
 

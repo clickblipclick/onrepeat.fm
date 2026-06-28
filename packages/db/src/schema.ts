@@ -80,6 +80,14 @@ export interface LikesTable {
   indexed_at: Generated<Timestamp>
 }
 
+export interface FollowsTable {
+  uri: string
+  author_did: string
+  subject_did: string
+  created_at: Timestamp
+  indexed_at: Generated<Timestamp>
+}
+
 export interface SubscriptionStateTable {
   service: string
   // bigint: comes back as a string from pg, accepts number | string on write
@@ -119,6 +127,7 @@ export interface Database {
   tracks: TracksTable
   jams: JamsTable
   likes: LikesTable
+  follows: FollowsTable
   subscription_state: SubscriptionStateTable
   oauth_state: OauthStateTable
   oauth_session: OauthSessionTable

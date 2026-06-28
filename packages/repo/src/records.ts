@@ -1,8 +1,10 @@
 import {
+  FOLLOW_NSID,
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
   validateRecord,
+  type FollowRecord,
   type JamRecord,
   type LikeRecord,
   type ProfileRecord,
@@ -50,6 +52,20 @@ export function buildLikeRecord(
   }
   const result = validateRecord(LIKE_NSID, record)
   if (!result.success) throw new Error(`invalid like: ${result.error}`)
+  return record
+}
+
+export function buildFollowRecord(
+  subject: string,
+  createdAt?: string,
+): FollowRecord {
+  const record: FollowRecord = {
+    $type: FOLLOW_NSID,
+    subject,
+    createdAt: createdAt ?? new Date().toISOString(),
+  }
+  const result = validateRecord(FOLLOW_NSID, record)
+  if (!result.success) throw new Error(`invalid follow: ${result.error}`)
   return record
 }
 

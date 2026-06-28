@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  FOLLOW_NSID,
   JAM_NSID,
   LIKE_NSID,
   PROFILE_NSID,
   validateRecord,
 } from '@onrepeat/lexicons'
 
-import { buildJamRecord, buildLikeRecord, buildProfileRecord } from './records'
+import {
+  buildFollowRecord,
+  buildJamRecord,
+  buildLikeRecord,
+  buildProfileRecord,
+} from './records'
 
 const baseJam = {
   sourceUrl: 'https://open.spotify.com/track/abc',
@@ -83,5 +89,20 @@ describe('buildProfileRecord', () => {
     expect(() => buildProfileRecord({ colorTheme: 'x'.repeat(65) })).toThrow(
       /invalid profile/i,
     )
+  })
+})
+
+describe('buildFollowRecord', () => {
+  it('builds a valid follow record', () => {
+    const r = buildFollowRecord('did:plc:abc', '2026-06-27T00:00:00.000Z')
+    expect(r).toEqual({
+      $type: FOLLOW_NSID,
+      subject: 'did:plc:abc',
+      createdAt: '2026-06-27T00:00:00.000Z',
+    })
+  })
+
+  it('throws on a non-DID subject', () => {
+    expect(() => buildFollowRecord('nope')).toThrow(/invalid follow/)
   })
 })
