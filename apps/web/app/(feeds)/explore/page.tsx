@@ -27,7 +27,7 @@ export default async function ExplorePage() {
         itemsKey="feed"
         empty={
           <>
-            No jams yet.{' '}
+            No tracks yet.{' '}
             <Link href="/post" className={linkInline}>
               Set yours.
             </Link>

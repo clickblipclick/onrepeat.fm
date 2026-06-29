@@ -15,7 +15,7 @@ import { db } from '../../../../../lib/db'
 export const runtime = 'nodejs'
 export const size = OG_SIZE
 export const contentType = 'image/png'
-export const alt = 'A jam on onrepeat.fm'
+export const alt = 'A track on onrepeat.fm'
 
 // Our own art CDN is configured at runtime; trust it (in addition to the provider
 // allowlist) so satori will fetch self-hosted covers for the OG card.
