@@ -50,7 +50,7 @@ export default function TermsPage() {
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Your content &amp; conduct</h2>
         <p>
-          The jams and likes you create are stored as records on{' '}
+          The tracks and likes you create are stored as records on{' '}
           <strong>your own Personal Data Server (PDS)</strong> and are{' '}
           <strong>public</strong> on the AT Protocol network. You are
           responsible for the content you post and the links you share, and you

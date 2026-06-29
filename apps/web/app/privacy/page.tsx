@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           Your activity is public by design
         </h2>
         <p>
-          The jams and likes you create are public records stored on{' '}
+          The tracks and likes you create are public records stored on{' '}
           <strong>your own Personal Data Server (PDS)</strong> on the AT
           Protocol network. The Service indexes public records from the network
           into our own database so we can build feeds and profiles. We do not
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="font-semibold text-ink">Your control over your data</h2>
         <p>
-          Deleting a jam removes it from your PDS and from our index. Signing
+          Deleting a track removes it from your PDS and from our index. Signing
           out clears your session cookie. Because your records live on your own
           PDS, your AT Protocol data ultimately remains yours and is portable.
         </p>

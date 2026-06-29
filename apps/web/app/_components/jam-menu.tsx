@@ -28,7 +28,7 @@ export function JamMenu({
 
   async function del() {
     const ok = await confirm({
-      title: 'Delete this jam?',
+      title: 'Delete this track?',
       description: "This permanently removes it and can't be undone.",
       confirmText: 'Delete',
       destructive: true,
@@ -42,19 +42,19 @@ export function JamMenu({
       } else if (res.error === 'session-expired') {
         window.location.href = '/login?expired=1'
       } else {
-        toast({ title: "Couldn't delete jam", variant: 'error' })
+        toast({ title: "Couldn't delete track", variant: 'error' })
       }
     })
   }
 
   return (
     <Menu
-      label="Jam options"
+      label="Track options"
       disabled={pending}
       triggerClassName={`inline-flex h-7 w-7 items-center justify-center rounded-full disabled:opacity-50 ${className ?? ''}`}
       items={[
         {
-          label: 'Delete jam',
+          label: 'Delete track',
           icon: <Trash2 size={16} aria-hidden />,
           onSelect: del,
           danger: true,
