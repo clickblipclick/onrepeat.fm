@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { linkInline } from '../../lib/link-variants'
+import { linkInline } from '@/lib/link-variants'
 
 export const metadata: Metadata = {
   title: 'Terms of Use · onrepeat.fm',

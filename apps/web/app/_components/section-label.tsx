@@ -1,4 +1,4 @@
-import { cn } from '../../lib/cn'
+import { cn } from '@/lib/cn'
 
 /** The uppercase muted label used for page titles and in-page section headers.
  *  One source for the size + spacing rules that were hand-rolled across pages. */

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getOauthClient } from '../../lib/oauth-client'
-import { getResponseSession } from '../../lib/session'
-import { APP_URL } from '../../lib/session-config'
+import { getOauthClient } from '@/lib/oauth-client'
+import { getResponseSession } from '@/lib/session'
+import { APP_URL } from '@/lib/session-config'
 
 export async function POST(req: NextRequest) {
   // 303 See Other: switch the POST to a GET of the home page (pinned to 127.0.0.1).

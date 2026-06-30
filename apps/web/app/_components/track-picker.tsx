@@ -18,8 +18,9 @@ import { useEffect, useRef, useState } from 'react'
 import { providerFromUrl } from '@onrepeat/core'
 import type { TrackCandidate } from '@onrepeat/music'
 
-import { inputClassName } from '../../lib/input-variants'
-import { deriveTrackAction } from '../actions'
+import { deriveTrackAction } from '@/app/actions'
+import { inputClassName } from '@/lib/input-variants'
+
 import { Button } from './ui/button'
 import { VinylPlaceholder } from './vinyl-placeholder'
 

@@ -9,11 +9,9 @@ import {
   embeddableProviders,
   LABELS,
   type Embed,
-} from '../../lib/embed'
-import {
-  parseProvider,
-  playbackCookieString,
-} from '../../lib/playback-preference'
+} from '@/lib/embed'
+import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
+
 import { Menu } from './ui/menu'
 
 interface PlaybackState {

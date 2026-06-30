@@ -3,7 +3,8 @@
 import { Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { type Embed } from '../../lib/embed'
+import { type Embed } from '@/lib/embed'
+
 import { usePlayback } from './playback'
 import { VinylPlaceholder } from './vinyl-placeholder'
 import { YouTubeEmbed } from './youtube-embed'
@@ -120,7 +121,7 @@ export function Player({
         >
           <span
             aria-hidden
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-sm transition group-hover:bg-black/75 group-focus-visible:ring-2 group-focus-visible:ring-white"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-black/20 text-white ring-1 ring-white/25 backdrop-blur-md transition duration-300 group-hover:backdrop-blur-sm group-focus-visible:ring-2 group-focus-visible:ring-white group-active:scale-95"
           >
             <Play
               size={20}

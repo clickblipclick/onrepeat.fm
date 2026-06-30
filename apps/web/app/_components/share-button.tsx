@@ -3,7 +3,7 @@
 import { Check, Send } from 'lucide-react'
 import { useState } from 'react'
 
-import { buildShareData } from '../../lib/share'
+import { buildShareData } from '@/lib/share'
 
 export function ShareButton({
   title,

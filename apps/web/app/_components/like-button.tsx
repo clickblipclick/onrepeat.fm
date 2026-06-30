@@ -3,7 +3,8 @@
 import { Heart } from 'lucide-react'
 import { useOptimistic, useState, useTransition } from 'react'
 
-import { likeJamAction, unlikeJamAction } from '../actions'
+import { likeJamAction, unlikeJamAction } from '@/app/actions'
+
 import { useLikeSync } from './liked-by'
 import { useToast } from './ui/toast'
 

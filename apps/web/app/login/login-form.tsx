@@ -15,9 +15,9 @@ import {
 } from '@floating-ui/react'
 import { useEffect, useRef, useState } from 'react'
 
-import { buttonClassName } from '../../lib/button-variants'
-import { inputClassName } from '../../lib/input-variants'
-import type { TypeaheadActor } from '../../lib/typeahead'
+import { buttonClassName } from '@/lib/button-variants'
+import { inputClassName } from '@/lib/input-variants'
+import type { TypeaheadActor } from '@/lib/typeahead'
 
 const inputCls = inputClassName('w-full')
 

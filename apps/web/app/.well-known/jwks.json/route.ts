@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { getOauthClient } from '../../../lib/oauth-client'
+import { getOauthClient } from '@/lib/oauth-client'
 
 // Must not be prerendered: keys come from runtime env, and evaluating the OAuth
 // client at build time would trip the production env guards on local builds.

@@ -2,8 +2,9 @@
 
 import { useOptimistic, useState, useTransition } from 'react'
 
-import { buttonClassName } from '../../lib/button-variants'
-import { followAction, unfollowAction } from '../actions'
+import { followAction, unfollowAction } from '@/app/actions'
+import { buttonClassName } from '@/lib/button-variants'
+
 import { useToast } from './ui/toast'
 
 export function FollowButton({

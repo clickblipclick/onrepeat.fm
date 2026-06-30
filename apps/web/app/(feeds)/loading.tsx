@@ -1,4 +1,4 @@
-import { JamCardSkeleton } from '../_components/jam-card-skeleton'
+import { JamCardSkeleton } from '@/app/_components/jam-card-skeleton'
 
 export default function Loading() {
   return (

@@ -4,7 +4,8 @@ import { LoaderCircle, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 
-import { deleteJamAction } from '../actions'
+import { deleteJamAction } from '@/app/actions'
+
 import { useConfirm } from './ui/confirm'
 import { Menu } from './ui/menu'
 import { useToast } from './ui/toast'

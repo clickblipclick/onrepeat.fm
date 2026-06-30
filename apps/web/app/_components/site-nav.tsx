@@ -1,8 +1,9 @@
 import Link from 'next/link'
 
-import { bsky } from '../../lib/appview'
-import { buttonClassName } from '../../lib/button-variants'
-import { getSession } from '../../lib/session'
+import { bsky } from '@/lib/appview'
+import { buttonClassName } from '@/lib/button-variants'
+import { getSession } from '@/lib/session'
+
 import { PostNavLink } from './post-nav-link'
 import { UserMenu } from './user-menu'
 
@@ -30,7 +31,7 @@ export async function SiteNav() {
   return (
     <header className="border-b border-ink/10">
       <nav className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 text-sm">
-        <Link href="/" className="font-bold">
+        <Link href="/" className="text-base font-bold">
           onrepeat<span className="text-accent">.fm</span>
         </Link>
         <div className="flex items-center gap-3">
@@ -46,7 +47,7 @@ export async function SiteNav() {
           ) : (
             <Link
               href="/login"
-              className={buttonClassName({ variant: 'outline', size: 'sm' })}
+              className={buttonClassName({ variant: 'outline', size: 'md' })}
             >
               sign in
             </Link>

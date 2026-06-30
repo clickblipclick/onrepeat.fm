@@ -1,7 +1,7 @@
 import { AtpAgent } from '@atproto/api'
 import { NextResponse } from 'next/server'
 
-import { mapTypeahead } from '../../../lib/typeahead'
+import { mapTypeahead } from '@/lib/typeahead'
 
 // Same public, unauthenticated AppView the appview package uses (packages/appview/src/bsky.ts).
 const PUBLIC_API = 'https://public.api.bsky.app'

@@ -32,10 +32,10 @@ import {
   type PostJamResult,
 } from '@onrepeat/repo'
 
-import { didFromUri, rkeyFromUri } from '../lib/at-uri'
-import { db } from '../lib/db'
-import { getBoss } from '../lib/jobs'
-import { getSessionAgent } from '../lib/session'
+import { didFromUri, rkeyFromUri } from '@/lib/at-uri'
+import { db } from '@/lib/db'
+import { getBoss } from '@/lib/jobs'
+import { getSessionAgent } from '@/lib/session'
 
 /**
  * After a jam write succeeds: index it into our Postgres and enqueue its resolve job
