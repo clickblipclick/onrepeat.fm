@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { searchTracks } from '@onrepeat/music'
 
-import { getSession } from '../../../lib/session'
+import { getSession } from '@/lib/session'
 
 export async function GET(req: Request) {
   const session = await getSession()

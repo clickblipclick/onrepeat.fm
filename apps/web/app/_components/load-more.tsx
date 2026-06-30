@@ -4,7 +4,8 @@ import { useState } from 'react'
 
 import type { HydratedJamView } from '@onrepeat/appview'
 
-import { readPreferredProviderClient } from '../../lib/playback-preference'
+import { readPreferredProviderClient } from '@/lib/playback-preference'
+
 import { JamCard } from './jam-card'
 import { LoadMoreButton } from './load-more-button'
 

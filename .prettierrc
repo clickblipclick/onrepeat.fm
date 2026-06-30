@@ -11,6 +11,8 @@
     "",
     "^@onrepeat/(.*)$",
     "",
+    "^@/(.*)$",
+    "",
     "^[.]"
   ],
   "importOrderTypeScriptVersion": "6.0.0",

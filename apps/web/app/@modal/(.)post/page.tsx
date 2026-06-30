@@ -1,6 +1,6 @@
-import { PostModal } from '../../_components/post-modal'
-import { getSession } from '../../../lib/session'
-import { readViewerTheme } from '../../../lib/viewer-theme'
+import { PostModal } from '@/app/_components/post-modal'
+import { getSession } from '@/lib/session'
+import { readViewerTheme } from '@/lib/viewer-theme'
 
 // Intercepts a soft navigation to /post and renders it as a modal over the current page.
 // A hard load / refresh / shared link skips this and hits app/post/page.tsx (full page).

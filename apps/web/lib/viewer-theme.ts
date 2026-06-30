@@ -10,11 +10,11 @@ import { db } from './db'
 import { getSession } from './session'
 
 /**
- * The signed-in user's resolved color theme — used by the settings page to highlight
- * their current choice. (The app chrome itself is neutral `mono`; color themes apply
- * only on profile pages and jam cards.) Logged-out / DID-less contexts get the
- * FALLBACK_THEME; a logged-in user who hasn't picked one gets their deterministic
- * default (the "random on join" behavior). Best-effort: a DB hiccup falls back.
+ * The signed-in user's resolved color theme — used by the root layout to theme the whole
+ * app shell and by the settings page to highlight their current choice. Logged-out /
+ * DID-less contexts get the FALLBACK_THEME; a logged-in user who hasn't picked one gets
+ * their deterministic default (the "random on join" behavior). Best-effort: a DB hiccup
+ * falls back.
  */
 export async function readViewerTheme(): Promise<ThemeName> {
   const { did } = await getSession()

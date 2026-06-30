@@ -11,9 +11,9 @@ const PATTERNS = [
 ] as const
 
 /**
- * Pick a stable background-pattern class for a card from a seed (the author's DID): one
- * person's cards share a signature texture, while a feed of different people varies. FNV-1a
- * hash → deterministic, no RNG.
+ * Pick a stable background-pattern class for a card from a seed (the track's
+ * "<title> <artist>"): each distinct song gets its own signature texture, while a feed of
+ * different songs varies. FNV-1a hash → deterministic, no RNG.
  */
 export function cardPattern(seed: string): string {
   let h = 0x811c9dc5

@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 
 import { getFollowFeed, getFollowingDids } from '@onrepeat/appview'
 
-import { hydrate } from '../../../lib/appview'
-import { db } from '../../../lib/db'
-import { getSession } from '../../../lib/session'
+import { hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
+import { getSession } from '@/lib/session'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)

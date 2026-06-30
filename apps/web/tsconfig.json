@@ -4,6 +4,13 @@
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node", "react", "react-dom"],
+    // `@/*` maps to the package root, so app code imports components/lib by an absolute
+    // path (`@/app/_components/…`, `@/lib/…`) instead of `../../../` chains. Next's bundler
+    // and tsc both read these paths automatically. No `baseUrl` needed under
+    // moduleResolution "Bundler" — `./*` resolves relative to this tsconfig.
+    "paths": {
+      "@/*": ["./*"]
+    },
     "plugins": [
       {
         "name": "next"

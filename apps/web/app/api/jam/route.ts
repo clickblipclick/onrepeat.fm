@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 
 import { getJam, type ActorProfile } from '@onrepeat/appview'
 
-import { cachedProfiles, hydrate } from '../../../lib/appview'
-import { db } from '../../../lib/db'
-import { getSession } from '../../../lib/session'
+import { cachedProfiles, hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
+import { getSession } from '@/lib/session'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)

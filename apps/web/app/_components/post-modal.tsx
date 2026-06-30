@@ -7,8 +7,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { ThemeName } from '@onrepeat/core'
 
-import { linkInline } from '../../lib/link-variants'
-import { PostJamForm } from '../post-jam-form'
+import { PostJamForm } from '@/app/post-jam-form'
+import { linkInline } from '@/lib/link-variants'
+
 import { Button } from './ui/button'
 import { useConfirm } from './ui/confirm'
 

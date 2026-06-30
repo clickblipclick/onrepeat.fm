@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getOauthClient } from '../../../lib/oauth-client'
-import { getResponseSession } from '../../../lib/session'
-import { APP_URL } from '../../../lib/session-config'
+import { getOauthClient } from '@/lib/oauth-client'
+import { getResponseSession } from '@/lib/session'
+import { APP_URL } from '@/lib/session-config'
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams

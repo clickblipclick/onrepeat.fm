@@ -8,9 +8,9 @@ import {
   OG_SIZE,
   RepeatBrandCard,
   RepeatJamCard,
-} from '../../../../_og/repeat-card'
-import { bsky, hydrate } from '../../../../../lib/appview'
-import { db } from '../../../../../lib/db'
+} from '@/app/_og/repeat-card'
+import { bsky, hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const size = OG_SIZE

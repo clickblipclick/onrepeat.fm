@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '../../lib/cn'
+import { cn } from '@/lib/cn'
 
 /** The dashed "load more / loading… / retry" pagination control shared by LoadMore and
  *  ArchiveGrid. Owns the label state machine so the two stay identical. */

@@ -5,30 +5,20 @@ import { cache } from 'react'
 
 import { getJam } from '@onrepeat/appview'
 
-import { authorName, type DisplayAuthor } from '../../../../_components/avatar'
-import {
-  JamCardShell,
-  MediaFrame,
-} from '../../../../_components/jam-card-shell'
-import {
-  JamActions,
-  JamBody,
-  JamHeader,
-} from '../../../../_components/jam-parts'
-import { LikedBy, LikeProvider } from '../../../../_components/liked-by'
-import {
-  PlaybackProvider,
-  PlaybackSwitcher,
-} from '../../../../_components/playback'
-import { Player } from '../../../../_components/player'
-import { RelativeTime } from '../../../../_components/relative-time'
-import { SectionLabel } from '../../../../_components/section-label'
-import { bsky, cachedProfiles, hydrate } from '../../../../../lib/appview'
-import { db } from '../../../../../lib/db'
-import { readPreferredProvider } from '../../../../../lib/playback-preference.server'
-import { getSession } from '../../../../../lib/session'
-import { APP_URL } from '../../../../../lib/session-config'
-import { buildJamOgMeta } from '../../../../../lib/share'
+import { authorName, type DisplayAuthor } from '@/app/_components/avatar'
+import { JamCardShell, MediaFrame } from '@/app/_components/jam-card-shell'
+import { JamActions, JamBody, JamHeader } from '@/app/_components/jam-parts'
+import { LikedBy, LikeProvider } from '@/app/_components/liked-by'
+import { PlaybackProvider, PlaybackSwitcher } from '@/app/_components/playback'
+import { Player } from '@/app/_components/player'
+import { RelativeTime } from '@/app/_components/relative-time'
+import { SectionLabel } from '@/app/_components/section-label'
+import { bsky, cachedProfiles, hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
+import { readPreferredProvider } from '@/lib/playback-preference.server'
+import { getSession } from '@/lib/session'
+import { APP_URL } from '@/lib/session-config'
+import { buildJamOgMeta } from '@/lib/share'
 
 // Inlined (canonical source: JAM_NSID in @onrepeat/lexicons) to avoid adding that
 // workspace dep for a single constant. Consolidate if apps/web needs more lexicon values.
@@ -127,7 +117,10 @@ export default async function JamPage({
     // Mirrors the feed/profile JamCard chrome (shared via jam-parts) for visual
     // consistency, minus the hover lift — the whole card isn't a link here, you're
     // already on the post — and plus the detail-only "liked by" / "re-jams" sections.
-    <JamCardShell did={jam.authorDid} theme={jam.author.theme}>
+    <JamCardShell
+      patternSeed={`${jam.title} ${jam.artist}`}
+      theme={jam.author.theme}
+    >
       <JamHeader
         jam={jam}
         viewerDid={session.did}

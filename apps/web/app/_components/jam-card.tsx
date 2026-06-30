@@ -40,7 +40,12 @@ export function JamCard({
     // Scope the card to its author's theme — the CSS-variable cascade (globals.css)
     // re-colors everything inside. The thick ink border + offset accent shadow + framed
     // artwork give the card weight and make the author's theme pop (riso-print feel).
-    <JamCardShell did={jam.authorDid} theme={jam.author.theme} interactive>
+    // The signature texture is seeded by the track, not the author, so each song varies.
+    <JamCardShell
+      patternSeed={`${jam.title} ${jam.artist}`}
+      theme={jam.author.theme}
+      interactive
+    >
       <JamHeader jam={jam} jamHref={jamHref} viewerDid={viewerDid} />
 
       {/* One playback scope per card: the player (media frame) and the service switcher

@@ -1,4 +1,4 @@
-import { relativeTime } from '../../lib/format'
+import { relativeTime } from '@/lib/format'
 
 export function RelativeTime({
   iso,

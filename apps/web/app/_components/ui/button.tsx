@@ -4,7 +4,7 @@ import {
   buttonClassName,
   type ButtonSize,
   type ButtonVariant,
-} from '../../../lib/button-variants'
+} from '@/lib/button-variants'
 
 export { buttonClassName }
 export type { ButtonVariant, ButtonSize }

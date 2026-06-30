@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
-import { linkInline } from '../lib/link-variants'
+import { linkInline } from '@/lib/link-variants'
+
 import { EmptyState } from './_components/empty-state'
 
 export default function NotFound() {

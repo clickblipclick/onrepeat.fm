@@ -2,13 +2,13 @@ import Link from 'next/link'
 
 import { getLatest } from '@onrepeat/appview'
 
-import { FeedList } from '../../_components/feed-list'
-import { SectionLabel } from '../../_components/section-label'
-import { hydrate } from '../../../lib/appview'
-import { db } from '../../../lib/db'
-import { linkInline } from '../../../lib/link-variants'
-import { readPreferredProvider } from '../../../lib/playback-preference.server'
-import { getSession } from '../../../lib/session'
+import { FeedList } from '@/app/_components/feed-list'
+import { SectionLabel } from '@/app/_components/section-label'
+import { hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
+import { linkInline } from '@/lib/link-variants'
+import { readPreferredProvider } from '@/lib/playback-preference.server'
+import { getSession } from '@/lib/session'
 
 export default async function ExplorePage() {
   const session = await getSession()

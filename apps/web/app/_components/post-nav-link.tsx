@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { buttonClassName } from '../../lib/button-variants'
+import { buttonClassName } from '@/lib/button-variants'
 
 /** The header "+ post a song" button. Hidden on /post itself — the full page or the
  *  intercepting modal (both set the path to /post) — since you're already composing.
@@ -15,7 +15,7 @@ export function PostNavLink() {
     <Link
       href="/post"
       scroll={false}
-      className={buttonClassName({ variant: 'outline', size: 'sm' })}
+      className={buttonClassName({ variant: 'outline', size: 'md' })}
     >
       <span className="sm:hidden">+ post</span>
       <span className="hidden sm:inline">+ post a song</span>

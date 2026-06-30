@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import type { ThemeName } from '@onrepeat/core'
 
-import { themeAccent, titleFontSize } from '../../lib/share'
+import { themeAccent, titleFontSize } from '@/lib/share'
 
 export const OG_SIZE = { width: 1200, height: 630 }
 const FONT_DIR = join(process.cwd(), 'app/_og/fonts')

@@ -44,7 +44,7 @@ export function UserMenu({
           },
         ]}
       >
-        <Avatar author={{ did, avatar }} size={24} />
+        <Avatar author={{ did, avatar }} size={34} />
       </Menu>
       {/* Native POST to the logout route (clears the session cookie, 303 → home). */}
       <form

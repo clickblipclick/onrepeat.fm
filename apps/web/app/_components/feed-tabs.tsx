@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { cn } from '../../lib/cn'
+import { cn } from '@/lib/cn'
 
 /** Segmented control that switches between the two feeds. Lives at the top of the
  *  feeds route group (see (feeds)/layout.tsx), replacing the old header nav links.

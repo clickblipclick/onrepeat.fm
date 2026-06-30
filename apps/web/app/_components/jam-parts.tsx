@@ -3,7 +3,8 @@ import Link from 'next/link'
 
 import type { HydratedJamView } from '@onrepeat/appview'
 
-import { isCurrentJam } from '../../lib/format'
+import { isCurrentJam } from '@/lib/format'
+
 import { authorName, Avatar } from './avatar'
 import { JamMenu } from './jam-menu'
 import { LikeButton } from './like-button'
@@ -55,10 +56,12 @@ export function JamHeader({
         aria-label={authorName(jam.author)}
         className="shrink-0 hover:opacity-90"
       >
-        <Avatar author={jam.author} />
+        <Avatar author={jam.author} size={28} />
       </Link>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        {/* min-h matches the 28px avatar so the name/time row centers against it
+            whether or not the owner menu button (which sets the row height) is present. */}
+        <div className="flex min-h-7 items-center gap-2">
           <Link
             href={profileHref}
             className="min-w-0 truncate font-bold hover:underline"
