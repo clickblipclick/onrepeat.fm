@@ -10,19 +10,19 @@ import {
 } from '@onrepeat/appview'
 import { resolveTheme } from '@onrepeat/core'
 
-import { ArchiveGrid } from '../../_components/archive-grid'
-import { Avatar } from '../../_components/avatar'
-import { EmptyState } from '../../_components/empty-state'
-import { FollowButton } from '../../_components/follow-button'
-import { HtmlTheme } from '../../_components/html-theme'
-import { JamCard } from '../../_components/jam-card'
-import { JamCardSkeleton } from '../../_components/jam-card-skeleton'
-import { SectionLabel } from '../../_components/section-label'
-import { bsky, hydrate } from '../../../lib/appview'
-import { db } from '../../../lib/db'
-import { isCurrentJam } from '../../../lib/format'
-import { readPreferredProvider } from '../../../lib/playback-preference.server'
-import { getSession } from '../../../lib/session'
+import { ArchiveGrid } from '@/app/_components/archive-grid'
+import { Avatar } from '@/app/_components/avatar'
+import { EmptyState } from '@/app/_components/empty-state'
+import { FollowButton } from '@/app/_components/follow-button'
+import { HtmlTheme } from '@/app/_components/html-theme'
+import { JamCard } from '@/app/_components/jam-card'
+import { JamCardSkeleton } from '@/app/_components/jam-card-skeleton'
+import { SectionLabel } from '@/app/_components/section-label'
+import { bsky, hydrate } from '@/lib/appview'
+import { db } from '@/lib/db'
+import { isCurrentJam } from '@/lib/format'
+import { readPreferredProvider } from '@/lib/playback-preference.server'
+import { getSession } from '@/lib/session'
 
 // One bsky.getProfile call per request, shared by generateMetadata and the page
 // body (bsky's own ~30min TTL cache sits underneath, but cache() guarantees
@@ -104,7 +104,7 @@ export default async function ProfilePage({
   const preferredProvider = (await readPreferredProvider()) ?? undefined
 
   // The profile page wears its owner's color theme across the whole shell (the rest of
-  // the app is neutral mono).
+  // the app wears the viewer's own theme).
   const themes = await loadActorThemes(db, [profile.did])
   const ownerTheme = resolveTheme(themes.get(profile.did), profile.did)
 
@@ -119,10 +119,10 @@ export default async function ProfilePage({
   return (
     <>
       {/* Theme <html> with the owner's color while this profile is open (nav, background,
-          cards); reverts to the neutral chrome on navigate-away. */}
+          cards); reverts to the viewer's own theme on navigate-away. */}
       <HtmlTheme theme={ownerTheme} />
       <div className="flex items-center gap-3">
-        <Avatar author={profile} size={52} />
+        <Avatar author={profile} size={68} />
         <div className="flex-1">
           <h1 className="font-bold">{profile.displayName ?? profile.handle}</h1>
           <div className="text-sm text-muted">@{profile.handle}</div>

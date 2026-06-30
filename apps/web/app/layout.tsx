@@ -3,6 +3,8 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 
+import { readViewerTheme } from '@/lib/viewer-theme'
+
 import { ChromeGate } from './_components/chrome-gate'
 import { SiteFooter } from './_components/site-footer'
 import { SiteNav } from './_components/site-nav'
@@ -28,17 +30,24 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   modal,
 }: {
   children: React.ReactNode
   modal: React.ReactNode
 }) {
-  // No data-theme on the chrome: it uses the neutral `mono` default (globals.css :root).
-  // Color themes apply only on profile pages and individual jam cards.
+  // The whole shell wears the viewer's color theme (logged-out → FALLBACK_THEME). The only
+  // exceptions are other people's content, which re-themes its own subtree: feed cards via
+  // <JamCardShell>'s per-author data-theme, and a profile page via <HtmlTheme> (which swaps
+  // <html> to the owner's theme while open, then restores the viewer's theme on leave).
+  const viewerTheme = await readViewerTheme()
   return (
-    <html lang="en" className={mono.variable}>
+    <html
+      lang="en"
+      data-theme={viewerTheme}
+      className={`${mono.variable} antialiased`}
+    >
       <body className="flex min-h-dvh flex-col">
         <UiProviders>
           <ChromeGate nav={<SiteNav />} footer={<SiteFooter />}>

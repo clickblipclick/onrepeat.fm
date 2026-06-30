@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { linkInline } from '../../lib/link-variants'
-import { pickLoginTheme } from '../../lib/login-theme'
-import { getSession } from '../../lib/session'
+import { linkInline } from '@/lib/link-variants'
+import { pickLoginTheme } from '@/lib/login-theme'
+import { getSession } from '@/lib/session'
+
 import { LoginForm } from './login-form'
 import { RepeatRings } from './repeat-rings'
 
@@ -27,7 +28,7 @@ export default async function LoginPage({
 
   // Re-rolled per request (this page is dynamic — it reads the session cookie), so the
   // accent (ring arc, Sign in button, input focus ring) varies on each visit. Scoped to
-  // this subtree so the rest of the app chrome stays neutral mono.
+  // this subtree so only the login card re-rolls, not the surrounding chrome.
   const theme = pickLoginTheme()
 
   return (
