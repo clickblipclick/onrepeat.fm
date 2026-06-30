@@ -1,19 +1,21 @@
 import type { ThemeName } from '@onrepeat/core'
 
-import { cardPattern } from '../../lib/card-pattern'
-import { cn } from '../../lib/cn'
+import { cardPattern } from '@/lib/card-pattern'
+import { cn } from '@/lib/cn'
 
 /** The themed riso-print card surface shared by the feed card and the jam detail page.
  *  `interactive` adds the hover-shadow lift (feed cards are a route into the post; the
  *  detail page is not, so it omits the lift). */
 export function JamCardShell({
-  did,
+  patternSeed,
   theme,
   interactive = false,
   className,
   children,
 }: {
-  did: string
+  /** Seed for the card's signature texture — the track's "<title> <artist>", so each
+   *  song gets its own pattern (rather than every card from one author looking alike). */
+  patternSeed: string
   theme?: ThemeName
   interactive?: boolean
   className?: string
@@ -23,7 +25,7 @@ export function JamCardShell({
     <article
       data-theme={theme}
       className={cn(
-        cardPattern(did),
+        cardPattern(patternSeed),
         'overflow-hidden rounded-md border-2 border-accent bg-surface shadow-[4px_4px_0_0_var(--accent)]',
         interactive &&
           'transition-shadow hover:shadow-[6px_6px_0_0_var(--accent)]',
