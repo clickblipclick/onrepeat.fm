@@ -7,7 +7,7 @@ describe('buttonClassName', () => {
     const c = buttonClassName()
     expect(c).toContain('bg-accent')
     expect(c).toContain('text-on-accent')
-    expect(c).toContain('py-2') // md padding
+    expect(c).toContain('py-1.5') // md padding
   })
 
   it('applies the danger variant', () => {
