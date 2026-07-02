@@ -1,7 +1,18 @@
 import type { ProviderRefs } from '@onrepeat/db'
 
 export type Embed =
-  | { kind: 'iframe'; provider: string; src: string; title: string }
+  | {
+      kind: 'iframe'
+      provider: string
+      src: string
+      title: string
+      /** YouTube only: the video id (the IFrame API player is built from it). Carried on
+       *  the model so consumers never re-parse it out of `src`. */
+      videoId?: string
+      /** The provider's user-facing page for this track — the link-out target when the
+       *  embed fails to load (blocked host, dead track). */
+      fallbackHref?: string
+    }
   | { kind: 'link'; provider: string; href: string }
 
 /** Providers we render as an inline iframe. This map ALSO gates embeddability:
@@ -19,12 +30,22 @@ export const LABELS: Record<string, string> = {
 
 type RefEntry = { url?: string; trackId?: string; embeddable?: boolean }
 
-function iframeSrc(provider: string, ref: RefEntry | undefined): string | null {
+/** Only ever link out to http(s) — never e.g. a javascript: URL. */
+function safeHttpUrl(url: string | undefined): string | undefined {
+  return url && /^https?:\/\//i.test(url) ? url : undefined
+}
+
+function iframeSrc(
+  provider: string,
+  ref: RefEntry | undefined,
+): { src: string; videoId?: string } | null {
   if (provider === 'bandcamp') {
     // size=large + artwork=small → the compact ~120px horizontal player (art thumb + controls),
     // consistent with the Spotify/Apple bars rather than the tall square.
     return ref?.trackId
-      ? `https://bandcamp.com/EmbeddedPlayer/track=${ref.trackId}/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/`
+      ? {
+          src: `https://bandcamp.com/EmbeddedPlayer/track=${ref.trackId}/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/`,
+        }
       : null
   }
   const url = ref?.url
@@ -40,7 +61,7 @@ function iframeSrc(provider: string, ref: RefEntry | undefined): string | null {
       const segments = u.pathname.split('/').filter(Boolean)
       const trackIdx = segments.indexOf('track')
       const id = trackIdx !== -1 ? segments[trackIdx + 1] : undefined
-      return id ? `https://open.spotify.com/embed/track/${id}` : null
+      return id ? { src: `https://open.spotify.com/embed/track/${id}` } : null
     }
     case 'youtube':
     case 'youtubemusic': {
@@ -49,12 +70,16 @@ function iframeSrc(provider: string, ref: RefEntry | undefined): string | null {
         u.hostname === 'youtu.be'
           ? u.pathname.slice(1)
           : u.searchParams.get('v')
-      return id ? `https://www.youtube.com/embed/${id}` : null
+      return id
+        ? { src: `https://www.youtube.com/embed/${id}`, videoId: id }
+        : null
     }
     case 'applemusic':
-      return `https://embed.music.apple.com${u.pathname}${u.search}`
+      return { src: `https://embed.music.apple.com${u.pathname}${u.search}` }
     case 'soundcloud':
-      return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`
+      return {
+        src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`,
+      }
     default:
       return null
   }
@@ -113,16 +138,19 @@ export function buildEmbed(
     const ref =
       refs[provider] ??
       (provider === sourceProvider ? { url: sourceUrl } : undefined)
-    const src = iframeSrc(provider, ref)
-    if (src)
+    const framed = iframeSrc(provider, ref)
+    if (framed)
       return {
         kind: 'iframe',
         provider,
-        src,
+        ...framed,
         title: `${LABELS[provider]} player`,
+        fallbackHref: safeHttpUrl(ref?.url),
       }
   }
-  // Defense-in-depth: never emit a non-http(s) href (e.g. a javascript: URL).
-  const href = /^https?:\/\//i.test(sourceUrl) ? sourceUrl : '#'
-  return { kind: 'link', provider: sourceProvider ?? 'source', href }
+  return {
+    kind: 'link',
+    provider: sourceProvider ?? 'source',
+    href: safeHttpUrl(sourceUrl) ?? '#',
+  }
 }

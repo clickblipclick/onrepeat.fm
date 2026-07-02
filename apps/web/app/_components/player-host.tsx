@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { clearNowPlaying } from '../../lib/now-playing-store'
-import { DEFAULT_PINNED, EmbedFrame, PINNED_FRAME } from './embed-frame'
+import { EmbedFrame } from './embed-frame'
 import { focusPlayControl } from './player'
 import { useNowPlaying } from './use-now-playing'
 
@@ -67,7 +67,7 @@ export function PlayerHost() {
       <EmbedFrame
         key={`${nowPlaying.jamUri}:${nowPlaying.embed.provider}`}
         embed={nowPlaying.embed}
-        sizeClass={PINNED_FRAME[nowPlaying.embed.provider] ?? DEFAULT_PINNED}
+        context="pinned"
         // grow: fills the dock's full width below sm (inert in the content-sized corner
         // card). max-h caps video embeds in the dock — full-width 16:9 would swallow the
         // viewport; YouTube letterboxes inside the shorter frame. rounded-xl: 12px,

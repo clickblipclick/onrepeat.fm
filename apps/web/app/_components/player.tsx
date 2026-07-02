@@ -3,7 +3,7 @@
 import { Play, X } from 'lucide-react'
 
 import { clearNowPlaying } from '../../lib/now-playing-store'
-import { DEFAULT_FRAME, EMBED_FRAME, EmbedFrame } from './embed-frame'
+import { EmbedFrame } from './embed-frame'
 import { usePlayback } from './playback'
 import { VinylPlaceholder } from './vinyl-placeholder'
 
@@ -103,7 +103,7 @@ export function Player({
             <EmbedFrame
               key={active.provider}
               embed={active}
-              sizeClass={EMBED_FRAME[active.provider] ?? DEFAULT_FRAME}
+              context="card"
               className="rounded-xl shadow-2xl ring-1 ring-black/10"
             />
           </div>

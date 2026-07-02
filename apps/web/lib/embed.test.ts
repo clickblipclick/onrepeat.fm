@@ -22,6 +22,7 @@ describe('buildEmbed', () => {
       provider: 'spotify',
       src: 'https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC',
       title: 'Spotify player',
+      fallbackHref: refs.spotify!.url,
     })
   })
 
@@ -36,6 +37,8 @@ describe('buildEmbed', () => {
       provider: 'youtube',
       src: 'https://www.youtube.com/embed/u9Dg-g7t2l4',
       title: 'YouTube player',
+      videoId: 'u9Dg-g7t2l4',
+      fallbackHref: refs.youtube!.url,
     })
   })
 
@@ -86,6 +89,8 @@ describe('buildEmbed', () => {
       provider: 'youtube',
       src: 'https://www.youtube.com/embed/abc123',
       title: 'YouTube player',
+      videoId: 'abc123',
+      fallbackHref: 'https://youtu.be/abc123',
     })
   })
 
@@ -97,6 +102,7 @@ describe('buildEmbed', () => {
       provider: 'spotify',
       src: 'https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC',
       title: 'Spotify player',
+      fallbackHref: url,
     })
   })
 
@@ -108,6 +114,7 @@ describe('buildEmbed', () => {
       provider: 'applemusic',
       src: 'https://embed.music.apple.com/us/album/song/123?i=456',
       title: 'Apple Music player',
+      fallbackHref: url,
     })
   })
 
@@ -119,6 +126,7 @@ describe('buildEmbed', () => {
       provider: 'soundcloud',
       src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`,
       title: 'SoundCloud player',
+      fallbackHref: url,
     })
   })
 
