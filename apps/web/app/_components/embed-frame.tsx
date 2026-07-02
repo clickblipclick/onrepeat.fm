@@ -30,8 +30,9 @@ export const DEFAULT_PINNED = 'aspect-square w-[320px]'
 
 /** Renders a third-party embed, revealing it only once it loads (with a 4s fallback so it
  *  never stays hidden), and falling back to a link-out when YouTube refuses to play. Sized by
- *  `sizeClass`; callers add positioning/shadow via `className`. Mount fresh per provider
- *  (key upstream) so the load gate resets on a service switch. */
+ *  `sizeClass`; callers add positioning/shadow/rounding via `className` (rounding lives with
+ *  the caller so a framed context can pick a radius concentric with its frame). Mount fresh
+ *  per provider (key upstream) so the load gate resets on a service switch. */
 export function EmbedFrame({
   embed,
   sizeClass,
@@ -57,7 +58,9 @@ export function EmbedFrame({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'} ${sizeClass} ${className}`}
+      // Hit-testable only once revealed: while hidden the frame must not swallow clicks
+      // meant for whatever sits underneath (e.g. the card's full-cover close button).
+      className={`overflow-hidden transition-opacity duration-200 ${loaded ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} ${sizeClass} ${className}`}
     >
       {isYouTube ? (
         failed ? (

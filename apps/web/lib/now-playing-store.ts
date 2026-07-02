@@ -15,6 +15,10 @@ export interface NowPlaying {
   /** The jam author's color-theme slug, so the corner player (hosted outside the card's
    *  themed subtree) can re-apply it via `data-theme` and match the card's accent. */
   theme?: string
+  /** Keyboard-initiated plays set this so the corner host takes focus — the card's play
+   *  button unmounts on desktop, so focus would otherwise be dropped on <body>. Mouse
+   *  plays leave it unset (stealing focus would make Space close the player). */
+  focusCorner?: boolean
 }
 
 let current: NowPlaying | null = null

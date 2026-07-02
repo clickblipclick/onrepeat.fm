@@ -18,6 +18,9 @@ import { useIsDesktop } from './use-is-desktop'
 import { useNowPlaying } from './use-now-playing'
 
 interface PlaybackState {
+  /** This jam's AT URI — the card's play control tags itself with it (`data-play-jam`)
+   *  so the corner host can return focus to it on close. */
+  jamUri: string
   /** The embed the player would/does show (resolved: preferred → source → first ref). */
   active: Embed
   /** Embeddable platform keys offered for this jam (the switcher's menu items). */
@@ -28,8 +31,9 @@ interface PlaybackState {
   isNowPlaying: boolean
   /** True at desktop widths (play routes to the corner host). */
   isDesktop: boolean
-  /** Start playing the currently-resolved service (never touches the stored preference). */
-  play: () => void
+  /** Start playing the currently-resolved service (never touches the stored preference).
+   *  `viaKeyboard` marks keyboard activation so the corner host knows to take focus. */
+  play: (viaKeyboard?: boolean) => void
   close: () => void
   /** Switch to a platform and play it; persists it as the preferred service. */
   launch: (p: string) => void
@@ -90,9 +94,17 @@ export function PlaybackProvider({
   const isNowPlaying = nowPlaying?.jamUri === jamUri
 
   /** Desktop → set the corner host; mobile → open the in-card embed. */
-  function start(embed: Embed) {
+  function start(embed: Embed, viaKeyboard?: boolean) {
     if (isDesktop) {
-      playNowPlaying({ jamUri, embed, title, artist, artworkUrl, theme })
+      playNowPlaying({
+        jamUri,
+        embed,
+        title,
+        artist,
+        artworkUrl,
+        theme,
+        focusCorner: viaKeyboard,
+      })
     } else {
       setActive(embed)
       setPlaying(true)
@@ -114,12 +126,13 @@ export function PlaybackProvider({
 
   const value = useMemo<PlaybackState>(
     () => ({
+      jamUri,
       active,
       platforms,
       playing,
       isNowPlaying,
       isDesktop,
-      play: () => start(active),
+      play: (viaKeyboard?: boolean) => start(active, viaKeyboard),
       close: () => setPlaying(false),
       launch,
     }),

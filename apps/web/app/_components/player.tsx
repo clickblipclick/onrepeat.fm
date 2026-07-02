@@ -20,7 +20,7 @@ export function Player({
   artist: string
   priority?: boolean
 }) {
-  const { active, playing, isNowPlaying, isDesktop, play, close } =
+  const { jamUri, active, playing, isNowPlaying, isDesktop, play, close } =
     usePlayback()
   const coverLoad = priority
     ? ({ fetchPriority: 'high' } as const)
@@ -93,7 +93,7 @@ export function Player({
               key={active.provider}
               embed={active}
               sizeClass={EMBED_FRAME[active.provider] ?? DEFAULT_FRAME}
-              className="pointer-events-auto shadow-2xl ring-1 ring-black/10"
+              className="rounded-xl shadow-2xl ring-1 ring-black/10"
             />
           </div>
         </>
@@ -114,7 +114,11 @@ export function Player({
         // dark circle + blur + ring.
         <button
           type="button"
-          onClick={play}
+          // Keyboard activation (Enter/Space) fires click with detail 0; only then does the
+          // corner host take focus, since this button is about to unmount. data-play-jam is
+          // the hook the host uses to return focus here on close.
+          onClick={(e) => play(e.detail === 0)}
+          data-play-jam={jamUri}
           aria-label={`Play ${title} by ${artist}`}
           className="cursor-play group absolute inset-0 flex items-center justify-center focus:outline-none"
         >
