@@ -136,9 +136,6 @@ export default async function JamPage({
         providerRefs={jam.providerRefs}
         sourceUrl={jam.sourceUrl}
         preferredProvider={preferredProvider}
-        title={jam.title}
-        artist={jam.artist}
-        artworkUrl={jam.artworkUrl}
         theme={jam.author.theme}
       >
         <MediaFrame>

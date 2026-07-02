@@ -11,16 +11,11 @@ import {
 const A: NowPlaying = {
   jamUri: 'at://a/jam/1',
   embed: { kind: 'iframe', provider: 'spotify', src: 's-a', title: 'pa' },
-  title: 'Song A',
-  artist: 'Artist A',
-  artworkUrl: null,
 }
 const B: NowPlaying = {
   jamUri: 'at://b/jam/2',
   embed: { kind: 'iframe', provider: 'youtube', src: 's-b', title: 'pb' },
-  title: 'Song B',
-  artist: 'Artist B',
-  artworkUrl: 'http://art/b.jpg',
+  theme: 'teal',
 }
 
 afterEach(() => clearNowPlaying())

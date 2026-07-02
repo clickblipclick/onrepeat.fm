@@ -56,9 +56,6 @@ export function JamCard({
         providerRefs={jam.providerRefs}
         sourceUrl={jam.sourceUrl}
         preferredProvider={preferredProvider}
-        title={jam.title}
-        artist={jam.artist}
-        artworkUrl={jam.artworkUrl}
         theme={jam.author.theme}
       >
         {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a

@@ -15,7 +15,7 @@ import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
 
 import { Menu } from './ui/menu'
 import { useIsDesktop } from './use-is-desktop'
-import { useNowPlaying } from './use-now-playing'
+import { useIsNowPlaying } from './use-now-playing'
 
 interface PlaybackState {
   /** This jam's AT URI — the card's play control tags itself with it (`data-play-jam`)
@@ -56,9 +56,6 @@ export function PlaybackProvider({
   providerRefs,
   sourceUrl,
   preferredProvider,
-  title,
-  artist,
-  artworkUrl,
   theme,
   lazy = true,
   children,
@@ -68,20 +65,21 @@ export function PlaybackProvider({
   providerRefs: ProviderRefs
   sourceUrl: string
   preferredProvider?: string
-  title: string
-  artist: string
-  artworkUrl: string | null
   theme?: string
   lazy?: boolean
   children: React.ReactNode
 }) {
-  const def = buildEmbed(
-    sourceProvider,
-    providerRefs,
-    sourceUrl,
-    preferredProvider,
+  // Server props that never change for a mounted card — memoized so store/breakpoint
+  // notifications don't re-run URL parsing on every card on the page.
+  const def = useMemo(
+    () =>
+      buildEmbed(sourceProvider, providerRefs, sourceUrl, preferredProvider),
+    [sourceProvider, providerRefs, sourceUrl, preferredProvider],
   )
-  const others = embeddableProviders(providerRefs)
+  const others = useMemo(
+    () => embeddableProviders(providerRefs),
+    [providerRefs],
+  )
   // Platforms offered in the switcher — the resolved embeddable refs, or the source
   // itself when nothing's resolved yet (def is always an iframe past the link guard).
   const platforms = others.length > 0 ? others : [def.provider]
@@ -89,8 +87,7 @@ export function PlaybackProvider({
   const [playing, setPlaying] = useState(!lazy)
 
   const isDesktop = useIsDesktop()
-  const nowPlaying = useNowPlaying()
-  const isNowPlaying = nowPlaying?.jamUri === jamUri
+  const isNowPlaying = useIsNowPlaying(jamUri)
 
   /** Routes playback ONCE, at play time: desktop → the corner host; mobile → the in-card
    *  embed. After this, playback is sticky to its surface — resizes never re-route (an
@@ -99,15 +96,7 @@ export function PlaybackProvider({
   function start(embed: Embed, viaKeyboard?: boolean) {
     if (isDesktop) {
       setPlaying(false)
-      playNowPlaying({
-        jamUri,
-        embed,
-        title,
-        artist,
-        artworkUrl,
-        theme,
-        focusCorner: viaKeyboard,
-      })
+      playNowPlaying({ jamUri, embed, theme, focusCorner: viaKeyboard })
     } else {
       clearNowPlaying()
       setActive(embed)
@@ -128,33 +117,20 @@ export function PlaybackProvider({
     start(embed)
   }
 
-  const value = useMemo<PlaybackState>(
-    () => ({
-      jamUri,
-      active,
-      platforms,
-      playing,
-      isNowPlaying,
-      play: (viaKeyboard?: boolean) => start(active, viaKeyboard),
-      close: () => setPlaying(false),
-      launch,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      active,
-      playing,
-      isNowPlaying,
-      isDesktop,
-      jamUri,
-      title,
-      artist,
-      artworkUrl,
-      theme,
-      sourceProvider,
-      providerRefs,
-      sourceUrl,
-    ],
-  )
+  // Plain object, deliberately un-memoized: the provider only re-renders when its own
+  // state changes (at which point the value should change anyway), and a hand-maintained
+  // dep list here has already gone stale once. Consumers live in this subtree and
+  // re-render with it regardless.
+  const value: PlaybackState = {
+    jamUri,
+    active,
+    platforms,
+    playing,
+    isNowPlaying,
+    play: (viaKeyboard?: boolean) => start(active, viaKeyboard),
+    close: () => setPlaying(false),
+    launch,
+  }
 
   return (
     <PlaybackContext.Provider value={value}>
