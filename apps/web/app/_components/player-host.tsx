@@ -64,17 +64,8 @@ export function PlayerHost() {
       // rounded-[18px]: concentric with the embed's 12px clip + border-2 + p-1 (6px gap).
       // The embed clip is pinned at 12px because providers round their own internal card
       // at ~12px — clipping tighter exposes the iframe background in the corner wedge.
-      className="fixed right-4 bottom-4 z-40 rounded-[18px] border-2 border-accent bg-surface p-1 shadow-2xl"
+      className="fixed right-4 bottom-4 z-40 flex gap-1 rounded-[18px] border-2 border-accent bg-surface p-1 shadow-2xl"
     >
-      <button
-        type="button"
-        ref={closeRef}
-        onClick={close}
-        aria-label="Close player"
-        className="absolute -top-7 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black text-white ring-1 ring-white/30 transition hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-      >
-        <X size={13} aria-hidden />
-      </button>
       {/* Keyed by jam+provider: switching service or track swaps the embed (resets the load
           gate); navigating with the same track keeps the same key → same iframe → no reload. */}
       <EmbedFrame
@@ -84,6 +75,18 @@ export function PlayerHost() {
         // 12px, matching the embeds' own internal rounding (see the frame comment above).
         className="rounded-xl"
       />
+      {/* Close spine: a rotated full-height label inside the frame, so the control reads
+          as part of the player rather than a floating chip. */}
+      <button
+        type="button"
+        ref={closeRef}
+        onClick={close}
+        aria-label="Close player"
+        className="flex items-center justify-center gap-1 rounded-md px-0.5 text-xs font-bold tracking-wide text-accent uppercase transition [writing-mode:vertical-rl] hover:bg-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        Close
+        <X size={12} aria-hidden />
+      </button>
     </div>
   )
 }
