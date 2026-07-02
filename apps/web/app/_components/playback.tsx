@@ -10,7 +10,7 @@ import {
   LABELS,
   type Embed,
 } from '@/lib/embed'
-import { playNowPlaying } from '@/lib/now-playing-store'
+import { clearNowPlaying, playNowPlaying } from '@/lib/now-playing-store'
 import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
 
 import { Menu } from './ui/menu'
@@ -25,12 +25,11 @@ interface PlaybackState {
   active: Embed
   /** Embeddable platform keys offered for this jam (the switcher's menu items). */
   platforms: string[]
-  /** Mobile only: the in-card embed is open. (Desktop playback lives in the corner host.) */
+  /** The in-card embed is open (playback that started at mobile widths — sticky to the
+   *  card across resizes; desktop-started playback lives in the corner host instead). */
   playing: boolean
-  /** Desktop only: this jam is the one playing in the corner. */
+  /** This jam is the one playing in the corner host. */
   isNowPlaying: boolean
-  /** True at desktop widths (play routes to the corner host). */
-  isDesktop: boolean
   /** Start playing the currently-resolved service (never touches the stored preference).
    *  `viaKeyboard` marks keyboard activation so the corner host knows to take focus. */
   play: (viaKeyboard?: boolean) => void
@@ -93,9 +92,13 @@ export function PlaybackProvider({
   const nowPlaying = useNowPlaying()
   const isNowPlaying = nowPlaying?.jamUri === jamUri
 
-  /** Desktop → set the corner host; mobile → open the in-card embed. */
+  /** Routes playback ONCE, at play time: desktop → the corner host; mobile → the in-card
+   *  embed. After this, playback is sticky to its surface — resizes never re-route (an
+   *  iframe can't move in the DOM without reloading, so re-routing would kill the audio).
+   *  Each branch closes the other surface so the two can't play at once. */
   function start(embed: Embed, viaKeyboard?: boolean) {
     if (isDesktop) {
+      setPlaying(false)
       playNowPlaying({
         jamUri,
         embed,
@@ -106,6 +109,7 @@ export function PlaybackProvider({
         focusCorner: viaKeyboard,
       })
     } else {
+      clearNowPlaying()
       setActive(embed)
       setPlaying(true)
     }
@@ -131,7 +135,6 @@ export function PlaybackProvider({
       platforms,
       playing,
       isNowPlaying,
-      isDesktop,
       play: (viaKeyboard?: boolean) => start(active, viaKeyboard),
       close: () => setPlaying(false),
       launch,

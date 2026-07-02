@@ -1,10 +1,22 @@
 'use client'
 
-import { Play } from 'lucide-react'
+import { Play, X } from 'lucide-react'
 
+import { clearNowPlaying } from '../../lib/now-playing-store'
 import { DEFAULT_FRAME, EMBED_FRAME, EmbedFrame } from './embed-frame'
 import { usePlayback } from './playback'
 import { VinylPlaceholder } from './vinyl-placeholder'
+
+/** Move focus to a jam's play control (the play button tags itself with `data-play-jam`).
+ *  Runs on the next frame so a control that remounts after a store clear exists by the
+ *  time we look. */
+export function focusPlayControl(jamUri: string) {
+  requestAnimationFrame(() => {
+    document
+      .querySelector<HTMLElement>(`[data-play-jam="${CSS.escape(jamUri)}"]`)
+      ?.focus({ preventScroll: true })
+  })
+}
 
 /** Cross-platform player. Click-to-play poster. On desktop, play hands off to the persistent
  *  corner <PlayerHost> (this card just shows a "now playing" marker); on mobile, the embed
@@ -20,8 +32,7 @@ export function Player({
   artist: string
   priority?: boolean
 }) {
-  const { jamUri, active, playing, isNowPlaying, isDesktop, play, close } =
-    usePlayback()
+  const { jamUri, active, playing, isNowPlaying, play, close } = usePlayback()
   const coverLoad = priority
     ? ({ fetchPriority: 'high' } as const)
     : ({ loading: 'lazy' } as const)
@@ -54,10 +65,10 @@ export function Player({
     )
   }
 
-  // Mobile shows the in-card embed when playing; desktop never does (it's in the corner host).
-  const showInCard = !isDesktop && playing
-  // Desktop highlights the card whose track is in the corner.
-  const marker = isDesktop && isNowPlaying
+  // Playback is sticky to the surface it started on (see start() in playback.tsx), so
+  // these follow the playback state alone — a resize never unmounts a live embed.
+  const showInCard = playing
+  const marker = isNowPlaying
 
   return (
     <div
@@ -98,14 +109,35 @@ export function Player({
           </div>
         </>
       ) : marker ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 text-white">
-          <span className="text-accent">
-            <Equalizer className="h-9 gap-1" barClass="w-1.5" />
+        // The active card doubles as the stop control: at rest it shows the "Active"
+        // marker; hover or keyboard focus reveals an explicit Stop affordance. (The
+        // equalizer signals "loaded in the corner player" — the embeds expose no play
+        // state, so it can't claim literal audio.) Stopping remounts the play button
+        // in this spot, so focus is handed to it.
+        <button
+          type="button"
+          onClick={() => {
+            clearNowPlaying()
+            focusPlayControl(jamUri)
+          }}
+          aria-label={`Stop ${title} by ${artist}`}
+          className="cursor-close group absolute inset-0 focus:outline-none"
+        >
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 text-white transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0">
+            <span className="text-accent">
+              <Equalizer className="h-9 gap-1" barClass="w-1.5" />
+            </span>
+            <span className="text-xs font-bold tracking-wide uppercase">
+              Active
+            </span>
           </span>
-          <span className="text-xs font-bold tracking-wide uppercase">
-            Active
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/55 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-inset">
+            <X size={32} aria-hidden />
+            <span className="text-xs font-bold tracking-wide uppercase">
+              Stop
+            </span>
           </span>
-        </div>
+        </button>
       ) : (
         // The whole cover is the play target — plays the resolved service without touching
         // the stored preference (only an explicit switcher pick persists). Hovering anywhere
