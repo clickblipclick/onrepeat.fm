@@ -36,7 +36,7 @@ export function PlayerHost() {
     if (hadFocus && jamUri) focusPlayControl(jamUri)
   }
 
-  if (!nowPlaying) return null
+  if (nowPlaying?.surface !== 'corner') return null
 
   return (
     <div
