@@ -19,158 +19,177 @@
 /* Themes. The neutral `mono` palette is the default (:root) — it dresses the app chrome
    and most pages. The six color themes (slugs mirror @onrepeat/core's THEMES) are applied
    only where a person's identity shows: their profile page and each of their jam cards,
-   via `data-theme` on that subtree. Light is the base; dark counterparts live in the
-   prefers-color-scheme block below.
+   via `data-theme` on that subtree.
 
-   Light/dark currently follows the system setting (color-scheme + the media query).
-   To add a manual toggle later: set `[data-mode='light'|'dark']` on <html> from a
-   no-flash inline script, gate the media query with `:root:not([data-mode])`, and
-   mirror the dark blocks under `[data-mode='dark'] [data-theme='<slug>']`. */
+   Each theme declares light/dark *pairs* (--bg-l/--bg-d, …); the mode switch below the
+   palettes maps the pairs onto the live tokens (--bg, …). `data-mode='light'|'dark'` on
+   <html> (server-rendered from the onrepeat_mode cookie, see lib/mode-preference.ts)
+   pins a mode; with no attribute, prefers-color-scheme decides.
+
+   Dark strategy: a bright, legible accent on a deep tinted ground, paired with a dark
+   --on-accent so accent-as-text (text-accent) and accent-as-button (bg-accent/
+   text-on-accent) both keep contrast. */
 
 /* Default: Mono — a near-black/near-white neutral for the app chrome (no color identity). */
 :root,
 [data-theme='mono'] {
-  /* color-scheme keeps native UI (scrollbars, form controls, <dialog> chrome) in
-     sync with the palette; it inherits from :root. */
-  color-scheme: light;
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --ink: #18181a;
-  --muted: #6b6b70;
-  --border: #e6e6e5;
-  --accent: #1a1a1c;
-  --on-accent: #ffffff;
+  --bg-l: #fafafa;
+  --surface-l: #ffffff;
+  --ink-l: #18181a;
+  --muted-l: #6b6b70;
+  --border-l: #e6e6e5;
+  --accent-l: #1a1a1c;
+  --on-accent-l: #ffffff;
+  --bg-d: #0d0d0f;
+  --surface-d: #18181b;
+  --ink-d: #f3f3f4;
+  --muted-d: #9b9ba1;
+  --border-d: #2a2a2e;
+  --accent-d: #f3f3f4;
+  --on-accent-d: #161617;
 }
 [data-theme='clay'] {
-  --bg: #f7f2ec;
-  --surface: #fcf8f2;
-  --ink: #1a140f;
-  --muted: #6f6253;
-  --border: #e7ddce;
-  --accent: #c5532b;
-  --on-accent: #ffffff;
+  --bg-l: #f7f2ec;
+  --surface-l: #fcf8f2;
+  --ink-l: #1a140f;
+  --muted-l: #6f6253;
+  --border-l: #e7ddce;
+  --accent-l: #b64c27;
+  --on-accent-l: #ffffff;
+  --bg-d: #18120d;
+  --surface-d: #211a13;
+  --ink-d: #f1e7da;
+  --muted-d: #ab9880;
+  --border-d: #352a1e;
+  --accent-d: #e7895a;
+  --on-accent-d: #1c1209;
 }
 [data-theme='court-green'] {
-  --bg: #f6f4ec;
-  --surface: #fbfaf4;
-  --ink: #15110d;
-  --muted: #6e665a;
-  --border: #e3dece;
-  --accent: #2f7d4f;
-  --on-accent: #ffffff;
+  --bg-l: #f6f4ec;
+  --surface-l: #fbfaf4;
+  --ink-l: #15110d;
+  --muted-l: #6e665a;
+  --border-l: #e3dece;
+  --accent-l: #2f7d4f;
+  --on-accent-l: #ffffff;
+  --bg-d: #0f140f;
+  --surface-d: #18201a;
+  --ink-d: #e7efe4;
+  --muted-d: #93a394;
+  --border-d: #283a2c;
+  --accent-d: #4caa72;
+  --on-accent-d: #0b160e;
 }
 [data-theme='ink-cobalt'] {
-  --bg: #f4f4f2;
-  --surface: #ffffff;
-  --ink: #14161a;
-  --muted: #5e646e;
-  --border: #dfe1e4;
-  --accent: #2b5bd7;
-  --on-accent: #ffffff;
+  --bg-l: #f4f4f2;
+  --surface-l: #ffffff;
+  --ink-l: #14161a;
+  --muted-l: #5e646e;
+  --border-l: #dfe1e4;
+  --accent-l: #2b5bd7;
+  --on-accent-l: #ffffff;
+  --bg-d: #0f1216;
+  --surface-d: #181c22;
+  --ink-d: #e6eaf1;
+  --muted-d: #8e97a6;
+  --border-d: #2a313c;
+  --accent-d: #6f9bff;
+  --on-accent-d: #0c1018;
 }
 [data-theme='marigold'] {
-  --bg: #f9f4e8;
-  --surface: #fdfaf0;
-  --ink: #1c1710;
-  --muted: #6f6450;
-  --border: #e8dfc9;
-  --accent: #9c670a;
-  --on-accent: #ffffff;
+  --bg-l: #f9f4e8;
+  --surface-l: #fdfaf0;
+  --ink-l: #1c1710;
+  --muted-l: #6f6450;
+  --border-l: #e8dfc9;
+  --accent-l: #966309;
+  --on-accent-l: #ffffff;
+  --bg-d: #16130b;
+  --surface-d: #1f1a10;
+  --ink-d: #f1e9d6;
+  --muted-d: #a99a7d;
+  --border-d: #342d1c;
+  --accent-d: #e2ad3a;
+  --on-accent-d: #1a1408;
 }
 [data-theme='plum'] {
-  --bg: #f6f3f7;
-  --surface: #fcf9fc;
-  --ink: #18141a;
-  --muted: #695f6e;
-  --border: #e4dde6;
-  --accent: #7c4aa6;
-  --on-accent: #ffffff;
+  --bg-l: #f6f3f7;
+  --surface-l: #fcf9fc;
+  --ink-l: #18141a;
+  --muted-l: #695f6e;
+  --border-l: #e4dde6;
+  --accent-l: #7c4aa6;
+  --on-accent-l: #ffffff;
+  --bg-d: #16121a;
+  --surface-d: #1f1a24;
+  --ink-d: #efe7f2;
+  --muted-d: #a294ab;
+  --border-d: #332a3b;
+  --accent-d: #b582e6;
+  --on-accent-d: #170f1f;
 }
 [data-theme='teal'] {
-  --bg: #eef4f3;
-  --surface: #f8fbfa;
-  --ink: #121a19;
-  --muted: #5c6a68;
-  --border: #d6e2df;
-  --accent: #0f766e;
-  --on-accent: #ffffff;
+  --bg-l: #eef4f3;
+  --surface-l: #f8fbfa;
+  --ink-l: #121a19;
+  --muted-l: #5c6a68;
+  --border-l: #d6e2df;
+  --accent-l: #0f766e;
+  --on-accent-l: #ffffff;
+  --bg-d: #0d1413;
+  --surface-d: #15201e;
+  --ink-d: #e2efec;
+  --muted-d: #8ba39e;
+  --border-d: #243a36;
+  --accent-d: #2bb3a3;
+  --on-accent-d: #07201d;
 }
 
-/* Dark counterparts. Strategy: a bright, legible accent on a deep tinted ground,
-   paired with a dark --on-accent so accent-as-text (text-accent) and accent-as-button
-   (bg-accent/text-on-accent) both keep contrast. */
+/* Mode switch: light pairs are the base; dark pairs win when the mode is pinned dark, or
+   when the system prefers dark and light isn't pinned. Selectors cover both :root (the
+   viewer-themed chrome) and nested [data-theme] subtrees (per-author cards, profiles).
+   color-scheme keeps native UI (scrollbars, form controls, <dialog> chrome) in sync with
+   the resolved mode; it inherits from :root. */
+:root,
+[data-theme] {
+  --bg: var(--bg-l);
+  --surface: var(--surface-l);
+  --ink: var(--ink-l);
+  --muted: var(--muted-l);
+  --border: var(--border-l);
+  --accent: var(--accent-l);
+  --on-accent: var(--on-accent-l);
+}
+:root {
+  color-scheme: light;
+}
 @media (prefers-color-scheme: dark) {
-  :root,
-  [data-theme='mono'] {
-    color-scheme: dark;
-    --bg: #0d0d0f;
-    --surface: #18181b;
-    --ink: #f3f3f4;
-    --muted: #9b9ba1;
-    --border: #2a2a2e;
-    --accent: #f3f3f4;
-    --on-accent: #161617;
+  :root:not([data-mode='light']),
+  :root:not([data-mode='light']) [data-theme] {
+    --bg: var(--bg-d);
+    --surface: var(--surface-d);
+    --ink: var(--ink-d);
+    --muted: var(--muted-d);
+    --border: var(--border-d);
+    --accent: var(--accent-d);
+    --on-accent: var(--on-accent-d);
   }
-  [data-theme='clay'] {
+  :root:not([data-mode='light']) {
     color-scheme: dark;
-    --bg: #18120d;
-    --surface: #211a13;
-    --ink: #f1e7da;
-    --muted: #ab9880;
-    --border: #352a1e;
-    --accent: #e7895a;
-    --on-accent: #1c1209;
   }
-  [data-theme='court-green'] {
-    color-scheme: dark;
-    --bg: #0f140f;
-    --surface: #18201a;
-    --ink: #e7efe4;
-    --muted: #93a394;
-    --border: #283a2c;
-    --accent: #4caa72;
-    --on-accent: #0b160e;
-  }
-  [data-theme='ink-cobalt'] {
-    color-scheme: dark;
-    --bg: #0f1216;
-    --surface: #181c22;
-    --ink: #e6eaf1;
-    --muted: #8e97a6;
-    --border: #2a313c;
-    --accent: #6f9bff;
-    --on-accent: #0c1018;
-  }
-  [data-theme='marigold'] {
-    color-scheme: dark;
-    --bg: #16130b;
-    --surface: #1f1a10;
-    --ink: #f1e9d6;
-    --muted: #a99a7d;
-    --border: #342d1c;
-    --accent: #e2ad3a;
-    --on-accent: #1a1408;
-  }
-  [data-theme='plum'] {
-    color-scheme: dark;
-    --bg: #16121a;
-    --surface: #1f1a24;
-    --ink: #efe7f2;
-    --muted: #a294ab;
-    --border: #332a3b;
-    --accent: #b582e6;
-    --on-accent: #170f1f;
-  }
-  [data-theme='teal'] {
-    color-scheme: dark;
-    --bg: #0d1413;
-    --surface: #15201e;
-    --ink: #e2efec;
-    --muted: #8ba39e;
-    --border: #243a36;
-    --accent: #2bb3a3;
-    --on-accent: #07201d;
-  }
+}
+:root[data-mode='dark'],
+:root[data-mode='dark'] [data-theme] {
+  --bg: var(--bg-d);
+  --surface: var(--surface-d);
+  --ink: var(--ink-d);
+  --muted: var(--muted-d);
+  --border: var(--border-d);
+  --accent: var(--accent-d);
+  --on-accent: var(--on-accent-d);
+}
+:root[data-mode='dark'] {
+  color-scheme: dark;
 }
 
 body {

@@ -26,7 +26,8 @@ export default async function SettingsPage() {
         <h2 className="font-bold">Profile theme</h2>
         <p className="mt-1 mb-3 text-sm text-muted">
           The colors for your profile and your posts in other people&apos;s
-          feeds. Light and dark follow your device.
+          feeds. Light and dark follow your display mode (the switch in the
+          footer).
         </p>
         <ThemePicker current={current} />
       </section>
