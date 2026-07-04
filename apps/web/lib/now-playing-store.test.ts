@@ -11,10 +11,12 @@ import {
 const A: NowPlaying = {
   jamUri: 'at://a/jam/1',
   embed: { kind: 'iframe', provider: 'spotify', src: 's-a', title: 'pa' },
+  surface: 'corner',
 }
 const B: NowPlaying = {
   jamUri: 'at://b/jam/2',
   embed: { kind: 'iframe', provider: 'youtube', src: 's-b', title: 'pb' },
+  surface: 'card',
   theme: 'teal',
 }
 

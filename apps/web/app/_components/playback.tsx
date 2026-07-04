@@ -15,7 +15,7 @@ import { parseProvider, playbackCookieString } from '@/lib/playback-preference'
 
 import { Menu } from './ui/menu'
 import { useIsDesktop } from './use-is-desktop'
-import { useIsNowPlaying } from './use-now-playing'
+import { useNowPlayingSurface } from './use-now-playing'
 
 interface PlaybackState {
   /** This jam's AT URI — the card's play control tags itself with it (`data-play-jam`)
@@ -25,10 +25,10 @@ interface PlaybackState {
   active: Embed
   /** Embeddable platform keys offered for this jam (the switcher's menu items). */
   platforms: string[]
-  /** The in-card embed is open (playback that started at mobile widths — sticky to the
-   *  card across resizes; desktop-started playback lives in the corner host instead). */
+  /** The in-card embed is open — this jam holds the now-playing slot with surface
+   *  'card' (mobile-width plays; sticky to the card across resizes). */
   playing: boolean
-  /** This jam is the one playing in the corner host. */
+  /** This jam holds the now-playing slot with surface 'corner' (the desktop host). */
   isNowPlaying: boolean
   /** Start playing the currently-resolved service (never touches the stored preference).
    *  `viaKeyboard` marks keyboard activation so the corner host knows to take focus. */
@@ -57,7 +57,6 @@ export function PlaybackProvider({
   sourceUrl,
   preferredProvider,
   theme,
-  lazy = true,
   children,
 }: {
   jamUri: string
@@ -66,7 +65,6 @@ export function PlaybackProvider({
   sourceUrl: string
   preferredProvider?: string
   theme?: string
-  lazy?: boolean
   children: React.ReactNode
 }) {
   // Server props that never change for a mounted card — memoized so store/breakpoint
@@ -84,24 +82,26 @@ export function PlaybackProvider({
   // itself when nothing's resolved yet (def is always an iframe past the link guard).
   const platforms = others.length > 0 ? others : [def.provider]
   const [active, setActive] = useState<Embed>(def)
-  const [playing, setPlaying] = useState(!lazy)
 
   const isDesktop = useIsDesktop()
-  const isNowPlaying = useIsNowPlaying(jamUri)
+  // This card's playback lives entirely in the shared now-playing slot — there's one
+  // slot for the whole app, so starting ANY play (this card or another, either surface)
+  // inherently stops whatever was playing before.
+  const surface = useNowPlayingSurface(jamUri)
+  const playing = surface === 'card'
+  const isNowPlaying = surface === 'corner'
 
   /** Routes playback ONCE, at play time: desktop → the corner host; mobile → the in-card
-   *  embed. After this, playback is sticky to its surface — resizes never re-route (an
-   *  iframe can't move in the DOM without reloading, so re-routing would kill the audio).
-   *  Each branch closes the other surface so the two can't play at once. */
+   *  embed. The surface is recorded on the slot, so playback stays sticky across resizes
+   *  (an iframe can't move in the DOM without reloading — re-routing would kill audio). */
   function start(embed: Embed, viaKeyboard?: boolean) {
-    if (isDesktop) {
-      setPlaying(false)
-      playNowPlaying({ jamUri, embed, theme, focusCorner: viaKeyboard })
-    } else {
-      clearNowPlaying()
-      setActive(embed)
-      setPlaying(true)
-    }
+    playNowPlaying({
+      jamUri,
+      embed,
+      theme,
+      surface: isDesktop ? 'corner' : 'card',
+      focusCorner: isDesktop ? viaKeyboard : undefined,
+    })
   }
 
   function launch(p: string) {
@@ -128,7 +128,10 @@ export function PlaybackProvider({
     playing,
     isNowPlaying,
     play: (viaKeyboard?: boolean) => start(active, viaKeyboard),
-    close: () => setPlaying(false),
+    // Card-scoped: only clears the slot while this card's in-card embed owns it.
+    close: () => {
+      if (playing) clearNowPlaying()
+    },
     launch,
   }
 

@@ -9,6 +9,10 @@ import type { Embed } from './embed'
 export interface NowPlaying {
   jamUri: string
   embed: Embed
+  /** Where this playback lives — decided once at play time (see start() in playback.tsx):
+   *  'corner' renders in the persistent host, 'card' renders inside the jam card. One
+   *  slot covering both surfaces is what makes playback single-active app-wide. */
+  surface: 'corner' | 'card'
   /** The jam author's color-theme slug, so the corner player (hosted outside the card's
    *  themed subtree) can re-apply it via `data-theme` and match the card's accent. */
   theme?: string
