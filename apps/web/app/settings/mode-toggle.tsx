@@ -45,10 +45,12 @@ export function ModeToggle({ initial }: { initial: DisplayMode }) {
               router.refresh()
             }}
             className={cn(
-              'flex flex-col gap-2 rounded-md border bg-surface p-3 text-left transition outline-none',
+              'flex flex-col gap-2 rounded-md border bg-surface p-3 text-left transition-colors outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent',
+              // forced-colors: rings (box-shadow) are stripped and all borders get the
+              // same system color, so give the active card a real outline there.
               selected
-                ? 'border-accent ring-2 ring-accent'
+                ? 'border-accent ring-2 ring-accent forced-colors:outline-2 forced-colors:-outline-offset-2 forced-colors:outline-solid'
                 : 'border-border hover:border-accent',
             )}
           >

@@ -11,10 +11,10 @@ import {
 
 describe('themeAccent', () => {
   it('maps each known theme to its light accent hex', () => {
-    expect(themeAccent('clay')).toBe('#c5532b')
+    expect(themeAccent('clay')).toBe('#b64c27')
     expect(themeAccent('court-green')).toBe('#2f7d4f')
     expect(themeAccent('ink-cobalt')).toBe('#2b5bd7')
-    expect(themeAccent('marigold')).toBe('#9c670a')
+    expect(themeAccent('marigold')).toBe('#966309')
     expect(themeAccent('plum')).toBe('#7c4aa6')
     expect(themeAccent('teal')).toBe('#0f766e')
   })

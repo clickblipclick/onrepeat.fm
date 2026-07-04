@@ -34,7 +34,6 @@ export function ModeSwitch({ initial }: { initial: DisplayMode }) {
             key={value}
             type="button"
             aria-label={label}
-            title={label}
             aria-pressed={selected}
             onClick={() => {
               setMode(value)
@@ -42,9 +41,11 @@ export function ModeSwitch({ initial }: { initial: DisplayMode }) {
               router.refresh()
             }}
             className={cn(
-              'rounded-full p-1.5 transition outline-none focus-visible:ring-2 focus-visible:ring-accent',
+              'rounded-full p-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent',
+              // forced-colors: bg/shadow are stripped, so give the active segment
+              // a real outline there (recolored to a visible system color).
               selected
-                ? 'bg-surface text-ink shadow-sm'
+                ? 'bg-surface text-ink shadow-sm forced-colors:outline-2 forced-colors:-outline-offset-2 forced-colors:outline-solid'
                 : 'text-muted hover:text-ink',
             )}
           >

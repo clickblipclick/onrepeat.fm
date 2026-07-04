@@ -4,10 +4,10 @@ import type { ThemeName } from '@onrepeat/core'
  *  Satori can't read CSS vars, so the OG card needs concrete hexes. Neutral fallback
  *  matches the `mono` chrome accent. */
 const THEME_ACCENT: Record<ThemeName, string> = {
-  clay: '#c5532b',
+  clay: '#b64c27',
   'court-green': '#2f7d4f',
   'ink-cobalt': '#2b5bd7',
-  marigold: '#9c670a',
+  marigold: '#966309',
   plum: '#7c4aa6',
   teal: '#0f766e',
 }
