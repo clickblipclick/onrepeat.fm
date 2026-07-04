@@ -2,13 +2,16 @@ import Link from 'next/link'
 
 import { bsky } from '@/lib/appview'
 import { buttonClassName } from '@/lib/button-variants'
+import { readModePreference } from '@/lib/mode-preference.server'
 import { getSession } from '@/lib/session'
 
+import { ModeMenu } from './mode-menu'
 import { PostNavLink } from './post-nav-link'
 import { UserMenu } from './user-menu'
 
 export async function SiteNav() {
   const session = await getSession()
+  const mode = await readModePreference()
 
   // Resolve the logged-in user's profile so the header links to the nicer
   // handle-based URL and shows their avatar. The /profile route also accepts a
@@ -45,12 +48,15 @@ export async function SiteNav() {
               />
             </>
           ) : (
-            <Link
-              href="/login"
-              className={buttonClassName({ variant: 'outline', size: 'md' })}
-            >
-              sign in
-            </Link>
+            <>
+              <ModeMenu initial={mode ?? 'system'} />
+              <Link
+                href="/login"
+                className={buttonClassName({ variant: 'outline', size: 'md' })}
+              >
+                sign in
+              </Link>
+            </>
           )}
         </div>
       </nav>
