@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 
+import { readModePreference } from '@/lib/mode-preference.server'
 import { readViewerTheme } from '@/lib/viewer-theme'
 
 import { ChromeGate } from './_components/chrome-gate'
@@ -43,10 +44,14 @@ export default async function RootLayout({
   // <JamCardShell>'s per-author data-theme, and a profile page via <HtmlTheme> (which swaps
   // <html> to the owner's theme while open, then restores the viewer's theme on leave).
   const viewerTheme = await readViewerTheme()
+  // A pinned display mode (onrepeat_mode cookie) rides along as data-mode so the
+  // right palette is server-rendered — no flash, no inline script. Absent = system.
+  const mode = await readModePreference()
   return (
     <html
       lang="en"
       data-theme={viewerTheme}
+      data-mode={mode ?? undefined}
       className={`${mono.variable} antialiased`}
     >
       <body className="flex min-h-dvh flex-col">
