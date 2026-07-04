@@ -1,30 +1,26 @@
 'use client'
 
-import { Play } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Play, X } from 'lucide-react'
 
-import { type Embed } from '@/lib/embed'
-
+import { clearNowPlaying } from '../../lib/now-playing-store'
+import { EmbedFrame } from './embed-frame'
 import { usePlayback } from './playback'
 import { VinylPlaceholder } from './vinyl-placeholder'
-import { YouTubeEmbed } from './youtube-embed'
 
-// Reasonable embed dimensions per provider, sized inside the square cover frame:
-// "bar" players get a fixed height, video gets 16:9, everything else stays square.
-const EMBED_FRAME: Record<string, string> = {
-  youtube: 'aspect-video w-full',
-  youtubemusic: 'aspect-video w-full',
-  spotify: 'h-[152px] w-full',
-  applemusic: 'h-[175px] w-full',
-  bandcamp: 'h-[120px] w-full',
+/** Move focus to a jam's play control (the play button tags itself with `data-play-jam`).
+ *  Runs on the next frame so a control that remounts after a store clear exists by the
+ *  time we look. */
+export function focusPlayControl(jamUri: string) {
+  requestAnimationFrame(() => {
+    document
+      .querySelector<HTMLElement>(`[data-play-jam="${CSS.escape(jamUri)}"]`)
+      ?.focus({ preventScroll: true })
+  })
 }
-const DEFAULT_FRAME = 'aspect-square w-full'
 
-/** Cross-platform player. Click-to-play by default: shows the album art as a poster and
- *  only mounts the third-party embed once the user hits play — keeps the art the focal
- *  point and avoids loading provider iframes (and their trackers) unbidden. Playback
- *  state (service + playing) lives in the surrounding <PlaybackProvider>, shared with
- *  the "via … ▾" switcher rendered beside the title/artist. */
+/** Cross-platform player. Click-to-play poster. On desktop, play hands off to the persistent
+ *  corner <PlayerHost> (this card just shows a "now playing" marker); on mobile, the embed
+ *  opens in-card. Playback routing lives in <PlaybackProvider>. */
 export function Player({
   artworkUrl,
   title,
@@ -32,16 +28,11 @@ export function Player({
   priority = false,
 }: {
   artworkUrl: string | null
-  /** Track title/artist — used only for accessible labels ("Play {title} by {artist}"). */
   title: string
   artist: string
-  /** Mark the cover as the LCP image (detail hero / first feed card): loads eagerly at
-   *  high priority. Otherwise the cover defers with loading="lazy". */
   priority?: boolean
 }) {
-  const { active, playing, play, close } = usePlayback()
-  // Cover-image loading hint: the LCP candidate loads eagerly at high priority; all
-  // other covers defer until near the viewport (per optimize-image-priority guidance).
+  const { jamUri, active, playing, isNowPlaying, play, close } = usePlayback()
   const coverLoad = priority
     ? ({ fetchPriority: 'high' } as const)
     : ({ loading: 'lazy' } as const)
@@ -74,10 +65,15 @@ export function Player({
     )
   }
 
+  // Playback is sticky to the surface it started on (see start() in playback.tsx), so
+  // these follow the playback state alone — a resize never unmounts a live embed.
+  const showInCard = playing
+  const marker = isNowPlaying
+
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded">
-      {/* One persistent cover: sharp on the poster, blurs in when the player opens and
-          un-blurs when it closes (CSS transitions both directions off `playing`). */}
+    <div
+      className={`relative aspect-square w-full overflow-hidden rounded ${marker ? 'ring-2 ring-accent ring-inset' : ''}`}
+    >
       {artworkUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -85,28 +81,63 @@ export function Player({
           alt=""
           decoding="async"
           {...coverLoad}
-          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${playing ? 'scale-110 blur-md' : 'blur-0 scale-100'}`}
+          className={`absolute inset-0 h-full w-full object-cover transition duration-200 ${showInCard ? 'scale-110 blur-md' : 'blur-0 scale-100'}`}
         />
       )}
       <VinylPlaceholder />
       <span
         aria-hidden
-        className={`absolute inset-0 bg-black/25 transition-opacity duration-200 ${playing ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/25 transition-opacity duration-200 ${showInCard ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {playing ? (
+      {showInCard ? (
         <>
-          {/* Click the cover (anywhere outside the embed) to dismiss and return to the poster. */}
+          {/* Tap the cover (outside the embed) to dismiss and return to the poster. */}
           <button
             type="button"
             onClick={close}
             aria-label="Close player"
             className="cursor-close absolute inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset"
           />
-          {/* Keyed by provider: a mid-play service switch remounts the box, resetting its
-              load gate so the incoming embed stays hidden until it actually loads. */}
-          <EmbedBox key={active.provider} embed={active} />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+            <EmbedFrame
+              key={active.provider}
+              embed={active}
+              context="card"
+              className="rounded-xl shadow-2xl ring-1 ring-black/10"
+            />
+          </div>
         </>
+      ) : marker ? (
+        // The active card doubles as the stop control: at rest it shows the "Active"
+        // marker; hover or keyboard focus reveals an explicit Stop affordance. (The
+        // equalizer signals "loaded in the corner player" — the embeds expose no play
+        // state, so it can't claim literal audio.) Stopping remounts the play button
+        // in this spot, so focus is handed to it.
+        <button
+          type="button"
+          onClick={() => {
+            clearNowPlaying()
+            focusPlayControl(jamUri)
+          }}
+          aria-label={`Stop ${title} by ${artist}`}
+          className="cursor-close group absolute inset-0 focus:outline-none"
+        >
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 text-white transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0">
+            <span className="text-accent">
+              <Equalizer className="h-9 gap-1" barClass="w-1.5" />
+            </span>
+            <span className="text-xs font-bold tracking-wide uppercase">
+              Active
+            </span>
+          </span>
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/55 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-inset">
+            <X size={32} aria-hidden />
+            <span className="text-xs font-bold tracking-wide uppercase">
+              Stop
+            </span>
+          </span>
+        </button>
       ) : (
         // The whole cover is the play target — plays the resolved service without touching
         // the stored preference (only an explicit switcher pick persists). Hovering anywhere
@@ -115,7 +146,11 @@ export function Player({
         // dark circle + blur + ring.
         <button
           type="button"
-          onClick={play}
+          // Keyboard activation (Enter/Space) fires click with detail 0; only then does the
+          // corner host take focus, since this button is about to unmount. data-play-jam is
+          // the hook the host uses to return focus here on close.
+          onClick={(e) => play(e.detail === 0)}
+          data-play-jam={jamUri}
           aria-label={`Play ${title} by ${artist}`}
           className="cursor-play group absolute inset-0 flex items-center justify-center focus:outline-none"
         >
@@ -136,70 +171,25 @@ export function Player({
   )
 }
 
-/** The floating embed: reveals only once the third-party player loads (with a fallback
- *  so it never stays hidden), and falls back to a link-out when YouTube refuses to play.
- *  Mounted fresh per provider (keyed upstream), so its load gate starts hidden. */
-function EmbedBox({ embed }: { embed: Embed }) {
-  const [loaded, setLoaded] = useState(false) // the embed iframe finished loading
-  const [failed, setFailed] = useState(false) // YouTube embed errored (region/age/disabled)
-  const ytId =
-    embed.kind === 'iframe'
-      ? (embed.src.match(/\/embed\/([^?]+)/)?.[1] ?? '')
-      : ''
-  const isYouTube =
-    embed.provider === 'youtube' || embed.provider === 'youtubemusic'
-
-  // Reveal the embed only once it loads — with a fallback so it never stays hidden if
-  // onLoad doesn't fire. (The blur in/out is pure CSS off `playing` in the Player.)
-  useEffect(() => {
-    const fallback = setTimeout(() => setLoaded(true), 4000)
-    return () => clearTimeout(fallback)
-  }, [])
-
+/** Animated equalizer bars — the "now playing" affordance. Inherits color via `currentColor`;
+ *  bars hold still (full height) under prefers-reduced-motion. Sized by `className` (container
+ *  height + gap) and `barClass` (bar width). */
+function Equalizer({
+  className = 'h-3.5 gap-[2px]',
+  barClass = 'w-[3px]',
+}: {
+  className?: string
+  barClass?: string
+}) {
   return (
-    /* The embed floats over the blurred cover; pointer-events-none lets clicks on the
-       surrounding art reach the close button, while the embed itself stays interactive. */
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
-      <div
-        className={`overflow-hidden rounded-xl shadow-2xl ring-1 ring-black/10 transition-opacity duration-200 ${loaded ? 'pointer-events-auto opacity-100' : 'opacity-0'} ${EMBED_FRAME[embed.provider] ?? DEFAULT_FRAME}`}
-      >
-        {isYouTube ? (
-          failed ? (
-            <a
-              href={`https://www.youtube.com/watch?v=${ytId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-full w-full items-center justify-center bg-black/60 text-sm font-bold text-white"
-            >
-              open in YouTube ↗
-            </a>
-          ) : (
-            <YouTubeEmbed
-              key={ytId}
-              videoId={ytId}
-              onReady={() => setLoaded(true)}
-              onError={() => {
-                setFailed(true)
-                setLoaded(true)
-              }}
-              className="block h-full w-full"
-            />
-          )
-        ) : (
-          <iframe
-            key={embed.provider}
-            src={embed.kind === 'iframe' ? embed.src : undefined}
-            title={embed.kind === 'iframe' ? embed.title : 'player'}
-            onLoad={() => setLoaded(true)}
-            className="block h-full w-full"
-            // No `sandbox` here: it broke the Bandcamp/Spotify/Apple/SoundCloud players
-            // (their EmbeddedPlayers need capabilities a sandbox strips). These are a
-            // fixed allowlist of reputable services, so the defense-in-depth wasn't worth
-            // breaking playback.
-            allow="autoplay; encrypted-media; clipboard-write; fullscreen"
-          />
-        )}
-      </div>
-    </div>
+    <span aria-hidden className={`flex items-end ${className}`}>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={`h-full origin-bottom rounded-full bg-current motion-safe:animate-[eq_0.9s_ease-in-out_infinite] ${barClass}`}
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
   )
 }

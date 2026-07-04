@@ -51,10 +51,12 @@ export function JamCard({
       {/* One playback scope per card: the player (media frame) and the service switcher
           (beside the title) share the same state, so switching works mid-play. */}
       <PlaybackProvider
+        jamUri={jam.uri}
         sourceProvider={jam.sourceProvider}
         providerRefs={jam.providerRefs}
         sourceUrl={jam.sourceUrl}
         preferredProvider={preferredProvider}
+        theme={jam.author.theme}
       >
         {/* Artwork sits inset on the themed surface with a crisp frame, so it reads as a
             framed object rather than a flush block. */}

@@ -131,10 +131,12 @@ export default async function JamPage({
       {/* One playback scope: the hero player and the service switcher (beside the
           title) share state, so switching works mid-play. */}
       <PlaybackProvider
+        jamUri={jam.uri}
         sourceProvider={jam.sourceProvider}
         providerRefs={jam.providerRefs}
         sourceUrl={jam.sourceUrl}
         preferredProvider={preferredProvider}
+        theme={jam.author.theme}
       >
         <MediaFrame>
           <Player

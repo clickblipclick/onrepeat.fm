@@ -6,6 +6,7 @@ import { JetBrains_Mono } from 'next/font/google'
 import { readViewerTheme } from '@/lib/viewer-theme'
 
 import { ChromeGate } from './_components/chrome-gate'
+import { PlayerHost } from './_components/player-host'
 import { SiteFooter } from './_components/site-footer'
 import { SiteNav } from './_components/site-nav'
 import { UiProviders } from './_components/ui/providers'
@@ -54,6 +55,7 @@ export default async function RootLayout({
             {children}
           </ChromeGate>
           {modal}
+          <PlayerHost />
         </UiProviders>
       </body>
     </html>
