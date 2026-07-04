@@ -5,7 +5,7 @@ import { buttonClassName } from '@/lib/button-variants'
 import { readModePreference } from '@/lib/mode-preference.server'
 import { getSession } from '@/lib/session'
 
-import { ModeMenu } from './mode-menu'
+import { ModeSwitch } from './mode-switch'
 import { PostNavLink } from './post-nav-link'
 import { UserMenu } from './user-menu'
 
@@ -49,7 +49,7 @@ export async function SiteNav() {
             </>
           ) : (
             <>
-              <ModeMenu initial={mode ?? 'system'} />
+              <ModeSwitch initial={mode ?? 'system'} />
               <Link
                 href="/login"
                 className={buttonClassName({ variant: 'outline', size: 'md' })}
