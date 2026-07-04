@@ -13,11 +13,10 @@ const OPTIONS = [
   { value: 'system', label: 'System', icon: SunMoon },
 ] as const
 
-/** Inline display-mode switch in the nav for signed-out visitors (signed-in users
- *  have the same control in Settings): a three-segment control on an inset track;
- *  the active segment sits raised on the surface color. Pins light/dark via the
- *  onrepeat_mode cookie or clears it (System); a router.refresh() re-syncs cached
- *  server payloads after each change. */
+/** Inline display-mode switch in the footer (every visitor, signed in or out):
+ *  a three-segment control on an inset track; the active segment sits raised on
+ *  the surface color. Pins light/dark via the onrepeat_mode cookie or clears it
+ *  (System); a router.refresh() re-syncs cached server payloads after each change. */
 export function ModeSwitch({ initial }: { initial: DisplayMode }) {
   const router = useRouter()
   const [mode, setMode] = useState<DisplayMode>(initial)
