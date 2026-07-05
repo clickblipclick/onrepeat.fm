@@ -1,4 +1,3 @@
-import { Bell } from 'lucide-react'
 import Link from 'next/link'
 
 import { getUnreadNotificationCount } from '@onrepeat/appview'
@@ -53,24 +52,11 @@ export async function SiteNav() {
           {session.did ? (
             <>
               <PostNavLink />
-              <Link
-                href="/notifications"
-                aria-label={
-                  unread > 0 ? `Notifications (${unread} new)` : 'Notifications'
-                }
-                className="relative p-1 hover:text-accent"
-              >
-                <Bell size={18} aria-hidden />
-                {unread > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-none font-bold text-on-accent">
-                    {unread > 99 ? '99+' : unread}
-                  </span>
-                )}
-              </Link>
               <UserMenu
                 did={session.did}
                 avatar={profileAvatar}
                 profileActor={profileActor}
+                unread={unread}
               />
             </>
           ) : (

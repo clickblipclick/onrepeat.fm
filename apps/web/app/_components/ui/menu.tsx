@@ -22,6 +22,12 @@ export interface MenuItem {
   icon?: React.ReactNode
   onSelect: () => void
   danger?: boolean
+  /** Accent-colored item for a highlighted entry (e.g. unread notifications). */
+  accent?: boolean
+  /** Small accent pill rendered at the item's right edge (e.g. an unread count). */
+  badge?: string
+  /** Draw a separator under this item (ignored on the last item). */
+  dividerAfter?: boolean
   /** Radio-style menus (e.g. a service picker): marks the active item. When any item
    *  in the menu defines this, items render as menuitemradio with aria-checked. */
   selected?: boolean
@@ -94,34 +100,43 @@ export function Menu({
               className="z-50 min-w-40 overflow-hidden rounded-md border border-border bg-surface py-1 text-sm shadow-lg"
             >
               {items.map((item, i) => (
-                <button
-                  key={item.label}
-                  ref={(node) => {
-                    listRef.current[i] = node
-                  }}
-                  type="button"
-                  role={radio ? 'menuitemradio' : 'menuitem'}
-                  aria-checked={radio ? (item.selected ?? false) : undefined}
-                  tabIndex={activeIndex === i ? 0 : -1}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left outline-none hover:bg-bg focus:bg-bg ${item.danger ? 'text-red-700' : ''}`}
-                  {...getItemProps({
-                    onClick() {
-                      setOpen(false)
-                      item.onSelect()
-                    },
-                  })}
-                >
-                  {radio && (
-                    <span
-                      aria-hidden
-                      className="w-3 text-center text-xs leading-none"
-                    >
-                      {item.selected ? '●' : ''}
-                    </span>
+                <div key={item.label}>
+                  <button
+                    ref={(node) => {
+                      listRef.current[i] = node
+                    }}
+                    type="button"
+                    role={radio ? 'menuitemradio' : 'menuitem'}
+                    aria-checked={radio ? (item.selected ?? false) : undefined}
+                    tabIndex={activeIndex === i ? 0 : -1}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left outline-none hover:bg-bg focus:bg-bg ${item.danger ? 'text-red-700' : item.accent ? 'font-bold text-accent' : ''}`}
+                    {...getItemProps({
+                      onClick() {
+                        setOpen(false)
+                        item.onSelect()
+                      },
+                    })}
+                  >
+                    {radio && (
+                      <span
+                        aria-hidden
+                        className="w-3 text-center text-xs leading-none"
+                      >
+                        {item.selected ? '●' : ''}
+                      </span>
+                    )}
+                    {item.icon}
+                    {item.label}
+                    {item.badge && (
+                      <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-none font-bold text-on-accent">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                  {item.dividerAfter && i < items.length - 1 && (
+                    <div aria-hidden className="my-1 border-t border-border" />
                   )}
-                  {item.icon}
-                  {item.label}
-                </button>
+                </div>
               ))}
             </div>
           </FloatingFocusManager>
