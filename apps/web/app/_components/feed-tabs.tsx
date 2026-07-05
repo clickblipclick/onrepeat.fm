@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link, { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { cn } from '@/lib/cn'
@@ -12,6 +12,14 @@ const TABS = [
   { href: '/', label: 'Following' },
   { href: '/explore', label: 'Explore' },
 ] as const
+
+/** Dims the tab label while its navigation is in flight (the feeds render dynamically,
+ *  so a switch waits on the server). The animation's start delay keeps fast switches
+ *  indicator-free — only a slow fetch ever shows it. */
+function TabLabel({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus()
+  return <span className={cn(pending && 'tab-pending')}>{children}</span>
+}
 
 export function FeedTabs() {
   const pathname = usePathname()
@@ -31,7 +39,7 @@ export function FeedTabs() {
                 : 'border-transparent text-muted hover:text-ink',
             )}
           >
-            {tab.label}
+            <TabLabel>{tab.label}</TabLabel>
           </Link>
         )
       })}
