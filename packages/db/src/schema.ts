@@ -5,11 +5,7 @@ type Timestamp = ColumnType<Date, Date | string, Date | string>
 /** Upstream account state mirrored from firehose #account events. Anything other
  *  than 'active' hides the actor's content at read time. */
 export type ActorStatus =
-  | 'active'
-  | 'deactivated'
-  | 'suspended'
-  | 'takendown'
-  | 'deleted'
+  'active' | 'deactivated' | 'suspended' | 'takendown' | 'deleted'
 
 export interface ActorsTable {
   did: string
@@ -36,10 +32,7 @@ export interface ProviderRefs {
 }
 
 export type ResolutionStatus =
-  | 'pending'
-  | 'resolved'
-  | 'self_contained'
-  | 'failed'
+  'pending' | 'resolved' | 'self_contained' | 'failed'
 
 export interface TracksTable {
   id: string

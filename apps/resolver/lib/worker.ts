@@ -49,7 +49,10 @@ export async function startResolver(
   db: DB,
   deps: ResolverDeps,
 ): Promise<void> {
-  await boss.work<ResolveJob>(
+  // No explicit type argument: pg-boss ≥12.25 derives the handler type from the
+  // inferred options literal (`includeMetadata: true` ⇒ metadata handler), and an
+  // explicit <ResolveJob> would reset the options param to plain WorkOptions.
+  await boss.work(
     RESOLVE_QUEUE,
     { includeMetadata: true, localConcurrency: 1, pollingIntervalSeconds: 2 },
     makeResolveHandler(db, deps) as WorkWithMetadataHandler<ResolveJob>,

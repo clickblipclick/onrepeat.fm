@@ -17,8 +17,7 @@ export const lexicons = new Lexicons([
 ])
 
 export type ValidationOutcome =
-  | { success: true }
-  | { success: false; error: string }
+  { success: true } | { success: false; error: string }
 
 /** Validate a record (must include a matching `$type`) against its lexicon. */
 export function validateRecord(
