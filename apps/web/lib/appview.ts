@@ -7,6 +7,7 @@ import {
   type ActorProfile,
   type HydratedJamView,
   type JamView,
+  type NotificationView,
 } from '@onrepeat/appview'
 import { upsertActorProfiles } from '@onrepeat/db'
 
@@ -34,6 +35,43 @@ export function cachedProfiles(
     },
     dids,
   )
+}
+
+export type HydratedNotification = NotificationView & {
+  /** The person who liked/reposted; DID-only when their profile can't be resolved. */
+  actor: { did: string; handle?: string; displayName?: string; avatar?: string }
+}
+
+/** Attach actor profiles to notifications via the DB write-through cache. Same
+ *  degradation contract as `hydrate`: a profile failure yields DID-only actors,
+ *  never a failed page. */
+export async function hydrateNotifications(
+  items: NotificationView[],
+): Promise<HydratedNotification[]> {
+  const dids = Array.from(new Set(items.map((i) => i.actorDid)))
+  let profiles = new Map<string, ActorProfile | null>()
+  try {
+    profiles = await cachedProfiles(dids)
+  } catch (err) {
+    console.error(
+      '[web] notification hydration failed; serving DID-only actors',
+      err,
+    )
+  }
+  return items.map((i) => {
+    const p = profiles.get(i.actorDid)
+    return {
+      ...i,
+      actor: p
+        ? {
+            did: p.did,
+            handle: p.handle,
+            displayName: p.displayName,
+            avatar: p.avatar,
+          }
+        : { did: i.actorDid },
+    }
+  })
 }
 
 /**

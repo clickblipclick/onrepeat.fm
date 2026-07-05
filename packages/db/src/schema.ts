@@ -88,6 +88,28 @@ export interface FollowsTable {
   indexed_at: Generated<Timestamp>
 }
 
+export type NotificationType = 'like' | 'rejam'
+
+/** Derived appview state: one row per source record (like / re-jam), keyed by its
+ *  at-uri. recipient_did is the at-uri authority of the subject jam. */
+export interface NotificationsTable {
+  record_uri: string
+  recipient_did: string
+  actor_did: string
+  type: ColumnType<NotificationType, string, string>
+  subject_uri: string
+  created_at: Timestamp
+  // DB-defaulted like Generated<Timestamp>, but with an explicit insert side:
+  // unread/seen compare against this arrival stamp, so tests pin it directly.
+  indexed_at: ColumnType<Date, Date | string | undefined, Date | string>
+}
+
+/** Per-user read watermark for notifications. */
+export interface NotificationStateTable {
+  did: string
+  seen_at: Timestamp
+}
+
 export interface SubscriptionStateTable {
   service: string
   // bigint: comes back as a string from pg, accepts number | string on write
@@ -128,6 +150,8 @@ export interface Database {
   jams: JamsTable
   likes: LikesTable
   follows: FollowsTable
+  notifications: NotificationsTable
+  notification_state: NotificationStateTable
   subscription_state: SubscriptionStateTable
   oauth_state: OauthStateTable
   oauth_session: OauthSessionTable

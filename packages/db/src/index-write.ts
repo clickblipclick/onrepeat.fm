@@ -3,7 +3,14 @@ import type { Insertable } from 'kysely'
 import type { FollowRecord, JamRecord, LikeRecord } from '@onrepeat/lexicons'
 
 import type { DB } from './client'
-import type { ActorStatus, FollowsTable, JamsTable, LikesTable } from './schema'
+import type {
+  ActorStatus,
+  FollowsTable,
+  JamsTable,
+  LikesTable,
+  NotificationsTable,
+  NotificationType,
+} from './schema'
 
 /** The repo DID is the authority of an at-uri: at://<did>/<collection>/<rkey>. */
 function didFromAtUri(uri: string): string | null {
@@ -37,6 +44,48 @@ export function jamRow(
     via_did: record.via?.uri ? didFromAtUri(record.via.uri) : null,
     created_at: record.createdAt,
   }
+}
+
+/**
+ * Notification fan-out row for a like or re-jam, or null when there is no one to
+ * notify: the actor targeting their own jam, or a subject uri whose authority
+ * can't be parsed. The recipient is the subject's at-uri authority — no jam
+ * lookup needed, so indexing order (like before jam) can't drop a notification.
+ */
+function notificationRow(args: {
+  recordUri: string
+  actorDid: string
+  type: NotificationType
+  subjectUri: string
+  createdAt: string
+}): Insertable<NotificationsTable> | null {
+  const recipient = didFromAtUri(args.subjectUri)
+  if (!recipient || recipient === args.actorDid) return null
+  return {
+    record_uri: args.recordUri,
+    recipient_did: recipient,
+    actor_did: args.actorDid,
+    type: args.type,
+    subject_uri: args.subjectUri,
+    created_at: args.createdAt,
+  }
+}
+
+/**
+ * Insert a notification, keeping the original row on redelivery (DO NOTHING, not
+ * an update): the firehose replays events the web write-through already indexed,
+ * and re-ingest must not bump indexed_at or resurface an already-seen row.
+ */
+async function insertNotification(
+  db: DB,
+  row: Insertable<NotificationsTable> | null,
+): Promise<void> {
+  if (!row) return
+  await db
+    .insertInto('notifications')
+    .values(row)
+    .onConflict((oc) => oc.column('record_uri').doNothing())
+    .execute()
 }
 
 /** Build a likes insert row. */
@@ -85,11 +134,27 @@ export async function indexJam(
       }),
     )
     .execute()
+  // Re-jam → notify the source jam's author. Statements are not transactional:
+  // a failure between them retries the whole event, and both writes are
+  // idempotent, so the pair converges (same reasoning as the cursor durability).
+  if (args.record.via?.uri)
+    await insertNotification(
+      db,
+      notificationRow({
+        recordUri: args.uri,
+        actorDid: args.did,
+        type: 'rejam',
+        subjectUri: args.record.via.uri,
+        createdAt: args.record.createdAt,
+      }),
+    )
 }
 
-/** Remove a jam row from the index by at-uri. Idempotent (no-op if absent). */
+/** Remove a jam row from the index by at-uri, along with the re-jam notification
+ *  it may have fanned out. Idempotent (no-op if absent). */
 export async function removeJam(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('jams').where('uri', '=', uri).execute()
+  await db.deleteFrom('notifications').where('record_uri', '=', uri).execute()
 }
 
 /**
@@ -113,11 +178,24 @@ export async function indexLike(
       }),
     )
     .execute()
+  // Notify the liked jam's author (see indexJam for the non-transactional reasoning).
+  await insertNotification(
+    db,
+    notificationRow({
+      recordUri: args.uri,
+      actorDid: args.did,
+      type: 'like',
+      subjectUri: args.record.subject.uri,
+      createdAt: args.record.createdAt,
+    }),
+  )
 }
 
-/** Remove a like row from the index by at-uri. Idempotent (no-op if absent). */
+/** Remove a like row from the index by at-uri, along with the notification it
+ *  may have fanned out. Idempotent (no-op if absent). */
 export async function removeLike(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('likes').where('uri', '=', uri).execute()
+  await db.deleteFrom('notifications').where('record_uri', '=', uri).execute()
 }
 
 /** Build a follows insert row. */
@@ -225,6 +303,15 @@ export async function purgeActorContent(db: DB, did: string): Promise<void> {
         eb.or([eb('author_did', '=', did), eb('subject_did', '=', did)]),
       )
       .execute()
+    // Notifications they triggered and notifications addressed to them both
+    // point at a repo that no longer exists.
+    await trx
+      .deleteFrom('notifications')
+      .where((eb) =>
+        eb.or([eb('actor_did', '=', did), eb('recipient_did', '=', did)]),
+      )
+      .execute()
+    await trx.deleteFrom('notification_state').where('did', '=', did).execute()
     // Their profile record died with the repo; fall back to the default theme.
     await trx
       .updateTable('actors')

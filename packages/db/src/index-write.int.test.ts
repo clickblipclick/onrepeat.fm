@@ -489,6 +489,169 @@ describe('follows index ops', () => {
   })
 })
 
+describe('notifications from likes and re-jams', () => {
+  const AUTHOR = 'did:plc:jamauthor'
+  const JAM_URI = `at://${AUTHOR}/fm.onrepeat.feed.jam/notif1`
+  const LIKER = 'did:plc:notifliker'
+  const NOTIF_LIKE_URI = `at://${LIKER}/fm.onrepeat.feed.like/notif1`
+
+  const like = (subjectUri: string) => ({
+    $type: LIKE_NSID as 'fm.onrepeat.feed.like',
+    subject: { uri: subjectUri, cid: 'bafynotif' },
+    createdAt: '2026-07-01T00:00:00.000Z',
+  })
+
+  const rejam = (viaUri: string) => ({
+    ...baseRecord,
+    via: { uri: viaUri, cid: 'bafynotif' },
+  })
+
+  beforeEach(async () => {
+    await db.deleteFrom('notifications').execute()
+    await db.deleteFrom('notification_state').execute()
+    await db.deleteFrom('likes').where('uri', '=', NOTIF_LIKE_URI).execute()
+    await db.deleteFrom('jams').where('author_did', '=', LIKER).execute()
+  })
+
+  afterAll(async () => {
+    await db.deleteFrom('notifications').execute()
+    await db.deleteFrom('notification_state').execute()
+    await db.deleteFrom('likes').where('uri', '=', NOTIF_LIKE_URI).execute()
+    await db.deleteFrom('jams').where('author_did', '=', LIKER).execute()
+  })
+
+  it('indexLike creates a like notification for the liked jam author', async () => {
+    await indexLike(db, {
+      uri: NOTIF_LIKE_URI,
+      did: LIKER,
+      record: like(JAM_URI),
+    })
+    const row = await db
+      .selectFrom('notifications')
+      .selectAll()
+      .where('record_uri', '=', NOTIF_LIKE_URI)
+      .executeTakeFirst()
+    expect(row).toBeDefined()
+    expect(row!.recipient_did).toBe(AUTHOR)
+    expect(row!.actor_did).toBe(LIKER)
+    expect(row!.type).toBe('like')
+    expect(row!.subject_uri).toBe(JAM_URI)
+  })
+
+  it('indexLike skips a self-like notification', async () => {
+    const selfJam = `at://${LIKER}/fm.onrepeat.feed.jam/own`
+    await indexLike(db, {
+      uri: NOTIF_LIKE_URI,
+      did: LIKER,
+      record: like(selfJam),
+    })
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('re-indexing the same like does not duplicate the notification', async () => {
+    await indexLike(db, {
+      uri: NOTIF_LIKE_URI,
+      did: LIKER,
+      record: like(JAM_URI),
+    })
+    await indexLike(db, {
+      uri: NOTIF_LIKE_URI,
+      did: LIKER,
+      record: like(JAM_URI),
+    })
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(1)
+  })
+
+  it('removeLike deletes the like notification', async () => {
+    await indexLike(db, {
+      uri: NOTIF_LIKE_URI,
+      did: LIKER,
+      record: like(JAM_URI),
+    })
+    await removeLike(db, NOTIF_LIKE_URI)
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('indexJam with via creates a rejam notification for the source author', async () => {
+    const rejamUri = `at://${LIKER}/fm.onrepeat.feed.jam/rejam1`
+    await indexJam(db, {
+      uri: rejamUri,
+      cid: 'c1',
+      did: LIKER,
+      record: rejam(JAM_URI),
+    })
+    const row = await db
+      .selectFrom('notifications')
+      .selectAll()
+      .where('record_uri', '=', rejamUri)
+      .executeTakeFirst()
+    expect(row).toBeDefined()
+    expect(row!.recipient_did).toBe(AUTHOR)
+    expect(row!.actor_did).toBe(LIKER)
+    expect(row!.type).toBe('rejam')
+    expect(row!.subject_uri).toBe(JAM_URI)
+  })
+
+  it('indexJam without via creates no notification', async () => {
+    const uri = `at://${LIKER}/fm.onrepeat.feed.jam/plain1`
+    await indexJam(db, { uri, cid: 'c1', did: LIKER, record: baseRecord })
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('indexJam skips a self re-jam notification', async () => {
+    const ownJam = `at://${LIKER}/fm.onrepeat.feed.jam/own`
+    const uri = `at://${LIKER}/fm.onrepeat.feed.jam/selfrejam`
+    await indexJam(db, { uri, cid: 'c1', did: LIKER, record: rejam(ownJam) })
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('removeJam deletes the rejam notification', async () => {
+    const rejamUri = `at://${LIKER}/fm.onrepeat.feed.jam/rejam2`
+    await indexJam(db, {
+      uri: rejamUri,
+      cid: 'c1',
+      did: LIKER,
+      record: rejam(JAM_URI),
+    })
+    await removeJam(db, rejamUri)
+    const rows = await db.selectFrom('notifications').selectAll().execute()
+    expect(rows).toHaveLength(0)
+  })
+
+  it('purgeActorContent clears notifications in both directions and read state', async () => {
+    // gone-actor liked AUTHOR's jam (gone is the actor)
+    await indexLike(db, {
+      uri: 'at://did:plc:gone/fm.onrepeat.feed.like/1',
+      did: 'did:plc:gone',
+      record: like(JAM_URI),
+    })
+    // LIKER liked gone-actor's jam (gone is the recipient)
+    await indexLike(db, {
+      uri: `at://${LIKER}/fm.onrepeat.feed.like/ongone`,
+      did: LIKER,
+      record: like('at://did:plc:gone/fm.onrepeat.feed.jam/1'),
+    })
+    await db
+      .insertInto('notification_state')
+      .values({ did: 'did:plc:gone', seen_at: new Date() })
+      .execute()
+
+    await purgeActorContent(db, 'did:plc:gone')
+
+    expect(
+      await db.selectFrom('notifications').selectAll().execute(),
+    ).toHaveLength(0)
+    expect(
+      await db.selectFrom('notification_state').selectAll().execute(),
+    ).toHaveLength(0)
+  })
+})
+
 beforeAll(async () => {
   const { error } = await createMigrator(db).migrateToLatest()
   if (error) throw error
