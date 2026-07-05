@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto-labs/fetch-node": "^0.3.0",
-    "@atproto/jwk-jose": "^0.2.0",
-    "@atproto/oauth-client-node": "^0.4.1",
+    "@atproto-labs/fetch-node": "^0.3.4",
+    "@atproto/jwk-jose": "^0.2.3",
+    "@atproto/oauth-client-node": "^0.4.5",
     "@onrepeat/db": "workspace:*"
   },
   "devDependencies": {

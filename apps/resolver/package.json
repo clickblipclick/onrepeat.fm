@@ -19,10 +19,10 @@
     "@onrepeat/service": "workspace:*",
     "@onrepeat/storage": "workspace:*",
     "kysely": "^0.29.0",
-    "pg-boss": "^12.19.1"
+    "pg-boss": "^12.25.1"
   },
   "devDependencies": {
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   }
 }

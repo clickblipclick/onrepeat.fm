@@ -547,19 +547,15 @@ export async function getNotifications(
   )
   const jams = await loadJamsByUris(db, subjectUris, params.did)
   const jamByUri = new Map(jams.map((j) => [j.uri, j]))
-  const notifications = pageRows.map(
-    (r): NotificationView => ({
-      recordUri: r.record_uri,
-      type: r.type,
-      actorDid: r.actor_did,
-      subjectUri: r.subject_uri,
-      createdAt: new Date(
-        r.created_at as unknown as string | Date,
-      ).toISOString(),
-      seen: !r.unseen,
-      jam: (r.subject_uri && jamByUri.get(r.subject_uri)) || null,
-    }),
-  )
+  const notifications = pageRows.map((r): NotificationView => ({
+    recordUri: r.record_uri,
+    type: r.type,
+    actorDid: r.actor_did,
+    subjectUri: r.subject_uri,
+    createdAt: new Date(r.created_at as unknown as string | Date).toISOString(),
+    seen: !r.unseen,
+    jam: (r.subject_uri && jamByUri.get(r.subject_uri)) || null,
+  }))
   const cursorItems = pageRows.map((r) => ({
     createdAt: r.cursor_ts,
     uri: r.record_uri,

@@ -1,12 +1,7 @@
 import { cn } from './cn'
 
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'ghost'
-  | 'danger'
-  | 'outline'
-  | 'link'
+  'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'link'
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'none' | 'icon'
 
 // font-bold lives per-variant (not in BASE) so the bare `link` variant can stay regular

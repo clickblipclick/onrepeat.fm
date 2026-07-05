@@ -117,9 +117,7 @@ export async function postJam(
     uri: res.data.uri,
     cid: res.data.cid,
     validationStatus: res.data.validationStatus as
-      | 'valid'
-      | 'unknown'
-      | undefined,
+      'valid' | 'unknown' | undefined,
     record,
   }
 }
@@ -141,9 +139,7 @@ export async function likeJam(
     uri: res.data.uri,
     cid: res.data.cid,
     validationStatus: res.data.validationStatus as
-      | 'valid'
-      | 'unknown'
-      | undefined,
+      'valid' | 'unknown' | undefined,
     record,
   }
 }
@@ -170,9 +166,7 @@ export async function putProfile(
     uri: res.data.uri,
     cid: res.data.cid,
     validationStatus: res.data.validationStatus as
-      | 'valid'
-      | 'unknown'
-      | undefined,
+      'valid' | 'unknown' | undefined,
   }
 }
 
@@ -235,9 +229,7 @@ export async function follow(
     uri: res.data.uri,
     cid: res.data.cid,
     validationStatus: res.data.validationStatus as
-      | 'valid'
-      | 'unknown'
-      | undefined,
+      'valid' | 'unknown' | undefined,
     record,
   }
 }
