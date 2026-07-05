@@ -9,3 +9,6 @@ next-env.d.ts
 
 # Lockfile
 pnpm-lock.yaml
+
+# Local code index (gitignored via its own .gitignore)
+.codegraph/

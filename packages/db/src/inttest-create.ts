@@ -5,14 +5,11 @@
 import { sql } from 'kysely'
 
 import { createDb } from './client'
-import { assertInttestUrl } from './inttest-guard'
-
-const DEFAULT_INTTEST_DB =
-  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest'
+import { assertInttestUrl, resolveInttestUrl } from './inttest-guard'
 
 async function main(): Promise<void> {
-  const url = process.env.DATABASE_URL_INTTEST ?? DEFAULT_INTTEST_DB
-  const name = assertInttestUrl(url) // safe, local, opted-in *_inttest DB or throws
+  const url = resolveInttestUrl() // safe, local, opted-in *_inttest DB or throws
+  const name = assertInttestUrl(url)
   const u = new URL(url)
 
   // Connect to the maintenance 'postgres' database to create the int DB if missing.

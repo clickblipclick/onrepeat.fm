@@ -2,13 +2,10 @@ import { sql } from 'kysely'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { createDb } from './client'
+import { resolveInttestUrl } from './inttest-guard'
 import { createMigrator } from './migrate'
 
-const url =
-  process.env.DATABASE_URL ??
-  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
-
-const db = createDb(url)
+const db = createDb(resolveInttestUrl())
 
 describe('001_init migration', () => {
   beforeAll(async () => {

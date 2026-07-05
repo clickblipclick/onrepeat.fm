@@ -19,13 +19,10 @@ import {
   removeLike,
   upsertActorProfiles,
 } from './index-write'
+import { resolveInttestUrl } from './inttest-guard'
 import { createMigrator } from './migrate'
 
-const url =
-  process.env.DATABASE_URL ??
-  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
-
-const db = createDb(url)
+const db = createDb(resolveInttestUrl())
 
 const TEST_URI = 'at://did:plc:test/fm.onrepeat.feed.jam/inttest1'
 const TEST_CID = 'bafytest1'
