@@ -14,8 +14,10 @@ import * as trackCdnArtwork010 from './migrations/010_track_cdn_artwork'
 import * as follows011 from './migrations/011_follows'
 import * as notifications012 from './migrations/012_notifications'
 import * as followNotifications013 from './migrations/013_follow_notifications'
+import * as notificationTypeCheck014 from './migrations/014_notification_type_check'
 
-const migrations: Record<string, Migration> = {
+/** Exported for the registry-completeness test only; use createMigrator to run them. */
+export const migrations: Record<string, Migration> = {
   '001_init': init001,
   '002_oauth': oauth002,
   '003_subscription_state': subscriptionState003,
@@ -29,6 +31,7 @@ const migrations: Record<string, Migration> = {
   '011_follows': follows011,
   '012_notifications': notifications012,
   '013_follow_notifications': followNotifications013,
+  '014_notification_type_check': notificationTypeCheck014,
 }
 
 export function createMigrator(db: Kysely<any>): Migrator {

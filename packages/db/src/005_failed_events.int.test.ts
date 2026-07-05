@@ -1,11 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb, createMigrator, recordFailedEvent } from './index'
+import { resolveInttestUrl } from './inttest-guard'
 
-const url =
-  process.env.DATABASE_URL ??
-  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_test'
-const db = createDb(url)
+const db = createDb(resolveInttestUrl())
 
 describe('failed_events dead-letter', () => {
   beforeAll(async () => {

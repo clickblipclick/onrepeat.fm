@@ -7,6 +7,22 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', ''])
 /** The dev/app database — never a valid integration target. */
 const APP_DB = 'onrepeat_test'
 
+export const DEFAULT_INTTEST_URL =
+  'postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest'
+
+/**
+ * Resolve the integration-test database URL (DATABASE_URL_INTTEST or the default)
+ * and validate it. Int test files connect through this rather than DATABASE_URL so
+ * the guard runs even when a file executes outside vitest.int.config.ts (whose
+ * setupFile is otherwise the only thing standing between a stray `vitest run` /
+ * editor test runner and a schema-dropping connection to the dev database).
+ */
+export function resolveInttestUrl(): string {
+  const url = process.env.DATABASE_URL_INTTEST ?? DEFAULT_INTTEST_URL
+  assertInttestUrl(url)
+  return url
+}
+
 /**
  * Validate that `url` is safe for the table-truncating integration suite, returning the
  * database name. Throws otherwise. Requires: a parseable URL, a LOCAL host (not a remote/
