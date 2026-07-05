@@ -428,3 +428,14 @@ html:has(dialog:modal) {
     transform: scaleY(1);
   }
 }
+
+/* Feed-tab pending pulse (feed-tabs.tsx). Opacity holds at 1 until the start delay
+   elapses, so navigations that resolve within 150ms never show it. */
+@keyframes tab-pending {
+  50% {
+    opacity: 0.35;
+  }
+}
+.tab-pending {
+  animation: tab-pending 1s ease-in-out 150ms infinite;
+}
