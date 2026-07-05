@@ -55,11 +55,13 @@ describe('getLatest', () => {
     await db.deleteFrom('likes').execute()
     await db.deleteFrom('jams').execute()
     await db.deleteFrom('tracks').execute()
+    await db.deleteFrom('actors').execute()
   })
   afterAll(async () => {
     await db.deleteFrom('likes').execute()
     await db.deleteFrom('jams').execute()
     await db.deleteFrom('tracks').execute()
+    await db.deleteFrom('actors').execute()
   })
 
   it('returns newest-first with resolved track refs, like count, and likedByYou', async () => {
@@ -335,6 +337,18 @@ describe('follow reads', () => {
     })
     const dids = await getFollowingDids(db, 'did:plc:a')
     expect(dids.sort()).toEqual(['did:plc:b', 'did:plc:c'])
+  })
+
+  it('getFollowingDids caps the returned set (keeps getFollowFeed bounded)', async () => {
+    for (const s of ['b', 'c', 'd']) {
+      await insertFollow({
+        uri: `at://did:plc:a/x/${s}`,
+        author: 'did:plc:a',
+        subject: `did:plc:${s}`,
+      })
+    }
+    const dids = await getFollowingDids(db, 'did:plc:a', 2)
+    expect(dids).toHaveLength(2)
   })
 
   it('getFollowCounts counts both directions and dedups', async () => {

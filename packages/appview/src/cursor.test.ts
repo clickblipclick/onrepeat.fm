@@ -31,6 +31,31 @@ describe('cursor', () => {
     })
   })
 
+  it('throws when createdAt is not a timestamp', () => {
+    const c = encodeCursor({
+      createdAt: "garbage'; drop table jams; --",
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
+    })
+    expect(() => decodeCursor(c)).toThrow('invalid cursor')
+  })
+
+  it('throws when snap is present but not a timestamp', () => {
+    const c = encodeCursor({
+      createdAt: '2026-05-30T00:00:00.000Z',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
+      snap: 'not-a-time',
+    })
+    expect(() => decodeCursor(c)).toThrow('invalid cursor')
+  })
+
+  it('accepts the microsecond-precision timestamps the SQL cursor formatter emits', () => {
+    const c = encodeCursor({
+      createdAt: '2026-05-30T00:00:00.000456Z',
+      uri: 'at://did:plc:x/fm.onrepeat.feed.jam/1',
+    })
+    expect(decodeCursor(c).createdAt).toBe('2026-05-30T00:00:00.000456Z')
+  })
+
   it('round-trips an optional snapshot timestamp', () => {
     const c = encodeCursor({
       createdAt: '2026-05-30T00:00:00.000Z',
