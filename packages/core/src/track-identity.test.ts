@@ -3,19 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { trackIdentity } from './track-identity'
 
 describe('trackIdentity', () => {
-  it('prefers ISRC, normalized to uppercase alphanumerics', () => {
-    expect(
-      trackIdentity({ isrc: 'us-rc1-23-00001', title: 'X', artist: 'Y' }),
-    ).toBe('isrc:USRC12300001')
-  })
-
-  it('falls back to the Odesli entity id when no ISRC', () => {
-    expect(
-      trackIdentity({ odesliId: 'SPOTIFY_SONG::abc', title: 'X', artist: 'Y' }),
-    ).toBe('odesli:SPOTIFY_SONG::abc')
-  })
-
-  it('falls back to a normalized title|artist key', () => {
+  it('builds a normalized title|artist key', () => {
     const a = trackIdentity({ title: 'Mr. Brightside', artist: 'The Killers' })
     const b = trackIdentity({
       title: '  mr brightside ',
@@ -31,6 +19,15 @@ describe('trackIdentity', () => {
     // which uses the same \p{L}\p{N} class.
     expect(trackIdentity({ title: 'Naïve', artist: 'Sigø' })).toBe(
       'ta:sigø|naive',
+    )
+  })
+
+  it('strips combining marks beyond U+0300–U+036F instead of splitting the word', () => {
+    // U+1DC4 (macron-acute) lives in Combining Diacritical Marks Supplement — outside
+    // the basic block. It must be deleted like any other mark, not turned into a space
+    // by the punctuation pass (which would split "Tést" into "te st").
+    expect(trackIdentity({ title: 'Te\u1DC4st', artist: 'A' })).toBe(
+      'ta:a|test',
     )
   })
 
@@ -84,33 +81,32 @@ describe('trackIdentity', () => {
     )
   })
 
-  it('ignores empty/whitespace ISRC and Odesli id', () => {
+  it('keeps titles where "ft" means feet, not a credit', () => {
+    // Bare "ft" (no dot) is not treated as a credit…
+    expect(trackIdentity({ title: '50 Ft Queenie', artist: 'PJ Harvey' })).toBe(
+      'ta:pj harvey|50 ft queenie',
+    )
+    // …and a title-initial "Ft." (Fort) is never a credit, even with the dot.
     expect(
-      trackIdentity({ isrc: '   ', odesliId: '', title: 'A', artist: 'B' }),
-    ).toBe('ta:b|a')
+      trackIdentity({ title: 'Ft. Worth Blues', artist: 'Steve Earle' }),
+    ).toBe('ta:steve earle|ft worth blues')
   })
 
-  it('ignores a punctuation-only ISRC that normalizes to empty (falls back to title|artist)', () => {
-    // '---' passes a naive trim check but normalizes to '' — must not collapse to the
-    // shared key 'isrc:' (which would merge unrelated tracks and shadow title/artist).
-    expect(
-      trackIdentity({
-        isrc: '---',
-        title: 'Real Title',
-        artist: 'Real Artist',
-      }),
-    ).toBe('ta:real artist|real title')
+  it('accepts that a dotless "ft" credit does not dedupe (split key beats a wrong merge)', () => {
+    expect(trackIdentity({ title: 'Song ft Someone', artist: 'A' })).toBe(
+      'ta:a|song ft someone',
+    )
   })
 
-  it('accepts a title-only or artist-only fallback', () => {
+  it('accepts a title-only or artist-only key', () => {
     expect(trackIdentity({ title: 'Solo Title' })).toBe('ta:|solo title')
     expect(trackIdentity({ artist: 'Solo Artist' })).toBe('ta:solo artist|')
   })
 
   it('throws when no identifying field is present', () => {
     expect(() => trackIdentity({})).toThrow(/at least one/)
-    expect(() =>
-      trackIdentity({ isrc: '  ', title: '  ', artist: '' }),
-    ).toThrow(/at least one/)
+    expect(() => trackIdentity({ title: '  ', artist: '' })).toThrow(
+      /at least one/,
+    )
   })
 })
