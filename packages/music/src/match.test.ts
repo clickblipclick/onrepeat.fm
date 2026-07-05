@@ -10,7 +10,15 @@ describe('normalizeTokens', () => {
       'you',
     ])
     expect(normalizeTokens('Song feat. Someone')).toEqual(['song'])
+    expect(normalizeTokens('Song ft. Someone')).toEqual(['song'])
     expect(normalizeTokens('A-Punk!')).toEqual(['a', 'punk'])
+  })
+
+  it('keeps titles where "ft" means feet, not a credit', () => {
+    // Bare "ft" (no dot) is not a credit; title-initial "Ft." (Fort) never is.
+    // Mirrors trackIdentity in @onrepeat/core — see the comment there.
+    expect(normalizeTokens('50 Ft Queenie')).toEqual(['50', 'ft', 'queenie'])
+    expect(normalizeTokens('Ft. Worth Blues')).toEqual(['ft', 'worth', 'blues'])
   })
 })
 

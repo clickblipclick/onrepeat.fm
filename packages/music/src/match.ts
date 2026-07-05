@@ -5,12 +5,17 @@ export interface MatchInput {
   durationSec?: number
 }
 
-/** Lowercase; drop (parentheticals)/[brackets]/feat…; keep only letters+digits as tokens. */
+/**
+ * Lowercase; drop (parentheticals)/[brackets]/feat…; keep only letters+digits as
+ * tokens. The feat-tail rule requires the dot on "ft." and skips title-initial
+ * matches so real titles ("50 Ft Queenie", "Ft. Worth Blues") aren't truncated —
+ * keep in sync with @onrepeat/core's trackIdentity normalization.
+ */
 export function normalizeTokens(s: string): string[] {
   return s
     .toLowerCase()
     .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
-    .replace(/\b(feat|ft|featuring)\b.*$/g, ' ')
+    .replace(/(?!^)\b(feat\b|ft\.|featuring\b).*$/g, ' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .split(/\s+/)
     .filter(Boolean)
