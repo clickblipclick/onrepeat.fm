@@ -1,6 +1,11 @@
 import { sql, type SqlBool } from 'kysely'
 
-import type { DB, ProviderRefs, ResolutionStatus } from '@onrepeat/db'
+import type {
+  DB,
+  NotificationType,
+  ProviderRefs,
+  ResolutionStatus,
+} from '@onrepeat/db'
 
 import type { ActorProfile } from './bsky'
 import { decodeCursor, encodeCursor, type Cursor } from './cursor'
@@ -57,7 +62,7 @@ function clampLimit(limit?: number): number {
  * as active: the ingester upserts the row before any content lands.
  */
 const authorActive = (
-  col: 'jams.author_did' | 'likes.author_did',
+  col: 'jams.author_did' | 'likes.author_did' | 'notifications.actor_did',
 ): ReturnType<typeof sql<SqlBool>> =>
   sql<SqlBool>`not exists (select 1 from actors where actors.did = ${sql.ref(col)} and actors.status <> 'active')`
 
@@ -479,6 +484,116 @@ export async function getFollowRecord(
     .orderBy('created_at', 'asc')
     .executeTakeFirst()
   return row ?? null
+}
+
+export interface NotificationView {
+  recordUri: string
+  type: NotificationType
+  actorDid: string
+  /** The viewer's jam the action targeted; null for follows (no subject). */
+  subjectUri: string | null
+  createdAt: string
+  /** Whether the viewer's watermark covers this row (see markNotificationsSeen). */
+  seen: boolean
+  /** The viewer's jam this is about; null for follows or when it has since been deleted. */
+  jam: JamView | null
+}
+
+export interface NotificationsPage {
+  notifications: NotificationView[]
+  cursor?: string
+}
+
+// Unread/seen compare against indexed_at (arrival), not created_at (author-controlled):
+// a backdated like must still count as new when it arrives after the watermark. The
+// list itself stays created_at-ordered like every other feed.
+const notifUnseen = (did: string): ReturnType<typeof sql<SqlBool>> =>
+  sql<SqlBool>`indexed_at > coalesce((select seen_at from notification_state where did = ${did}), '-infinity'::timestamptz)`
+
+/** The viewer's notifications (likes + re-jams of their jams), newest-first. */
+export async function getNotifications(
+  db: DB,
+  params: { did: string; limit?: number; cursor?: string },
+): Promise<NotificationsPage> {
+  const limit = clampLimit(params.limit)
+  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
+  let q = db
+    .selectFrom('notifications')
+    .select(['record_uri', 'type', 'actor_did', 'subject_uri', 'created_at'])
+    .select(CURSOR_TS.as('cursor_ts'))
+    .select(notifUnseen(params.did).as('unseen'))
+    .where('recipient_did', '=', params.did)
+    .where(authorActive('notifications.actor_did'))
+    .orderBy('created_at', 'desc')
+    .orderBy('record_uri', 'desc')
+    .limit(limit + 1)
+  if (cur) {
+    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
+    q = q.where((eb) =>
+      eb.or([
+        eb('created_at', '<', cursorDate),
+        eb.and([
+          eb('created_at', '=', cursorDate),
+          eb('record_uri', '<', cur.uri),
+        ]),
+      ]),
+    )
+  }
+  const idRows = await q.execute()
+  const hasMore = idRows.length > limit
+  const pageRows = idRows.slice(0, limit)
+  const subjectUris = Array.from(
+    new Set(pageRows.map((r) => r.subject_uri).filter((u): u is string => !!u)),
+  )
+  const jams = await loadJamsByUris(db, subjectUris, params.did)
+  const jamByUri = new Map(jams.map((j) => [j.uri, j]))
+  const notifications = pageRows.map(
+    (r): NotificationView => ({
+      recordUri: r.record_uri,
+      type: r.type,
+      actorDid: r.actor_did,
+      subjectUri: r.subject_uri,
+      createdAt: new Date(
+        r.created_at as unknown as string | Date,
+      ).toISOString(),
+      seen: !r.unseen,
+      jam: (r.subject_uri && jamByUri.get(r.subject_uri)) || null,
+    }),
+  )
+  const cursorItems = pageRows.map((r) => ({
+    createdAt: r.cursor_ts,
+    uri: r.record_uri,
+  }))
+  return { notifications, cursor: buildCursor(cursorItems, hasMore) }
+}
+
+/** Notifications that arrived since the viewer last opened the page (see notifUnseen). */
+export async function getUnreadNotificationCount(
+  db: DB,
+  did: string,
+): Promise<number> {
+  const row = await db
+    .selectFrom('notifications')
+    .select((eb) => eb.fn.count<string>('record_uri').as('n'))
+    .where('recipient_did', '=', did)
+    .where(authorActive('notifications.actor_did'))
+    .where(notifUnseen(did))
+    .executeTakeFirst()
+  return Number(row?.n ?? 0)
+}
+
+/** Advance the viewer's read watermark to now. DB clock (not JS) so it totally
+ *  orders against indexed_at, which is also DB now(). */
+export async function markNotificationsSeen(
+  db: DB,
+  did: string,
+): Promise<void> {
+  const now = sql<Date>`now()`
+  await db
+    .insertInto('notification_state')
+    .values({ did, seen_at: now })
+    .onConflict((oc) => oc.column('did').doUpdateSet({ seen_at: now }))
+    .execute()
 }
 
 /** Whether viewer follows subject. */

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getFollowRecord } from '@onrepeat/appview'
+import { getFollowRecord, markNotificationsSeen } from '@onrepeat/appview'
 import { isThemeName, providerFromUrl } from '@onrepeat/core'
 import {
   indexFollow,
@@ -35,7 +35,7 @@ import {
 import { didFromUri, rkeyFromUri } from '@/lib/at-uri'
 import { db } from '@/lib/db'
 import { getBoss } from '@/lib/jobs'
-import { getSessionAgent } from '@/lib/session'
+import { getSession, getSessionAgent } from '@/lib/session'
 
 /**
  * After a jam write succeeds: index it into our Postgres and enqueue its resolve job
@@ -359,6 +359,22 @@ export async function followAction(subjectDid: string): Promise<ActionResult> {
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'failed' }
+  }
+}
+
+/**
+ * Advance the viewer's notifications read watermark (clears the bell badge).
+ * Local appview state only — no PDS write, so the session cookie's DID is enough
+ * and no OAuth agent is needed. The notifications page fires this on mount and
+ * router.refresh()es afterwards, so no revalidate here.
+ */
+export async function markNotificationsSeenAction(): Promise<void> {
+  const session = await getSession()
+  if (!session.did) return
+  try {
+    await markNotificationsSeen(db, session.did)
+  } catch (e) {
+    console.error('[web] markNotificationsSeen failed', e)
   }
 }
 
