@@ -9,10 +9,7 @@ import {
 } from '@onrepeat/lexicons'
 
 export type IngestCollection =
-  | typeof JAM_NSID
-  | typeof LIKE_NSID
-  | typeof PROFILE_NSID
-  | typeof FOLLOW_NSID
+  typeof JAM_NSID | typeof LIKE_NSID | typeof PROFILE_NSID | typeof FOLLOW_NSID
 
 export interface RecordIngestEvent {
   action: 'create' | 'update' | 'delete'

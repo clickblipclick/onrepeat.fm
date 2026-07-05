@@ -56,8 +56,7 @@ export function isRetryableStatus(status: number): boolean {
 
 /** A fetch+parse outcome that distinguishes a retryable failure from a permanent one. */
 export type FetchResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; reason: 'transient' | 'unreadable' }
+  { ok: true; data: T } | { ok: false; reason: 'transient' | 'unreadable' }
 
 /** Map a non-ok HTTP status to a failure reason (429/5xx ⇒ transient, else unreadable). */
 export function failureReason(status: number): 'transient' | 'unreadable' {
