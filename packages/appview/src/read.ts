@@ -490,11 +490,12 @@ export interface NotificationView {
   recordUri: string
   type: NotificationType
   actorDid: string
-  subjectUri: string
+  /** The viewer's jam the action targeted; null for follows (no subject). */
+  subjectUri: string | null
   createdAt: string
   /** Whether the viewer's watermark covers this row (see markNotificationsSeen). */
   seen: boolean
-  /** The viewer's jam this is about; null when it has since been deleted. */
+  /** The viewer's jam this is about; null for follows or when it has since been deleted. */
   jam: JamView | null
 }
 
@@ -541,7 +542,9 @@ export async function getNotifications(
   const idRows = await q.execute()
   const hasMore = idRows.length > limit
   const pageRows = idRows.slice(0, limit)
-  const subjectUris = Array.from(new Set(pageRows.map((r) => r.subject_uri)))
+  const subjectUris = Array.from(
+    new Set(pageRows.map((r) => r.subject_uri).filter((u): u is string => !!u)),
+  )
   const jams = await loadJamsByUris(db, subjectUris, params.did)
   const jamByUri = new Map(jams.map((j) => [j.uri, j]))
   const notifications = pageRows.map(
@@ -554,7 +557,7 @@ export async function getNotifications(
         r.created_at as unknown as string | Date,
       ).toISOString(),
       seen: !r.unseen,
-      jam: jamByUri.get(r.subject_uri) ?? null,
+      jam: (r.subject_uri && jamByUri.get(r.subject_uri)) || null,
     }),
   )
   const cursorItems = pageRows.map((r) => ({

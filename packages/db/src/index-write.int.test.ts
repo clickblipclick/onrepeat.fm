@@ -511,6 +511,7 @@ describe('notifications from likes and re-jams', () => {
     await db.deleteFrom('notification_state').execute()
     await db.deleteFrom('likes').where('uri', '=', NOTIF_LIKE_URI).execute()
     await db.deleteFrom('jams').where('author_did', '=', LIKER).execute()
+    await db.deleteFrom('follows').where('author_did', '=', LIKER).execute()
   })
 
   afterAll(async () => {
@@ -518,6 +519,7 @@ describe('notifications from likes and re-jams', () => {
     await db.deleteFrom('notification_state').execute()
     await db.deleteFrom('likes').where('uri', '=', NOTIF_LIKE_URI).execute()
     await db.deleteFrom('jams').where('author_did', '=', LIKER).execute()
+    await db.deleteFrom('follows').where('author_did', '=', LIKER).execute()
   })
 
   it('indexLike creates a like notification for the liked jam author', async () => {
@@ -621,6 +623,61 @@ describe('notifications from likes and re-jams', () => {
     await removeJam(db, rejamUri)
     const rows = await db.selectFrom('notifications').selectAll().execute()
     expect(rows).toHaveLength(0)
+  })
+
+  it('indexFollow creates a follow notification for the followed account', async () => {
+    const uri = `at://${LIKER}/fm.onrepeat.graph.follow/n1`
+    await indexFollow(db, {
+      uri,
+      did: LIKER,
+      record: {
+        $type: FOLLOW_NSID,
+        subject: AUTHOR,
+        createdAt: '2026-07-01T00:00:00.000Z',
+      },
+    })
+    const row = await db
+      .selectFrom('notifications')
+      .selectAll()
+      .where('record_uri', '=', uri)
+      .executeTakeFirst()
+    expect(row).toBeDefined()
+    expect(row!.recipient_did).toBe(AUTHOR)
+    expect(row!.actor_did).toBe(LIKER)
+    expect(row!.type).toBe('follow')
+    expect(row!.subject_uri).toBeNull()
+  })
+
+  it('indexFollow creates no notification for a (skipped) self-follow', async () => {
+    await indexFollow(db, {
+      uri: `at://${LIKER}/fm.onrepeat.graph.follow/self`,
+      did: LIKER,
+      record: {
+        $type: FOLLOW_NSID,
+        subject: LIKER,
+        createdAt: '2026-07-01T00:00:00.000Z',
+      },
+    })
+    expect(
+      await db.selectFrom('notifications').selectAll().execute(),
+    ).toHaveLength(0)
+  })
+
+  it('removeFollow deletes the follow notification', async () => {
+    const uri = `at://${LIKER}/fm.onrepeat.graph.follow/n2`
+    await indexFollow(db, {
+      uri,
+      did: LIKER,
+      record: {
+        $type: FOLLOW_NSID,
+        subject: AUTHOR,
+        createdAt: '2026-07-01T00:00:00.000Z',
+      },
+    })
+    await removeFollow(db, uri)
+    expect(
+      await db.selectFrom('notifications').selectAll().execute(),
+    ).toHaveLength(0)
   })
 
   it('purgeActorContent clears notifications in both directions and read state', async () => {

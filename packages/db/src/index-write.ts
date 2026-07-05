@@ -47,23 +47,24 @@ export function jamRow(
 }
 
 /**
- * Notification fan-out row for a like or re-jam, or null when there is no one to
- * notify: the actor targeting their own jam, or a subject uri whose authority
- * can't be parsed. The recipient is the subject's at-uri authority — no jam
- * lookup needed, so indexing order (like before jam) can't drop a notification.
+ * Notification fan-out row, or null when there is no one to notify: a self-action,
+ * or a recipient that couldn't be derived. For likes and re-jams the recipient is
+ * the subject's at-uri authority — no jam lookup needed, so indexing order (like
+ * before jam) can't drop a notification. Follows name their recipient directly
+ * and have no subject.
  */
 function notificationRow(args: {
   recordUri: string
   actorDid: string
+  recipientDid: string | null
   type: NotificationType
-  subjectUri: string
+  subjectUri: string | null
   createdAt: string
 }): Insertable<NotificationsTable> | null {
-  const recipient = didFromAtUri(args.subjectUri)
-  if (!recipient || recipient === args.actorDid) return null
+  if (!args.recipientDid || args.recipientDid === args.actorDid) return null
   return {
     record_uri: args.recordUri,
-    recipient_did: recipient,
+    recipient_did: args.recipientDid,
     actor_did: args.actorDid,
     type: args.type,
     subject_uri: args.subjectUri,
@@ -143,6 +144,7 @@ export async function indexJam(
       notificationRow({
         recordUri: args.uri,
         actorDid: args.did,
+        recipientDid: didFromAtUri(args.record.via.uri),
         type: 'rejam',
         subjectUri: args.record.via.uri,
         createdAt: args.record.createdAt,
@@ -184,6 +186,7 @@ export async function indexLike(
     notificationRow({
       recordUri: args.uri,
       actorDid: args.did,
+      recipientDid: didFromAtUri(args.record.subject.uri),
       type: 'like',
       subjectUri: args.record.subject.uri,
       createdAt: args.record.createdAt,
@@ -235,11 +238,25 @@ export async function indexFollow(
       }),
     )
     .execute()
+  // Notify the followed account (see indexJam for the non-transactional reasoning).
+  await insertNotification(
+    db,
+    notificationRow({
+      recordUri: args.uri,
+      actorDid: args.did,
+      recipientDid: args.record.subject,
+      type: 'follow',
+      subjectUri: null,
+      createdAt: args.record.createdAt,
+    }),
+  )
 }
 
-/** Remove a follow row from the index by at-uri. Idempotent (no-op if absent). */
+/** Remove a follow row from the index by at-uri, along with the notification it
+ *  may have fanned out. Idempotent (no-op if absent). */
 export async function removeFollow(db: DB, uri: string): Promise<void> {
   await db.deleteFrom('follows').where('uri', '=', uri).execute()
+  await db.deleteFrom('notifications').where('record_uri', '=', uri).execute()
 }
 
 /**

@@ -13,6 +13,7 @@ import * as hotPathIndexes009 from './migrations/009_hot_path_indexes'
 import * as trackCdnArtwork010 from './migrations/010_track_cdn_artwork'
 import * as follows011 from './migrations/011_follows'
 import * as notifications012 from './migrations/012_notifications'
+import * as followNotifications013 from './migrations/013_follow_notifications'
 
 const migrations: Record<string, Migration> = {
   '001_init': init001,
@@ -27,6 +28,7 @@ const migrations: Record<string, Migration> = {
   '010_track_cdn_artwork': trackCdnArtwork010,
   '011_follows': follows011,
   '012_notifications': notifications012,
+  '013_follow_notifications': followNotifications013,
 }
 
 export function createMigrator(db: Kysely<any>): Migrator {

@@ -88,16 +88,17 @@ export interface FollowsTable {
   indexed_at: Generated<Timestamp>
 }
 
-export type NotificationType = 'like' | 'rejam'
+export type NotificationType = 'like' | 'rejam' | 'follow'
 
-/** Derived appview state: one row per source record (like / re-jam), keyed by its
- *  at-uri. recipient_did is the at-uri authority of the subject jam. */
+/** Derived appview state: one row per source record (like / re-jam / follow), keyed
+ *  by its at-uri. For likes and re-jams, recipient_did is the at-uri authority of
+ *  the subject jam; follows carry the recipient directly and have no subject. */
 export interface NotificationsTable {
   record_uri: string
   recipient_did: string
   actor_did: string
   type: ColumnType<NotificationType, string, string>
-  subject_uri: string
+  subject_uri: string | null
   created_at: Timestamp
   // DB-defaulted like Generated<Timestamp>, but with an explicit insert side:
   // unread/seen compare against this arrival stamp, so tests pin it directly.

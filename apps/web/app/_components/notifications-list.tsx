@@ -1,6 +1,6 @@
 'use client'
 
-import { Heart, Repeat2 } from 'lucide-react'
+import { Heart, Repeat2, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -65,8 +65,8 @@ export function NotificationsList({
   if (items.length === 0)
     return (
       <EmptyState>
-        Nothing yet. When someone likes or reposts your tracks, it shows up
-        here.
+        Nothing yet. When someone likes or reposts your tracks, or follows you,
+        it shows up here.
       </EmptyState>
     )
 
@@ -87,9 +87,16 @@ function NotificationRow({ n }: { n: HydratedNotification }) {
   // The subject is the viewer's own jam; /profile accepts a DID, so no handle
   // lookup is needed for the permalink.
   const jamHref = n.jam
-    ? `/profile/${encodeURIComponent(n.jam.authorDid)}/jam/${rkeyFromUri(n.subjectUri)}`
+    ? `/profile/${encodeURIComponent(n.jam.authorDid)}/jam/${rkeyFromUri(n.jam.uri)}`
     : null
-  const Icon = n.type === 'like' ? Heart : Repeat2
+  const Icon =
+    n.type === 'like' ? Heart : n.type === 'rejam' ? Repeat2 : UserPlus
+  const verb =
+    n.type === 'like'
+      ? 'liked your track'
+      : n.type === 'rejam'
+        ? 'reposted your track'
+        : 'followed you'
   return (
     <div className="flex items-start gap-3 rounded-md border border-border bg-surface p-3 text-sm">
       <Link
@@ -105,7 +112,7 @@ function NotificationRow({ n }: { n: HydratedNotification }) {
             <Link href={profileHref} className="font-bold hover:underline">
               {authorName(n.actor)}
             </Link>{' '}
-            {n.type === 'like' ? 'liked' : 'reposted'} your track
+            {verb}
           </span>
           {!n.seen && (
             <span
@@ -116,13 +123,17 @@ function NotificationRow({ n }: { n: HydratedNotification }) {
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
           <Icon size={13} className="shrink-0" aria-hidden />
-          {n.jam && jamHref ? (
-            <Link href={jamHref} className="min-w-0 truncate hover:text-accent">
-              {n.jam.title} · {n.jam.artist}
-            </Link>
-          ) : (
-            <span>a track that has since been deleted</span>
-          )}
+          {n.type !== 'follow' &&
+            (n.jam && jamHref ? (
+              <Link
+                href={jamHref}
+                className="min-w-0 truncate hover:text-accent"
+              >
+                {n.jam.title} · {n.jam.artist}
+              </Link>
+            ) : (
+              <span>a track that has since been deleted</span>
+            ))}
         </div>
       </div>
       <RelativeTime

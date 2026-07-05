@@ -164,6 +164,26 @@ describe('notifications reads', () => {
     expect(page.notifications[0]!.seen).toBe(true)
   })
 
+  it('returns follow notifications with no subject jam', async () => {
+    await db
+      .insertInto('notifications')
+      .values({
+        record_uri: `at://${OTHER}/fm.onrepeat.graph.follow/1`,
+        recipient_did: ME,
+        actor_did: OTHER,
+        type: 'follow',
+        subject_uri: null,
+        created_at: '2026-07-02T00:00:00.000Z',
+      })
+      .execute()
+    const page = await getNotifications(db, { did: ME })
+    expect(page.notifications).toHaveLength(1)
+    expect(page.notifications[0]!.type).toBe('follow')
+    expect(page.notifications[0]!.subjectUri).toBeNull()
+    expect(page.notifications[0]!.jam).toBeNull()
+    expect(await getUnreadNotificationCount(db, ME)).toBe(1)
+  })
+
   it('unread is arrival-based: a backdated like arriving after mark-seen still counts', async () => {
     await markNotificationsSeen(db, ME)
     // createdAt far in the past, but indexed (arrived) after the watermark
