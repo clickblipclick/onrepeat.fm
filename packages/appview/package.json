@@ -13,7 +13,7 @@
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
     "kysely": "^0.29.0",
-    "lru-cache": "^10.4.3"
+    "lru-cache": "^11.5.1"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
