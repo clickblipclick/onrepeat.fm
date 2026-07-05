@@ -40,7 +40,7 @@ export async function generateMetadata({
   // (the page body's notFound() fires after the root loading shell flushes a 200).
   if (!profile) notFound()
   return {
-    title: `${profile.displayName ?? profile.handle} · onrepeat.fm`,
+    title: `${profile.displayName || profile.handle} · onrepeat.fm`,
   }
 }
 
@@ -124,8 +124,12 @@ export default async function ProfilePage({
       <div className="flex items-center gap-3">
         <Avatar author={profile} size={68} />
         <div className="flex-1">
-          <h1 className="font-bold">{profile.displayName ?? profile.handle}</h1>
-          <div className="text-sm text-muted">@{profile.handle}</div>
+          <h1 className="font-bold">
+            {profile.displayName || <>@{profile.handle}</>}
+          </h1>
+          {!!profile.displayName && (
+            <div className="text-sm text-muted">@{profile.handle}</div>
+          )}
           <div className="mt-1 text-sm text-muted">
             <span className="font-medium">{counts.followers}</span> followers ·{' '}
             <span className="font-medium">{counts.following}</span> following
