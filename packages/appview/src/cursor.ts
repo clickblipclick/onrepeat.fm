@@ -14,6 +14,13 @@ export function encodeCursor(c: Cursor): string {
   ).toString('base64url')
 }
 
+// Both timestamp slots are interpolated into `::timestamptz` casts downstream; reject
+// anything that isn't a plain ISO-8601 UTC instant here so a hand-crafted cursor fails
+// as `invalid cursor` at the boundary instead of a Postgres syntax error mid-query.
+// Fractional seconds are optional: JS toISOString emits 3 digits (snap), the SQL cursor
+// formatter emits 6 (createdAt).
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/
+
 export function decodeCursor(s: string): Cursor {
   const decoded = Buffer.from(s, 'base64url').toString('utf8')
   const i1 = decoded.indexOf('|')
@@ -22,7 +29,8 @@ export function decodeCursor(s: string): Cursor {
   const snap = decoded.slice(0, i1)
   const createdAt = decoded.slice(i1 + 1, i2)
   const uri = decoded.slice(i2 + 1)
-  if (!createdAt || !uri || !uri.startsWith('at://'))
+  if (!ISO_UTC.test(createdAt) || !uri.startsWith('at://'))
     throw new Error('invalid cursor')
+  if (snap && !ISO_UTC.test(snap)) throw new Error('invalid cursor')
   return { createdAt, uri, snap: snap || undefined }
 }

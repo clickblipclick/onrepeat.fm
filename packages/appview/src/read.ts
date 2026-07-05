@@ -224,10 +224,43 @@ function buildCursor(
   hasMore: boolean,
   snap?: string,
 ): string | undefined {
-  if (!hasMore || items.length === 0) return undefined
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const last = items[items.length - 1]!
+  const last = items.at(-1)
+  if (!hasMore || !last) return undefined
   return encodeCursor({ createdAt: last.createdAt, uri: last.uri, snap })
+}
+
+/** Keyset boundary for the newest-first feeds: rows strictly after the cursor position,
+ *  i.e. `(created_at, uriCol) < (cursor.createdAt, cursor.uri)`. The cursor timestamp is
+ *  validated ISO-UTC (decodeCursor) and round-trips losslessly via `::timestamptz`
+ *  against the microsecond CURSOR_TS it was built from. */
+const keysetBoundary = (
+  cur: Cursor,
+  uriCol: 'uri' | 'record_uri' = 'uri',
+): ReturnType<typeof sql<SqlBool>> =>
+  sql<SqlBool>`(created_at < ${cur.createdAt}::timestamptz
+    or (created_at = ${cur.createdAt}::timestamptz and ${sql.ref(uriCol)} < ${cur.uri}))`
+
+/** Shared tail of the jam feeds: take the `limit + 1` id rows, detect the extra row,
+ *  hydrate one page of JamViews, and build the next-page cursor from CURSOR_TS. */
+async function jamPage(
+  db: DB,
+  idRows: { uri: string; cursor_ts: string }[],
+  limit: number,
+  viewerDid?: string,
+  snap?: string,
+): Promise<Page> {
+  const hasMore = idRows.length > limit
+  const pageRows = idRows.slice(0, limit)
+  const jams = await loadJamsByUris(
+    db,
+    pageRows.map((r) => r.uri),
+    viewerDid,
+  )
+  const cursorItems = pageRows.map((r) => ({
+    createdAt: r.cursor_ts,
+    uri: r.uri,
+  }))
+  return { jams, cursor: buildCursor(cursorItems, hasMore, snap) }
 }
 
 /** Explore/Latest — network-wide recent jams, newest-first. */
@@ -236,9 +269,7 @@ export async function getLatest(
   params: PageParams = {},
 ): Promise<Page> {
   const limit = clampLimit(params.limit)
-  const cur: Cursor | undefined = params.cursor
-    ? decodeCursor(params.cursor)
-    : undefined
+  const cur = params.cursor ? decodeCursor(params.cursor) : undefined
   let q = db
     .selectFrom('jams')
     .select('uri')
@@ -247,28 +278,8 @@ export async function getLatest(
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
-  if (cur) {
-    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
-    q = q.where((eb) =>
-      eb.or([
-        eb('created_at', '<', cursorDate),
-        eb.and([eb('created_at', '=', cursorDate), eb('uri', '<', cur.uri)]),
-      ]),
-    )
-  }
-  const idRows = await q.execute()
-  const hasMore = idRows.length > limit
-  const pageRows = idRows.slice(0, limit)
-  const jams = await loadJamsByUris(
-    db,
-    pageRows.map((r) => r.uri),
-    params.viewerDid,
-  )
-  const cursorItems = pageRows.map((r) => ({
-    createdAt: r.cursor_ts,
-    uri: r.uri,
-  }))
-  return { jams, cursor: buildCursor(cursorItems, hasMore) }
+  if (cur) q = q.where(keysetBoundary(cur))
+  return jamPage(db, await q.execute(), limit, params.viewerDid)
 }
 
 /** A profile's jams, newest-first (jams[0] is the current jam if <7 days old). */
@@ -287,28 +298,8 @@ export async function getActorJams(
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
-  if (cur) {
-    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
-    q = q.where((eb) =>
-      eb.or([
-        eb('created_at', '<', cursorDate),
-        eb.and([eb('created_at', '=', cursorDate), eb('uri', '<', cur.uri)]),
-      ]),
-    )
-  }
-  const idRows = await q.execute()
-  const hasMore = idRows.length > limit
-  const pageRows = idRows.slice(0, limit)
-  const jams = await loadJamsByUris(
-    db,
-    pageRows.map((r) => r.uri),
-    params.viewerDid,
-  )
-  const cursorItems = pageRows.map((r) => ({
-    createdAt: r.cursor_ts,
-    uri: r.uri,
-  }))
-  return { jams, cursor: buildCursor(cursorItems, hasMore) }
+  if (cur) q = q.where(keysetBoundary(cur))
+  return jamPage(db, await q.execute(), limit, params.viewerDid)
 }
 
 export interface JamDetail {
@@ -412,37 +403,28 @@ export async function getFollowFeed(
     .orderBy('created_at', 'desc')
     .orderBy('uri', 'desc')
     .limit(limit + 1)
-  if (cur) {
-    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
-    q = q.where((eb) =>
-      eb.or([
-        eb('created_at', '<', cursorDate),
-        eb.and([eb('created_at', '=', cursorDate), eb('uri', '<', cur.uri)]),
-      ]),
-    )
-  }
-  const idRows = await q.execute()
-  const hasMore = idRows.length > limit
-  const pageRows = idRows.slice(0, limit)
-  const jams = await loadJamsByUris(
-    db,
-    pageRows.map((r) => r.uri),
-    params.viewerDid,
-  )
-  const cursorItems = pageRows.map((r) => ({
-    createdAt: r.cursor_ts,
-    uri: r.uri,
-  }))
-  return { jams, cursor: buildCursor(cursorItems, hasMore, snap) }
+  if (cur) q = q.where(keysetBoundary(cur))
+  return jamPage(db, await q.execute(), limit, params.viewerDid, snap)
 }
 
-/** DIDs the given actor follows (deduped). Feeds getFollowFeed's `followedDids`. */
-export async function getFollowingDids(db: DB, did: string): Promise<string[]> {
+// Cap on how many followed DIDs feed getFollowFeed. The list becomes a bind-parameter
+// array in an IN clause there, and Postgres tops out at 65,535 params — so an unbounded
+// follow graph would eventually hard-fail the query (and get slow well before that).
+// 10k is far above any realistic follow count for now; revisit with a local join if hit.
+const FOLLOWING_DIDS_CAP = 10_000
+
+/** DIDs the given actor follows (deduped, capped). Feeds getFollowFeed's `followedDids`. */
+export async function getFollowingDids(
+  db: DB,
+  did: string,
+  cap: number = FOLLOWING_DIDS_CAP,
+): Promise<string[]> {
   const rows = await db
     .selectFrom('follows')
     .select('subject_did')
     .distinct()
     .where('author_did', '=', did)
+    .limit(cap)
     .execute()
   return rows.map((r) => r.subject_did)
 }
@@ -527,18 +509,7 @@ export async function getNotifications(
     .orderBy('created_at', 'desc')
     .orderBy('record_uri', 'desc')
     .limit(limit + 1)
-  if (cur) {
-    const cursorDate = sql<Date>`${cur.createdAt}::timestamptz`
-    q = q.where((eb) =>
-      eb.or([
-        eb('created_at', '<', cursorDate),
-        eb.and([
-          eb('created_at', '=', cursorDate),
-          eb('record_uri', '<', cur.uri),
-        ]),
-      ]),
-    )
-  }
+  if (cur) q = q.where(keysetBoundary(cur, 'record_uri'))
   const idRows = await q.execute()
   const hasMore = idRows.length > limit
   const pageRows = idRows.slice(0, limit)
