@@ -213,9 +213,13 @@ describe('persistArtwork', () => {
     const onSkip = vi.fn(() => {
       throw new Error('logger exploded')
     })
-    const url = await persistArtwork('https://evil.example/a.jpg', fakeStore(), {
-      onSkip,
-    })
+    const url = await persistArtwork(
+      'https://evil.example/a.jpg',
+      fakeStore(),
+      {
+        onSkip,
+      },
+    )
     expect(url).toBeNull()
     expect(onSkip).toHaveBeenCalled()
   })

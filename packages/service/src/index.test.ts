@@ -101,9 +101,7 @@ describe('onShutdown', () => {
     }
     onShutdown('t', async () => {})
     const added = {
-      int: process
-        .listeners('SIGINT')
-        .filter((l) => !before.int.includes(l)),
+      int: process.listeners('SIGINT').filter((l) => !before.int.includes(l)),
       term: process
         .listeners('SIGTERM')
         .filter((l) => !before.term.includes(l)),

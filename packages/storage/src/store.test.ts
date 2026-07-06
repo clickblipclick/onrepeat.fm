@@ -1,7 +1,4 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3'
+import { HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createR2Store, publicUrl, type ObjectClient } from './store'
