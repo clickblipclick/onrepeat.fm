@@ -90,36 +90,60 @@ describe('enqueueResolveForJam', () => {
     })
   })
 
-  it('uses the ta: fallback identity (title/artist) for a jam without isrc', async () => {
-    const noIsrc = jam()
+  it('skips a jam with no usable identity fields without writing or enqueuing', async () => {
+    const blank = jam({ title: '', artist: '' })
     await db
       .insertInto('jams')
       .values({
-        uri: noIsrc.uri,
+        uri: blank.uri,
         cid: 'bafy',
         author_did: 'did:plc:author',
-        source_url: noIsrc.record.sourceUrl,
+        source_url: blank.record.sourceUrl,
+        source_provider: 'spotify',
+        raw_title: '',
+        raw_artist: '',
+        created_at: '2026-05-30T00:00:00.000Z',
+      })
+      .execute()
+
+    await enqueueResolveForJam(boss, db, blank)
+
+    const tracks = await db.selectFrom('tracks').selectAll().execute()
+    expect(tracks).toHaveLength(0)
+    const linked = await db
+      .selectFrom('jams')
+      .select('track_id')
+      .where('uri', '=', blank.uri)
+      .executeTakeFirst()
+    expect(linked?.track_id).toBeNull()
+    const queued = await boss.fetch(RESOLVE_QUEUE)
+    expect(queued).toHaveLength(0)
+  })
+
+  it('re-enqueues a track that previously failed to resolve', async () => {
+    await db
+      .insertInto('jams')
+      .values({
+        uri: jam().uri,
+        cid: 'bafy',
+        author_did: 'did:plc:author',
+        source_url: jam().record.sourceUrl,
         source_provider: 'spotify',
         raw_title: 'Song',
         raw_artist: 'Artist',
         created_at: '2026-05-30T00:00:00.000Z',
       })
       .execute()
+    await db
+      .insertInto('tracks')
+      .values({ id: 'ta:artist|song', resolution_status: 'failed' })
+      .execute()
 
-    await enqueueResolveForJam(boss, db, noIsrc)
+    await enqueueResolveForJam(boss, db, jam())
 
-    const linked = await db
-      .selectFrom('jams')
-      .select('track_id')
-      .where('uri', '=', noIsrc.uri)
-      .executeTakeFirst()
-    expect(linked?.track_id).toBe('ta:artist|song')
-    const track = await db
-      .selectFrom('tracks')
-      .selectAll()
-      .where('id', '=', 'ta:artist|song')
-      .executeTakeFirst()
-    expect(track?.resolution_status).toBe('pending')
+    const queued = await boss.fetch(RESOLVE_QUEUE)
+    expect(queued).toHaveLength(1)
+    expect(queued[0]?.data).toMatchObject({ identity: 'ta:artist|song' })
   })
 
   it('does not re-enqueue or reset a track that is already resolved', async () => {
