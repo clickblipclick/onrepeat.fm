@@ -6,6 +6,7 @@ import { useRef } from 'react'
 
 import { Avatar } from './avatar'
 import { Menu } from './ui/menu'
+import { useUnreadStream } from './use-unread-stream'
 
 /** Account menu on the nav avatar (shared <Menu>): notifications, your profile,
  *  settings, sign out. Unread notifications show as an accent dot on the avatar and
@@ -15,7 +16,7 @@ export function UserMenu({
   did,
   avatar,
   profileActor,
-  unread = 0,
+  unread: serverUnread = 0,
 }: {
   did: string
   avatar?: string
@@ -24,6 +25,8 @@ export function UserMenu({
 }) {
   const router = useRouter()
   const signOutRef = useRef<HTMLFormElement>(null)
+  // Server-rendered count, kept live by the notification SSE stream.
+  const unread = useUnreadStream(serverUnread)
   return (
     <>
       <Menu
