@@ -55,7 +55,12 @@ export function createPgAdvisoryLock(db: DB): RuntimeLock {
         try {
           return await fn()
         } finally {
-          await sql`select pg_advisory_unlock(hashtext(${name}))`.execute(conn)
+          // Swallow unlock failures: they only happen when the connection is
+          // already gone, and a session-level lock auto-releases with its
+          // connection — rethrowing here would just mask fn()'s real error.
+          await sql`select pg_advisory_unlock(hashtext(${name}))`
+            .execute(conn)
+            .catch(() => {})
         }
       } finally {
         await sql`select set_config('lock_timeout', '0', false)`.execute(conn)

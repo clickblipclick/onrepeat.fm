@@ -12,10 +12,10 @@
     "@atproto-labs/fetch-node": "^0.3.4",
     "@atproto/jwk-jose": "^0.2.3",
     "@atproto/oauth-client-node": "^0.4.5",
-    "@onrepeat/db": "workspace:*"
+    "@onrepeat/db": "workspace:*",
+    "kysely": "^0.29.0"
   },
   "devDependencies": {
-    "kysely": "^0.29.0",
     "typescript": "^6.0.3"
   }
 }

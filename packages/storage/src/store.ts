@@ -31,16 +31,29 @@ export function publicUrl(base: string, key: string): string {
   return `${base.replace(/\/+$/, '')}/${key}`
 }
 
+/** The slice of the S3 client the store uses; injectable for tests. */
+export interface ObjectClient {
+  send(command: HeadObjectCommand | PutObjectCommand): Promise<unknown>
+}
+
+/** The SDK surfaces a HEAD 404 as name 'NotFound'; keep the status check as a fallback. */
+function isNotFound(err: unknown): boolean {
+  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
+  return e?.name === 'NotFound' || e?.$metadata?.httpStatusCode === 404
+}
+
 /** An ArtworkStore backed by a Cloudflare R2 bucket (S3-compatible API). */
-export function createR2Store(cfg: R2Config): ArtworkStore {
-  const client = new S3Client({
+export function createR2Store(
+  cfg: R2Config,
+  client: ObjectClient = new S3Client({
     region: 'auto',
     endpoint: `https://${cfg.accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: cfg.accessKeyId,
       secretAccessKey: cfg.secretAccessKey,
     },
-  })
+  }),
+): ArtworkStore {
   return {
     async has(key) {
       try {
@@ -48,8 +61,12 @@ export function createR2Store(cfg: R2Config): ArtworkStore {
           new HeadObjectCommand({ Bucket: cfg.bucket, Key: key }),
         )
         return true
-      } catch {
-        return false
+      } catch (err) {
+        // Only a definitive 404 means "missing" — an auth/config/network failure
+        // must surface, or a misconfigured store reads as "object not there" and
+        // the real cause never shows up anywhere.
+        if (isNotFound(err)) return false
+        throw err
       }
     },
     async put(key, bytes, contentType) {

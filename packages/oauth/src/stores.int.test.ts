@@ -72,6 +72,17 @@ describe('Kysely OAuth stores', () => {
     await store.del('expired')
   })
 
+  it('session store: get() refuses rows past the idle window even before cleanup runs', async () => {
+    const store = new KyselySessionStore(db)
+    await store.set('did:plc:idle', { tokenSet: 1 } as any)
+    // Backdate past the 90-day idle window without running the cleanup sweep.
+    await sql`update oauth_session set updated_at = now() - interval '91 days' where did = 'did:plc:idle'`.execute(
+      db,
+    )
+    expect(await store.get('did:plc:idle')).toBeUndefined()
+    await store.del('did:plc:idle')
+  })
+
   it('stores ciphertext at rest when a cipher is configured', async () => {
     const cipher = createStoreCipher(randomBytes(32).toString('base64'))
     const sessions = new KyselySessionStore(db, { cipher })

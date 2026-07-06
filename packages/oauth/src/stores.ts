@@ -88,10 +88,15 @@ export class KyselySessionStore implements NodeSavedSessionStore {
   ) {}
 
   async get(did: string): Promise<NodeSavedSession | undefined> {
+    // Enforce the idle window on read, not just via the opportunistic sweep in
+    // set(): on a quiet instance a long-idle row would otherwise stay servable
+    // indefinitely (same rationale as KyselyStateStore.get).
+    const cutoff = new Date(Date.now() - SESSION_MAX_IDLE_MS)
     const row = await this.db
       .selectFrom('oauth_session')
       .select('session')
       .where('did', '=', did)
+      .where(sql<SqlBool>`updated_at >= ${cutoff}`)
       .executeTakeFirst()
     if (!row) return undefined
     const opened = this.opts.cipher

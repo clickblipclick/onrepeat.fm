@@ -13,6 +13,7 @@ import {
   buildJamRecord,
   buildLikeRecord,
   buildProfileRecord,
+  RecordValidationError,
 } from './records'
 
 const baseJam = {
@@ -56,6 +57,19 @@ describe('buildJamRecord', () => {
     expect(() =>
       buildJamRecord({ ...baseJam, caption: 'x'.repeat(141) }),
     ).toThrow(/invalid jam/i)
+  })
+
+  it('throws a RecordValidationError carrying the offending nsid', () => {
+    const thrown = (() => {
+      try {
+        buildJamRecord({ ...baseJam, caption: 'x'.repeat(141) })
+        return undefined
+      } catch (err) {
+        return err
+      }
+    })()
+    expect(thrown).toBeInstanceOf(RecordValidationError)
+    expect((thrown as RecordValidationError).nsid).toBe(JAM_NSID)
   })
 })
 
