@@ -93,7 +93,24 @@ async function main(): Promise<void> {
   }
 
   if (store) {
-    deps.persistArtwork = (artworkUrl) => persistArtwork(artworkUrl, store)
+    deps.persistArtwork = (artworkUrl) =>
+      persistArtwork(artworkUrl, store, {
+        onSkip: (reason, cause) => {
+          // Allowlist rejections are the SSRF guard working as intended and can
+          // recur for every track from a non-allowlisted CDN — keep them off the
+          // warn stream but visible enough to catch a provider host change.
+          if (reason === 'untrusted-url') {
+            console.info(
+              `[resolver] artwork host not allowlisted: ${artworkUrl}`,
+            )
+            return
+          }
+          console.warn(
+            `[resolver] artwork persist skipped (${reason}): ${artworkUrl}`,
+            ...(cause === undefined ? [] : [cause]),
+          )
+        },
+      })
     console.log('[resolver] artwork persistence enabled (R2)')
   } else {
     console.warn(
