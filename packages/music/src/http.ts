@@ -1,3 +1,41 @@
+/** The init subset this package's fetchers pass through to fetch. */
+export interface FetchInit {
+  signal?: AbortSignal
+  redirect?: 'follow' | 'error' | 'manual'
+}
+
+export interface ResponseLike {
+  ok: boolean
+  status: number
+}
+export interface JsonResponseLike extends ResponseLike {
+  json(): Promise<unknown>
+}
+export interface TextResponseLike extends ResponseLike {
+  text(): Promise<string>
+  /** Present on real fetch; absent on lightweight test doubles. */
+  body?: ReadableStream<Uint8Array> | null
+}
+
+/**
+ * Minimal fetch-shaped dependencies. Each module asks for only the response
+ * members it reads, so both real fetch and one-sided test doubles satisfy them
+ * structurally. `FetchLike` (JSON + text) is for modules that hit both kinds of
+ * endpoint (deriveTrack); return covariance makes it assignable to the narrow two.
+ */
+export type JsonFetchLike = (
+  url: string,
+  init?: FetchInit,
+) => Promise<JsonResponseLike>
+export type TextFetchLike = (
+  url: string,
+  init?: FetchInit,
+) => Promise<TextResponseLike>
+export type FetchLike = (
+  url: string,
+  init?: FetchInit,
+) => Promise<JsonResponseLike & TextResponseLike>
+
 export interface RetryOptions {
   /** Total attempts including the first. Default 3. */
   attempts?: number
@@ -95,6 +133,12 @@ export async function fetchWithRetry<T extends { ok: boolean; status: number }>(
       const res = await doFetch()
       if (res.ok || !isRetryableStatus(res.status) || attempt >= attempts)
         return res
+      // Abandoning a retryable response: cancel its body so the connection is
+      // released now rather than when the response is GC'd (undici holds the
+      // socket until the body is consumed or cancelled).
+      const body = (res as { body?: { cancel(): Promise<unknown> } | null })
+        .body
+      if (body) void body.cancel().catch(() => undefined)
     } catch (err) {
       lastErr = err
       if (attempt >= attempts) throw err

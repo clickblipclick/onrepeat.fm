@@ -1,5 +1,11 @@
 import type { ColumnType, Generated } from 'kysely'
 
+import type { ProviderRefs } from '@onrepeat/core'
+
+// Canonical definition lives in @onrepeat/core (it's produced by the resolver and
+// read by the web app); re-exported here alongside the table that persists it.
+export type { ProviderRefs }
+
 type Timestamp = ColumnType<Date, Date | string, Date | string>
 
 /** Upstream account state mirrored from firehose #account events. Anything other
@@ -18,17 +24,6 @@ export interface ActorsTable {
   /** Chosen profile color-theme slug; null → deterministic default (see @onrepeat/core). */
   color_theme: string | null
   status: Generated<ActorStatus>
-}
-
-export interface ProviderRefs {
-  [provider: string]: {
-    url: string
-    trackUri?: string
-    videoId?: string
-    songId?: string
-    trackId?: string
-    embeddable?: boolean
-  }
 }
 
 export type ResolutionStatus =

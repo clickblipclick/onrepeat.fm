@@ -1,21 +1,8 @@
-import { readTextCapped } from './http'
-
-type FetchLike = (
-  url: string,
-  init?: { signal?: AbortSignal; redirect?: 'follow' | 'error' | 'manual' },
-) => Promise<{
-  ok: boolean
-  status: number
-  text(): Promise<string>
-  /** Present on real fetch; absent on lightweight test doubles. */
-  body?: ReadableStream<Uint8Array> | null
-}>
+import { decodeEntities, MAX_HTML_BYTES, metaContent } from './html'
+import { readTextCapped, type TextFetchLike } from './http'
 
 export type BandcampMeta = { trackId?: string; artworkUrl?: string }
 export type BandcampFetcher = (url: string) => Promise<BandcampMeta | null>
-
-/** Cap on the scraped HTML we'll buffer — Bandcamp track pages are ~100–200 KB. */
-const MAX_HTML_BYTES = 1024 * 1024
 
 /** Pure: pull the EmbeddedPlayer track id out of a Bandcamp track page's HTML. */
 export function parseBandcampEmbedId(html: string): string | null {
@@ -26,31 +13,6 @@ export function parseBandcampEmbedId(html: string): string | null {
 /** Pure: pull the cover art URL from a Bandcamp page's og:image meta (either attr order). */
 export function parseBandcampArtwork(html: string): string | null {
   return metaContent(html, 'og:image')
-}
-
-/** Read a `<meta property|name="key" content="...">` value, tolerating attribute order. */
-function metaContent(html: string, key: string): string | null {
-  const k = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const m =
-    new RegExp(
-      `<meta[^>]+(?:property|name)="${k}"[^>]+content="([^"]*)"`,
-      'i',
-    ).exec(html) ??
-    new RegExp(
-      `<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="${k}"`,
-      'i',
-    ).exec(html)
-  return m ? m[1]! : null
-}
-
-/** Decode the handful of HTML entities Bandcamp emits in its meta tags. */
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;|&#x27;|&apos;/gi, "'")
-    .replace(/&amp;/g, '&')
 }
 
 /** Pure: derive { title, artist } from a Bandcamp page. Its og:title is the canonical
@@ -92,13 +54,13 @@ function isBandcampUrl(raw: string): boolean {
  *  Returns null on a failed fetch or when neither is present (soft fail). */
 export async function fetchBandcampEmbed(
   url: string,
-  opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
+  opts: { fetchFn?: TextFetchLike; timeoutMs?: number } = {},
 ): Promise<BandcampMeta | null> {
   // Defense-in-depth (SSRF): only ever fetch bandcamp's own hosts over https, so a caller
   // that forwards an untrusted url can't aim this at an internal/metadata endpoint. The
   // resolver also re-derives the provider from the url before getting here.
   if (!isBandcampUrl(url)) return null
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as TextFetchLike)
   try {
     const res = await fetchFn(url, {
       signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),

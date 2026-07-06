@@ -6,13 +6,17 @@ export interface MatchInput {
 }
 
 /**
- * Lowercase; drop (parentheticals)/[brackets]/feat…; keep only letters+digits as
- * tokens. The feat-tail rule requires the dot on "ft." and skips title-initial
- * matches so real titles ("50 Ft Queenie", "Ft. Worth Blues") aren't truncated —
- * keep in sync with @onrepeat/core's trackIdentity normalization.
+ * Fold diacritics (NFKD + strip combining marks, so "Beyoncé" from one provider
+ * matches "Beyonce" from another); lowercase; drop (parentheticals)/[brackets]/feat…;
+ * keep only letters+digits as tokens. The feat-tail rule requires the dot on "ft."
+ * and skips title-initial matches so real titles ("50 Ft Queenie", "Ft. Worth
+ * Blues") aren't truncated — keep in sync with @onrepeat/core's trackIdentity
+ * normalization.
  */
 export function normalizeTokens(s: string): string[] {
   return s
+    .normalize('NFKD')
+    .replace(/\p{M}+/gu, '')
     .toLowerCase()
     .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
     .replace(/(?!^)\b(feat\b|ft\.|featuring\b).*$/g, ' ')

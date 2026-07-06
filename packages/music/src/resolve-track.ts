@@ -1,7 +1,8 @@
-import type { ProviderRefs } from '@onrepeat/db'
+import type { ProviderRefs } from '@onrepeat/core'
 
 import type { ItunesClient } from './itunes'
 import { isConfidentMatch } from './match'
+import { extractAppleTrackId } from './track'
 import { youtubeVideoId, type YoutubeClient } from './youtube'
 
 export interface ResolveInput {
@@ -31,15 +32,6 @@ export interface ResolutionResult {
    * fact — callers should retry instead of persisting it as a final "resolved" state.
    */
   transient?: boolean
-}
-
-/** Apple Music track URLs carry the song id in the `i` query param. */
-function appleId(url: string): string | null {
-  try {
-    return new URL(url).searchParams.get('i')
-  } catch {
-    return null
-  }
 }
 
 /**
@@ -72,7 +64,9 @@ export async function resolveTrack(
     let apple = null as Awaited<ReturnType<ItunesClient['lookup']>>
     if (input.sourceProvider === 'applemusic') {
       // Source is Apple: lookup is definitive; don't search for a substitute.
-      const id = appleId(input.sourceUrl)
+      // Same extractor deriveTrack uses, so album (`?i=`) and direct /song/ URLs
+      // that produce a jam also anchor its resolution.
+      const id = extractAppleTrackId(input.sourceUrl)
       if (id) apple = await deps.itunes.lookup(id)
       notes.push(apple ? 'apple:source' : 'apple:source-miss')
     } else {

@@ -1,9 +1,9 @@
-import { failureReason, type FetchResult } from './http'
-
-type FetchLike = (
-  url: string,
-  init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
+import {
+  failureReason,
+  type FetchResult,
+  type JsonFetchLike,
+  type JsonResponseLike,
+} from './http'
 
 /** Providers with a free, no-auth oEmbed endpoint (used by deriveTrack). */
 const OEMBED_ENDPOINTS: Record<string, string> = {
@@ -25,12 +25,12 @@ type Oembed = { title?: string; author?: string; thumbnail?: string }
 export async function fetchOembedResult(
   provider: string,
   url: string,
-  opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
+  opts: { fetchFn?: JsonFetchLike; timeoutMs?: number } = {},
 ): Promise<FetchResult<Oembed>> {
   const endpoint = OEMBED_ENDPOINTS[provider]
   if (!endpoint) return { ok: false, reason: 'unreadable' }
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
-  let res: Awaited<ReturnType<FetchLike>>
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
+  let res: JsonResponseLike
   try {
     res = await fetchFn(
       `${endpoint}?format=json&url=${encodeURIComponent(url)}`,
@@ -58,7 +58,7 @@ export async function fetchOembedResult(
 export async function fetchOembed(
   provider: string,
   url: string,
-  opts: { fetchFn?: FetchLike; timeoutMs?: number } = {},
+  opts: { fetchFn?: JsonFetchLike; timeoutMs?: number } = {},
 ): Promise<{ title?: string; author?: string; thumbnail?: string } | null> {
   const r = await fetchOembedResult(provider, url, opts)
   return r.ok ? r.data : null

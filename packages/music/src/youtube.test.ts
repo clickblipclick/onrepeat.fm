@@ -24,6 +24,21 @@ describe('youtubeVideoId', () => {
     expect(youtubeVideoId('https://example.com/watch?v=abc')).toBeNull()
     expect(youtubeVideoId('not a url')).toBeNull()
   })
+
+  it('extracts path-carried ids (/shorts/, /embed/, /live/) but not playlists', () => {
+    expect(youtubeVideoId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe(
+      'dQw4w9WgXcQ',
+    )
+    expect(youtubeVideoId('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe(
+      'dQw4w9WgXcQ',
+    )
+    expect(
+      youtubeVideoId('https://www.youtube.com/live/dQw4w9WgXcQ?feature=share'),
+    ).toBe('dQw4w9WgXcQ')
+    expect(
+      youtubeVideoId('https://www.youtube.com/embed/videoseries?list=PL123'),
+    ).toBeNull()
+  })
 })
 
 describe('fetchYoutubeCategory', () => {

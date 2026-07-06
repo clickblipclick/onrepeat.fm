@@ -1,3 +1,16 @@
+/** Per-provider playback references for a resolved track, keyed by provider slug.
+ *  Persisted as jsonb on tracks (see @onrepeat/db) and produced by @onrepeat/music. */
+export interface ProviderRefs {
+  [provider: string]: {
+    url: string
+    trackUri?: string
+    videoId?: string
+    songId?: string
+    trackId?: string
+    embeddable?: boolean
+  }
+}
+
 export type ProviderTier = 'cross-resolvable' | 'self-contained'
 
 /** Providers that are self-contained (not cross-resolvable) — play via their own embed. */

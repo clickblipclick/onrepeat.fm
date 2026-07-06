@@ -174,6 +174,68 @@ describe('deriveTrack', () => {
     })
   })
 
+  it('spotify: decodes entities and tolerates reversed meta attribute order', async () => {
+    const fetchFn = async (u: string) => {
+      if (u.includes('/oembed'))
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return { title: 'Dog Days Are Over' }
+          },
+          async text() {
+            return ''
+          },
+        }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {}
+        },
+        async text() {
+          return '<meta content="Florence &amp; The Machine" name="music:musician_description">'
+        },
+      }
+    }
+    const r = await deriveTrack('https://open.spotify.com/track/x', { fetchFn })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { artist: 'Florence & The Machine' },
+    })
+  })
+
+  it('spotify: falls back to the "Artist · …" og:description shape', async () => {
+    const fetchFn = async (u: string) => {
+      if (u.includes('/oembed'))
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return { title: 'Thinkin Bout You' }
+          },
+          async text() {
+            return ''
+          },
+        }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {}
+        },
+        async text() {
+          return '<meta property="og:description" content="Frank Ocean · Song · 2012">'
+        },
+      }
+    }
+    const r = await deriveTrack('https://open.spotify.com/track/x', { fetchFn })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { artist: 'Frank Ocean' },
+    })
+  })
+
   it('spotify oEmbed network error → transient', async () => {
     const fetchFn = async () => {
       throw new Error('network')

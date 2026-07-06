@@ -1,7 +1,8 @@
 import { providerFromUrl } from '@onrepeat/core'
 
 import { parseBandcampArtwork, parseBandcampTitleArtist } from './bandcamp'
-import { failureReason, readTextCapped } from './http'
+import { decodeEntities, MAX_HTML_BYTES, metaContent } from './html'
+import { failureReason, readTextCapped, type FetchLike } from './http'
 import { lookupTrackResult } from './itunes'
 import { fetchOembedResult } from './oembed'
 import { youtubeVideoId } from './youtube'
@@ -32,29 +33,14 @@ export interface DeriveTrackOptions {
   classifyYoutubeMusic?: (videoId: string) => Promise<boolean | null>
 }
 
-type FetchLike = (
-  url: string,
-  init?: { signal?: AbortSignal; redirect?: 'follow' | 'error' | 'manual' },
-) => Promise<{
-  ok: boolean
-  status: number
-  json(): Promise<unknown>
-  text(): Promise<string>
-  /** Present on real fetch; absent on lightweight test doubles. */
-  body?: ReadableStream<Uint8Array> | null
-}>
-
-/** Cap on the scraped HTML we'll buffer — track pages are a few hundred KB at most. */
-const MAX_HTML_BYTES = 1024 * 1024
-
 /**
  * Apple Music exposes a track id two ways: album-track URLs carry it in the `i` query
  * param (…/album/<slug>/<albumId>?i=<trackId>); direct-song URLs carry it as the last
  * path segment (…/song/<slug>/<trackId>, or …/song/<trackId>). Prefer `i`, else read the
  * trailing numeric id of a /song/ path. Restricted to /song/ so an album URL's <albumId>
- * is never mistaken for a track id.
+ * is never mistaken for a track id. Shared with the resolver so both accept the same URLs.
  */
-function extractAppleTrackId(url: string): string | null {
+export function extractAppleTrackId(url: string): string | null {
   try {
     const u = new URL(url)
     const i = u.searchParams.get('i')
@@ -87,14 +73,14 @@ async function fetchSpotifyArtist(
     if (!res.ok) return ''
     const html = await readTextCapped(res, MAX_HTML_BYTES)
     if (html == null) return ''
-    const m =
-      /<meta[^>]+name="music:musician_description"[^>]+content="([^"]+)"/.exec(
-        html,
-      ) ??
-      /<meta[^>]+property="og:description"[^>]+content="([^"·]+?)\s*·/.exec(
-        html,
-      )
-    return m ? m[1]!.trim() : ''
+    const musician = metaContent(html, 'music:musician_description')
+    if (musician?.trim()) return decodeEntities(musician.trim())
+    // Fallback: og:description opens with "Artist · Song · Year"; only trust it
+    // when that "·"-delimited shape is present.
+    const desc = metaContent(html, 'og:description')
+    const dot = desc?.indexOf('·') ?? -1
+    if (desc && dot > 0) return decodeEntities(desc.slice(0, dot).trim())
+    return ''
   } catch {
     return ''
   }
@@ -146,15 +132,22 @@ export async function deriveTrack(
 
   if (provider === 'bandcamp') {
     // Bandcamp has no oEmbed; scrape the track page's og: meta (same source the
-    // resolver reads). No ", by" shape ⇒ unreadable.
+    // resolver reads). No ", by" shape ⇒ unreadable. Same scrape hardening as
+    // fetchBandcampEmbed/fetchSpotifyArtist: `redirect: 'error'` so an open redirect
+    // can't bounce this server-side fetch off the bandcamp host providerFromUrl
+    // checked, and a capped read so a hostile page can't OOM the process.
     let res: Awaited<ReturnType<FetchLike>>
     try {
-      res = await fetchFn(url, { signal: AbortSignal.timeout(8000) })
+      res = await fetchFn(url, {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'error',
+      })
     } catch {
       return { ok: false, reason: 'transient' }
     }
     if (!res.ok) return { ok: false, reason: failureReason(res.status) }
-    const html = await res.text()
+    const html = await readTextCapped(res, MAX_HTML_BYTES)
+    if (html == null) return { ok: false, reason: 'unreadable' }
     const ta = parseBandcampTitleArtist(html)
     if (!ta) return { ok: false, reason: 'unreadable' }
     return {

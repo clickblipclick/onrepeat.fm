@@ -4,6 +4,8 @@ import {
   failureReason,
   fetchWithRetry,
   type FetchResult,
+  type JsonFetchLike,
+  type JsonResponseLike,
   type RetryOptions,
 } from './http'
 import { createRateLimiter, type RateLimiter } from './rate-limit'
@@ -50,13 +52,8 @@ export function mapItunes(body: ItunesBody): TrackCandidate[] {
   return out
 }
 
-type FetchLike = (
-  url: string,
-  init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>
-
 export interface SearchOptions {
-  fetchFn?: FetchLike
+  fetchFn?: JsonFetchLike
   limit?: number
   timeoutMs?: number
   /**
@@ -77,7 +74,7 @@ export async function searchTracks(
 ): Promise<TrackCandidate[]> {
   const term = q.trim()
   if (term.length < 2) return []
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
   const limit = opts.limit ?? 6
   const timeoutMs = opts.timeoutMs ?? 8000
   const url = `${ENDPOINT}?term=${encodeURIComponent(term)}&entity=song&media=music&limit=${limit}`
@@ -102,9 +99,9 @@ export async function lookupTrackResult(
   id: string,
   opts: SearchOptions = {},
 ): Promise<FetchResult<TrackCandidate>> {
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
-  let res: Awaited<ReturnType<FetchLike>>
+  let res: JsonResponseLike
   try {
     res = await fetchWithRetry(
       () =>
@@ -141,7 +138,7 @@ export async function lookupTrack(
   id: string,
   opts: SearchOptions = {},
 ): Promise<TrackCandidate | null> {
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
   const res = await fetchWithRetry(
     () =>

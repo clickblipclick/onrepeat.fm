@@ -9,8 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@onrepeat/core": "workspace:*",
-    "@onrepeat/db": "workspace:*"
+    "@onrepeat/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
