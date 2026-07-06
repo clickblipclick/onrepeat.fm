@@ -51,6 +51,26 @@ describe('fetchWithRetry', () => {
     expect(calls).toBe(2)
   })
 
+  it('cancels the body of an abandoned retryable response (frees the socket)', async () => {
+    let cancelled = 0
+    const bad = {
+      ok: false,
+      status: 503,
+      body: {
+        async cancel() {
+          cancelled++
+        },
+      },
+    }
+    let calls = 0
+    const out = await fetchWithRetry(
+      async () => (calls++ === 0 ? bad : { ...ok, body: null }),
+      { sleep: noSleep, jitter: noJitter },
+    )
+    expect(out.ok).toBe(true)
+    expect(cancelled).toBe(1)
+  })
+
   it('does NOT retry a non-retryable 4xx (returns it)', async () => {
     let calls = 0
     const out = await fetchWithRetry(

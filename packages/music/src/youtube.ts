@@ -1,4 +1,4 @@
-import { fetchWithRetry, type RetryOptions } from './http'
+import { fetchWithRetry, type JsonFetchLike, type RetryOptions } from './http'
 import { createRateLimiter, type RateLimiter } from './rate-limit'
 
 export interface YoutubeVideo {
@@ -20,11 +20,6 @@ export interface YoutubeClient {
   /** Batch-fetch per-video duration + embeddability in one videos.list call. */
   lookupVideos(ids: string[]): Promise<Map<string, YoutubeVideoMeta>>
 }
-
-type FetchLike = (
-  url: string,
-  init?: { signal?: AbortSignal },
-) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
 
 /** Parse an ISO-8601 duration (e.g. "PT3M21S") to whole seconds; 0 if unparseable. */
 export function parseIso8601Duration(d: string): number {
@@ -56,15 +51,28 @@ export function mapYoutubeSearch(body: {
   return out
 }
 
-/** Extract the video id from a youtube.com/youtu.be/music.youtube.com watch url; null
- *  for playlist/channel urls (no single video) or anything non-youtube. */
+/** Extract the video id from a youtube.com/youtu.be/music.youtube.com url — watch
+ *  (`?v=`) plus the /shorts/, /embed/ and /live/ path forms; null for
+ *  playlist/channel urls (no single video) or anything non-youtube. */
 export function youtubeVideoId(url: string): string | null {
   try {
     const u = new URL(url)
     const host = u.hostname.toLowerCase()
     if (host === 'youtu.be') return u.pathname.slice(1) || null
-    if (host === 'youtube.com' || host.endsWith('.youtube.com'))
-      return u.searchParams.get('v')
+    if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+      const v = u.searchParams.get('v')
+      if (v) return v
+      const segs = u.pathname.split('/').filter(Boolean)
+      // Path-carried ids. The 11-char id check plus the literal 'videoseries'
+      // exclusion (itself 11 chars) keep playlist embeds from reading as a video.
+      if (
+        segs.length === 2 &&
+        (segs[0] === 'shorts' || segs[0] === 'embed' || segs[0] === 'live') &&
+        segs[1] !== 'videoseries' &&
+        /^[\w-]{11}$/.test(segs[1]!)
+      )
+        return segs[1]!
+    }
     return null
   } catch {
     return null
@@ -77,11 +85,11 @@ const API = 'https://www.googleapis.com/youtube/v3'
  *  null on a blank id, a not-found video, or any error — callers treat null as "unknown". */
 export async function fetchYoutubeCategory(
   videoId: string,
-  opts: { apiKey: string; fetchFn?: FetchLike; timeoutMs?: number },
+  opts: { apiKey: string; fetchFn?: JsonFetchLike; timeoutMs?: number },
 ): Promise<string | null> {
   const id = videoId.trim()
   if (!id) return null
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
   try {
     const res = await fetchFn(
       `${API}/videos?part=snippet&id=${encodeURIComponent(id)}&key=${encodeURIComponent(opts.apiKey)}`,
@@ -99,7 +107,7 @@ export async function fetchYoutubeCategory(
 
 export interface YoutubeClientOptions {
   apiKey: string
-  fetchFn?: FetchLike
+  fetchFn?: JsonFetchLike
   timeoutMs?: number
   /** Client-only: minimum gap between API calls (ms) to avoid bursting the quota. */
   minIntervalMs?: number
@@ -108,7 +116,7 @@ export interface YoutubeClientOptions {
 }
 
 export function createYoutubeClient(opts: YoutubeClientOptions): YoutubeClient {
-  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as JsonFetchLike)
   const timeoutMs = opts.timeoutMs ?? 8000
   const retry: RetryOptions = opts.retry ?? { attempts: 3, baseDelayMs: 500 }
   const limit: RateLimiter = opts.minIntervalMs

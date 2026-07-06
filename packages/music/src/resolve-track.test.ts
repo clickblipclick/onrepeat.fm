@@ -111,6 +111,32 @@ describe('resolveTrack (iTunes-anchored)', () => {
     })
   })
 
+  it('apple source: a direct /song/ url also anchors via lookup', async () => {
+    let lookedUp: string | null = null
+    const r = await resolveTrack(
+      {
+        ...base,
+        sourceUrl:
+          'https://music.apple.com/us/song/thinkin-bout-you/1886119379',
+        sourceProvider: 'applemusic',
+      },
+      deps({
+        itunes: {
+          async search() {
+            return []
+          },
+          async lookup(id) {
+            lookedUp = id
+            return apple
+          },
+        },
+      }),
+    )
+    expect(lookedUp).toBe('1886119379')
+    expect(r.notes).toContain('apple:source')
+    expect(r.title).toBe('Thinkin Bout You')
+  })
+
   it('omits apple when no confident iTunes match', async () => {
     const r = await resolveTrack(
       base,

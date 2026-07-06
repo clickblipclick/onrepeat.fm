@@ -114,7 +114,10 @@ describe('fm.onrepeat.graph.follow validation', () => {
   }
 
   it('accepts a valid follow record', () => {
-    expect(validateRecord(FOLLOW_NSID, valid)).toEqual({ success: true })
+    expect(validateRecord(FOLLOW_NSID, valid)).toEqual({
+      success: true,
+      value: valid,
+    })
   })
 
   it('rejects a missing subject', () => {

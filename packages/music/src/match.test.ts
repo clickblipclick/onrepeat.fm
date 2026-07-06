@@ -20,6 +20,16 @@ describe('normalizeTokens', () => {
     expect(normalizeTokens('50 Ft Queenie')).toEqual(['50', 'ft', 'queenie'])
     expect(normalizeTokens('Ft. Worth Blues')).toEqual(['ft', 'worth', 'blues'])
   })
+
+  it('folds diacritics so cross-provider spellings match (like trackIdentity)', () => {
+    expect(normalizeTokens('Beyoncé')).toEqual(['beyonce'])
+    expect(
+      isConfidentMatch(
+        { title: 'Halo', artist: 'Beyoncé' },
+        { title: 'Halo', artist: 'Beyonce' },
+      ),
+    ).toBe(true)
+  })
 })
 
 describe('isConfidentMatch', () => {
