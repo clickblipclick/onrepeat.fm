@@ -27,7 +27,9 @@ export type WriteErrorKind =
   | 'transient' // 5xx or network/timeout — safe to retry
   | 'unknown' // anything else (e.g. 4xx bad request)
 
-/** Normalized error for all repo writes; wraps the underlying XRPC/network error. */
+/** Normalized error for all repo writes; wraps the underlying XRPC/network error.
+ *  Invalid input never reaches the network — it throws RecordValidationError
+ *  from the record builders instead. */
 export class RepoWriteError extends Error {
   constructor(
     readonly kind: WriteErrorKind,
@@ -90,6 +92,24 @@ export interface WriteResult {
   validationStatus?: 'valid' | 'unknown'
 }
 
+function toWriteResult(data: {
+  uri: string
+  cid: string
+  validationStatus?: string
+}): WriteResult {
+  return {
+    uri: data.uri,
+    cid: data.cid,
+    validationStatus: data.validationStatus as WriteResult['validationStatus'],
+  }
+}
+
+/** The generated XRPC client types `record` with an index signature that our
+ *  closed record interfaces lack; funnel the one required cast through here. */
+function asRecordInput(record: object): Record<string, unknown> {
+  return record as Record<string, unknown>
+}
+
 export interface PostJamResult extends WriteResult {
   /** The record that was written (incl. the resolved createdAt). */
   record: JamRecord
@@ -110,16 +130,10 @@ export async function postJam(
     agent.com.atproto.repo.createRecord({
       repo: agent.assertDid,
       collection: JAM_NSID,
-      record: record as unknown as Record<string, unknown>,
+      record: asRecordInput(record),
     }),
   )
-  return {
-    uri: res.data.uri,
-    cid: res.data.cid,
-    validationStatus: res.data.validationStatus as
-      'valid' | 'unknown' | undefined,
-    record,
-  }
+  return { ...toWriteResult(res.data), record }
 }
 
 /** Like a jam by writing a like record referencing its strongRef. */
@@ -132,16 +146,10 @@ export async function likeJam(
     agent.com.atproto.repo.createRecord({
       repo: agent.assertDid,
       collection: LIKE_NSID,
-      record: record as unknown as Record<string, unknown>,
+      record: asRecordInput(record),
     }),
   )
-  return {
-    uri: res.data.uri,
-    cid: res.data.cid,
-    validationStatus: res.data.validationStatus as
-      'valid' | 'unknown' | undefined,
-    record,
-  }
+  return { ...toWriteResult(res.data), record }
 }
 
 /**
@@ -159,15 +167,10 @@ export async function putProfile(
       repo: agent.assertDid,
       collection: PROFILE_NSID,
       rkey: 'self',
-      record: record as unknown as Record<string, unknown>,
+      record: asRecordInput(record),
     }),
   )
-  return {
-    uri: res.data.uri,
-    cid: res.data.cid,
-    validationStatus: res.data.validationStatus as
-      'valid' | 'unknown' | undefined,
-  }
+  return toWriteResult(res.data)
 }
 
 /** Un-like by deleting the like record (rkey must be known by the caller). */
@@ -222,16 +225,10 @@ export async function follow(
     agent.com.atproto.repo.createRecord({
       repo: agent.assertDid,
       collection: FOLLOW_NSID,
-      record: record as unknown as Record<string, unknown>,
+      record: asRecordInput(record),
     }),
   )
-  return {
-    uri: res.data.uri,
-    cid: res.data.cid,
-    validationStatus: res.data.validationStatus as
-      'valid' | 'unknown' | undefined,
-    record,
-  }
+  return { ...toWriteResult(res.data), record }
 }
 
 /** Unfollow by deleting the follow record (rkey must be known by the caller). */

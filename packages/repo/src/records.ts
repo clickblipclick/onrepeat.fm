@@ -11,6 +11,27 @@ import {
   type StrongRef,
 } from '@onrepeat/lexicons'
 
+/** A built record failed local lexicon validation — thrown before any network
+ *  write, unlike RepoWriteError which covers the write itself. */
+export class RecordValidationError extends Error {
+  constructor(
+    readonly nsid: string,
+    readonly detail: string,
+  ) {
+    // Last NSID segment keeps the message human ("invalid jam: …").
+    super(`invalid ${nsid.split('.').pop()}: ${detail}`)
+    this.name = 'RecordValidationError'
+  }
+}
+
+/** Validate against the lexicon and return the canonicalized value — write
+ *  that, not the input, in case validation normalizes shapes (e.g. blob refs). */
+function validated<T>(nsid: string, record: T): T {
+  const result = validateRecord(nsid, record)
+  if (!result.success) throw new RecordValidationError(nsid, result.error)
+  return result.value as T
+}
+
 export interface JamInput {
   sourceUrl: string
   sourceProvider: string
@@ -36,9 +57,7 @@ export function buildJamRecord(input: JamInput): JamRecord {
   if (input.caption) record.caption = input.caption
   if (input.via) record.via = input.via
 
-  const result = validateRecord(JAM_NSID, record)
-  if (!result.success) throw new Error(`invalid jam: ${result.error}`)
-  return record
+  return validated(JAM_NSID, record)
 }
 
 export function buildLikeRecord(
@@ -50,9 +69,7 @@ export function buildLikeRecord(
     subject,
     createdAt: createdAt ?? new Date().toISOString(),
   }
-  const result = validateRecord(LIKE_NSID, record)
-  if (!result.success) throw new Error(`invalid like: ${result.error}`)
-  return record
+  return validated(LIKE_NSID, record)
 }
 
 export function buildFollowRecord(
@@ -64,9 +81,7 @@ export function buildFollowRecord(
     subject,
     createdAt: createdAt ?? new Date().toISOString(),
   }
-  const result = validateRecord(FOLLOW_NSID, record)
-  if (!result.success) throw new Error(`invalid follow: ${result.error}`)
-  return record
+  return validated(FOLLOW_NSID, record)
 }
 
 export function buildProfileRecord(input: {
@@ -79,7 +94,5 @@ export function buildProfileRecord(input: {
   }
   if (input.colorTheme) record.colorTheme = input.colorTheme
 
-  const result = validateRecord(PROFILE_NSID, record)
-  if (!result.success) throw new Error(`invalid profile: ${result.error}`)
-  return record
+  return validated(PROFILE_NSID, record)
 }
