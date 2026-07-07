@@ -4,12 +4,14 @@
  * lexicon only checks `format: uri`, which permits `http://169.254.169.254/…`,
  * `http://localhost/…`, etc. Anything that fetches it server-side (the OG-image route)
  * must therefore allowlist the host, or it becomes an SSRF. These are the CDNs our own
- * resolvers emit artwork from: iTunes/Apple (mzstatic), Spotify (scdn), Bandcamp
- * (bcbits), YouTube (ytimg), SoundCloud (sndcdn).
+ * resolvers emit artwork from: iTunes/Apple (mzstatic), Spotify (scdn + spotifycdn —
+ * oEmbed thumbnails moved to image-cdn-*.spotifycdn.com), Bandcamp (bcbits),
+ * YouTube (ytimg), SoundCloud (sndcdn).
  */
 const ARTWORK_CDN_HOSTS = [
   'mzstatic.com',
   'scdn.co',
+  'spotifycdn.com',
   'bcbits.com',
   'ytimg.com',
   'sndcdn.com',
