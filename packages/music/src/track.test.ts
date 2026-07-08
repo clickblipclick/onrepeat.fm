@@ -121,6 +121,46 @@ describe('deriveTrack', () => {
     })
   })
 
+  it('youtube oEmbed with no title → unreadable', async () => {
+    const fetchFn = json({ author_name: 'Chan' })
+    const r = await deriveTrack('https://youtu.be/abc', { fetchFn })
+    expect(r).toEqual({ ok: false, reason: 'unreadable' })
+  })
+
+  it('spotify: a failed artist scrape is not fatal — keeps an empty artist', async () => {
+    const fetchFn = async (u: string) => {
+      if (u.includes('/oembed'))
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return {
+              title: 'Thinkin Bout You',
+              thumbnail_url: 'https://t/i.jpg',
+            }
+          },
+          async text() {
+            return ''
+          },
+        }
+      return {
+        ok: false,
+        status: 403,
+        async json() {
+          return {}
+        },
+        async text() {
+          return ''
+        },
+      }
+    }
+    const r = await deriveTrack('https://open.spotify.com/track/x', { fetchFn })
+    expect(r).toMatchObject({
+      ok: true,
+      candidate: { title: 'Thinkin Bout You', artist: '', provider: 'spotify' },
+    })
+  })
+
   it('youtube oEmbed 404 → unreadable', async () => {
     const fetchFn = async () => ({
       ok: false,

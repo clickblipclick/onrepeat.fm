@@ -81,6 +81,28 @@ describe('trackIdentity', () => {
     )
   })
 
+  it('collapses a remaster dash-tail the same as its parenthesized form', () => {
+    const clean = trackIdentity({ title: 'Dreams', artist: 'Fleetwood Mac' })
+    expect(
+      trackIdentity({
+        title: 'Dreams - 2004 Remaster',
+        artist: 'Fleetwood Mac',
+      }),
+    ).toBe(clean)
+    expect(
+      trackIdentity({
+        title: 'Dreams (2004 Remaster)',
+        artist: 'Fleetwood Mac',
+      }),
+    ).toBe(clean)
+  })
+
+  it('keeps non-remaster dash tails distinct (a live take is a different recording)', () => {
+    expect(
+      trackIdentity({ title: 'Dreams - Live', artist: 'Fleetwood Mac' }),
+    ).toBe('ta:fleetwood mac|dreams live')
+  })
+
   it('keeps titles where "ft" means feet, not a credit', () => {
     // Bare "ft" (no dot) is not treated as a credit…
     expect(trackIdentity({ title: '50 Ft Queenie', artist: 'PJ Harvey' })).toBe(

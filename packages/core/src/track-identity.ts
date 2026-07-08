@@ -11,6 +11,14 @@ function normalizeText(s: string): string {
       .toLowerCase()
       // Drop decorations so identity matches @onrepeat/music's normalizeTokens — otherwise
       // "Bohemian Rhapsody (Official Video Remastered)" dedupes apart from "Bohemian Rhapsody".
+      // Spotify's "Title - 2004 Remaster" dash tail — same recording, so it must
+      // dedupe with the plain title and Apple's parenthesized form. Restricted to
+      // the remaster class: live/acoustic/mix tails ARE different recordings and
+      // keep their own key. Keep in sync with @onrepeat/music's normalizeTokens.
+      .replace(
+        /\s[-–—]\s*(?:\d{4}\s+)?remaster(?:ed)?(?:\s+version)?(?:\s+\d{4})?\s*$/,
+        ' ',
+      )
       .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ') // (parentheticals) / [brackets]
       // Featured-artist tails. Two guards keep real titles intact, since truncating
       // one corrupts its identity (risking wrong merges): the short form requires

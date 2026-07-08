@@ -161,6 +161,80 @@ describe('resolveTrack (iTunes-anchored)', () => {
     expect(r.providerRefs.applemusic).toBeUndefined()
   })
 
+  it('notes youtube:no-results when the search returns nothing', async () => {
+    const r = await resolveTrack(
+      base,
+      deps({
+        youtube: {
+          async searchVideo() {
+            return []
+          },
+          async lookupVideos() {
+            return new Map()
+          },
+        },
+      }),
+    )
+    expect(r.providerRefs.youtube).toBeUndefined()
+    expect(r.notes).toContain('youtube:no-results')
+  })
+
+  it('scans past a non-matching iTunes candidate to a later confident one', async () => {
+    const r = await resolveTrack(
+      base,
+      deps({
+        itunes: {
+          async search() {
+            return [
+              {
+                ...apple,
+                title: 'Totally Different',
+                artist: 'Nobody',
+                durationSec: 99,
+                sourceUrl: 'https://music.apple.com/us/album/wrong/9?i=9',
+              },
+              apple,
+            ]
+          },
+          async lookup() {
+            return null
+          },
+        },
+      }),
+    )
+    expect(r.providerRefs.applemusic).toEqual({
+      url: 'https://music.apple.com/us/album/t/1?i=2',
+    })
+    expect(r.notes).toContain('apple:matched')
+  })
+
+  it('youtube source without an extractable video id: keeps the ref, skips the embed lookup', async () => {
+    let lookedUp = false
+    const r = await resolveTrack(
+      {
+        ...base,
+        sourceUrl: 'https://www.youtube.com/playlist?list=PL123',
+        sourceProvider: 'youtube',
+      },
+      deps({
+        youtube: {
+          async searchVideo() {
+            return []
+          },
+          async lookupVideos() {
+            lookedUp = true
+            return new Map()
+          },
+        },
+      }),
+    )
+    expect(lookedUp).toBe(false)
+    expect(r.providerRefs.youtube).toEqual({
+      url: 'https://www.youtube.com/playlist?list=PL123',
+    })
+    expect(r.notes).toContain('youtube:source')
+  })
+
   it('omits youtube when duration disagrees', async () => {
     const r = await resolveTrack(
       base,
