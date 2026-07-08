@@ -79,6 +79,27 @@ describe('isConfidentMatch', () => {
     ).toBe(false)
   })
 
+  it('matches a dash version suffix against its parenthesized form (Spotify vs Apple)', () => {
+    // Spotify titles versions "Title - Version"; Apple titles them "Title (Version)".
+    // Spotify-derived anchors carry no duration, so this exercises the strict branch:
+    // the candidate's parenthetical content must count toward coverage.
+    expect(
+      isConfidentMatch(
+        { title: 'Crazy - Midnight Mix', artist: 'ICEHOUSE' },
+        { title: 'Crazy (Midnight Mix)', artist: 'ICEHOUSE', durationSec: 288 },
+      ),
+    ).toBe(true)
+  })
+
+  it('rejects a different version behind the parenthetical', () => {
+    expect(
+      isConfidentMatch(
+        { title: 'Crazy - Midnight Mix', artist: 'ICEHOUSE' },
+        { title: 'Crazy (Acoustic)', artist: 'ICEHOUSE', durationSec: 288 },
+      ),
+    ).toBe(false)
+  })
+
   it('requires full token coverage when no durations are available', () => {
     expect(
       isConfidentMatch(

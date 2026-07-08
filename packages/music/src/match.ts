@@ -14,11 +14,28 @@ export interface MatchInput {
  * normalization.
  */
 export function normalizeTokens(s: string): string[] {
-  return s
+  return tokenize(s, { stripParentheticals: true })
+}
+
+/**
+ * Candidate-side tokens: same folding as normalizeTokens, but (parenthetical)/
+ * [bracket] CONTENT is kept (only the punctuation is dropped). Coverage asks
+ * "are the anchor's tokens present in the candidate?", so discarding candidate
+ * parentheticals only destroys evidence — e.g. Spotify's "Crazy - Midnight Mix"
+ * could never match Apple's "Crazy (Midnight Mix)" once the candidate collapsed
+ * to just "crazy". Anchor-side stripping stays: it shrinks what must be covered.
+ */
+function candidateTokens(s: string): string[] {
+  return tokenize(s, { stripParentheticals: false })
+}
+
+function tokenize(s: string, opts: { stripParentheticals: boolean }): string[] {
+  let t = s
     .normalize('NFKD')
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
-    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+  if (opts.stripParentheticals) t = t.replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+  return t
     .replace(/(?!^)\b(feat\b|ft\.|featuring\b).*$/g, ' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .split(/\s+/)
@@ -51,8 +68,8 @@ export function isConfidentMatch(
   ])
   if (want.size === 0) return false
   const have = new Set([
-    ...normalizeTokens(candidate.title),
-    ...normalizeTokens(candidate.artist),
+    ...candidateTokens(candidate.title),
+    ...candidateTokens(candidate.artist),
   ])
   let hit = 0
   for (const t of want) if (have.has(t)) hit++
