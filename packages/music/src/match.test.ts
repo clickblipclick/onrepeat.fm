@@ -59,6 +59,25 @@ describe('isConfidentMatch', () => {
     ).toBe(true)
   })
 
+  it('accepts a duration gap at the tolerance boundary, rejects one past it', () => {
+    const candidate = { title: 'Thinkin Bout You', artist: 'Frank Ocean' }
+    expect(isConfidentMatch(anchor, { ...candidate, durationSec: 204 })).toBe(
+      true,
+    )
+    expect(isConfidentMatch(anchor, { ...candidate, durationSec: 205 })).toBe(
+      false,
+    )
+  })
+
+  it('rejects when the anchor normalizes to no tokens at all', () => {
+    expect(
+      isConfidentMatch(
+        { title: '!!!', artist: '' },
+        { title: '!!!', artist: '' },
+      ),
+    ).toBe(false)
+  })
+
   it('rejects a duration mismatch even when text matches', () => {
     expect(
       isConfidentMatch(anchor, {
