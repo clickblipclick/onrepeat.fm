@@ -26,15 +26,17 @@ export function titleFontSize(title: string): number {
   return 38
 }
 
-/** Web Share API payload. The url unfurls into the per-jam OG card on platforms
- *  that render link previews; `text` is used by targets that ignore `url`. */
+/** Web Share API payload. Share targets are inconsistent about which fields they
+ *  consume — Bluesky (and other iOS share extensions) read only `text` and drop
+ *  the standalone `url`, so the link is embedded in `text` too. Targets that do
+ *  honor `url` still get it for rich handling (previews, Reading List). */
 export function buildShareData(args: {
   title: string
   artist: string
   url: string
 }): { title: string; text: string; url: string } {
   const label = `🔁 ${args.title} — ${args.artist}`
-  return { title: label, text: label, url: args.url }
+  return { title: label, text: `${label}\n${args.url}`, url: args.url }
 }
 
 /** OG/Twitter text fields (rendered by the platform, not baked into the image). */

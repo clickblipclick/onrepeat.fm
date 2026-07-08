@@ -47,6 +47,9 @@ describe('buildShareData', () => {
     expect(d.title).toContain('🔁')
     expect(d.title).toContain('Such Great Heights — The Postal Service')
     expect(d.text).toContain('Such Great Heights — The Postal Service')
+    // Some share targets (Bluesky among them) only consume `text` and drop the
+    // separate `url` field, so the link must be embedded in the text itself.
+    expect(d.text).toContain('https://onrepeat.fm/profile/ben/jam/abc')
   })
 })
 
