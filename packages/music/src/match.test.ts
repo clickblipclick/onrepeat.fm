@@ -21,6 +21,22 @@ describe('normalizeTokens', () => {
     expect(normalizeTokens('Ft. Worth Blues')).toEqual(['ft', 'worth', 'blues'])
   })
 
+  it('strips a remaster dash-tail (Spotify writes versions as "Title - Version")', () => {
+    expect(normalizeTokens('Dreams - 2004 Remaster')).toEqual(['dreams'])
+    expect(normalizeTokens('Song - Remastered 2009')).toEqual(['song'])
+    expect(normalizeTokens('Song - 2011 Remastered Version')).toEqual(['song'])
+    expect(normalizeTokens('Song - Remastered')).toEqual(['song'])
+  })
+
+  it('keeps non-remaster dash tails — live/mix names denote a different recording', () => {
+    expect(normalizeTokens('Dreams - Live')).toEqual(['dreams', 'live'])
+    expect(normalizeTokens('Crazy - Midnight Mix')).toEqual([
+      'crazy',
+      'midnight',
+      'mix',
+    ])
+  })
+
   it('folds diacritics so cross-provider spellings match (like trackIdentity)', () => {
     expect(normalizeTokens('Beyoncé')).toEqual(['beyonce'])
     expect(
@@ -108,6 +124,27 @@ describe('isConfidentMatch', () => {
         { title: 'Crazy (Midnight Mix)', artist: 'ICEHOUSE', durationSec: 288 },
       ),
     ).toBe(true)
+  })
+
+  it('matches a Spotify remaster dash suffix against the plain Apple title', () => {
+    // Apple rarely carries Spotify's remaster year ("Dreams - 2004 Remaster" vs
+    // a catalog of "Dreams" / "Dreams (2001 Remaster)"), so the year tokens must
+    // not count toward required coverage.
+    expect(
+      isConfidentMatch(
+        { title: 'Dreams - 2004 Remaster', artist: 'Fleetwood Mac' },
+        { title: 'Dreams', artist: 'Fleetwood Mac', durationSec: 258 },
+      ),
+    ).toBe(true)
+  })
+
+  it('does not let a live dash suffix match the studio recording', () => {
+    expect(
+      isConfidentMatch(
+        { title: 'Dreams - Live', artist: 'Fleetwood Mac' },
+        { title: 'Dreams', artist: 'Fleetwood Mac', durationSec: 258 },
+      ),
+    ).toBe(false)
   })
 
   it('rejects a different version behind the parenthetical', () => {

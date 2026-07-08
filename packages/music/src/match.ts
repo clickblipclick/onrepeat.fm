@@ -14,8 +14,19 @@ export interface MatchInput {
  * normalization.
  */
 export function normalizeTokens(s: string): string[] {
-  return tokenize(s, { stripParentheticals: true })
+  return tokenize(s, { stripDecorations: true })
 }
+
+/**
+ * Spotify labels versions as a "Title - Version" dash tail where Apple uses
+ * "Title (Version)". Only the remaster class is stripped — a remaster is the
+ * same recording, so its (often provider-specific) year must not count toward
+ * required coverage; live/acoustic/mix tails name a DIFFERENT recording and are
+ * kept so they can't match the studio version. Keep in sync with
+ * @onrepeat/core's trackIdentity normalization. Applied post-lowercase.
+ */
+const REMASTER_DASH_TAIL =
+  /\s[-–—]\s*(?:\d{4}\s+)?remaster(?:ed)?(?:\s+version)?(?:\s+\d{4})?\s*$/
 
 /**
  * Candidate-side tokens: same folding as normalizeTokens, but (parenthetical)/
@@ -26,15 +37,16 @@ export function normalizeTokens(s: string): string[] {
  * to just "crazy". Anchor-side stripping stays: it shrinks what must be covered.
  */
 function candidateTokens(s: string): string[] {
-  return tokenize(s, { stripParentheticals: false })
+  return tokenize(s, { stripDecorations: false })
 }
 
-function tokenize(s: string, opts: { stripParentheticals: boolean }): string[] {
+function tokenize(s: string, opts: { stripDecorations: boolean }): string[] {
   let t = s
     .normalize('NFKD')
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
-  if (opts.stripParentheticals) t = t.replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+  if (opts.stripDecorations)
+    t = t.replace(REMASTER_DASH_TAIL, ' ').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
   return t
     .replace(/(?!^)\b(feat\b|ft\.|featuring\b).*$/g, ' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
