@@ -12,6 +12,7 @@ describe('isTrustedArtworkUrl', () => {
       'https://i1.sndcdn.com/artworks-abc-large.jpg',
       'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e0259f15d080856e3a386ebffb9',
       'https://mzstatic.com/x.jpg', // exact apex host
+      'https://resources.tidal.com/images/6b8a4883/0e65/4764/a8e2/98ea78e9ca54/640x640.jpg',
     ]) {
       expect(isTrustedArtworkUrl(url)).toBe(true)
     }
@@ -26,6 +27,8 @@ describe('isTrustedArtworkUrl', () => {
       'https://evil-scdn.co/x.jpg', // not dot-anchored under scdn.co
       'https://evil-spotifycdn.com/x.jpg', // not dot-anchored under spotifycdn.com
       'https://scdn.co.attacker.com/x.jpg', // suffix-spoof
+      'https://resources.tidal.com.attacker.com/x.jpg', // suffix-spoof
+      'https://tidal.com/x.jpg', // only the art host is trusted, not the whole domain
     ]) {
       expect(isTrustedArtworkUrl(url)).toBe(false)
     }
