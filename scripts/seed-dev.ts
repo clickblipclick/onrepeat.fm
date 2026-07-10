@@ -88,9 +88,10 @@ const SONG_QUERIES = [
 
 // Hand-picked, verified-embeddable tracks for the non-Apple providers, so the local feed
 // exercises every player shape: YouTube (16:9 video), Spotify (bar), SoundCloud (bar),
-// Bandcamp (bar). Bandcamp's embed keys off a numeric trackId (scraped from the track page,
-// not derivable from the URL), so those entries carry `bandcampTrackId` and get a matching
-// `tracks` row below. Artwork is filled best-effort from iTunes (null → placeholder).
+// TIDAL (bar), Bandcamp (bar). Bandcamp's embed keys off a numeric trackId (scraped from
+// the track page, not derivable from the URL), so those entries carry `bandcampTrackId` and
+// get a matching `tracks` row below. TIDAL embeds straight from the numeric id in the URL.
+// Artwork is filled best-effort from iTunes (null → placeholder).
 const CURATED_TRACKS: {
   provider: string
   url: string
@@ -148,6 +149,19 @@ const CURATED_TRACKS: {
     url: 'https://soundcloud.com/theweeknd/blinding-lights',
     title: 'Blinding Lights',
     artist: 'The Weeknd',
+  },
+  // TIDAL — audio bar; one canonical and one listen.-variant URL so both shapes render.
+  {
+    provider: 'tidal',
+    url: 'https://tidal.com/track/251380837',
+    title: "I'M THAT GIRL",
+    artist: 'Beyoncé',
+  },
+  {
+    provider: 'tidal',
+    url: 'https://listen.tidal.com/track/77646168',
+    title: 'Internal Calm',
+    artist: 'Afterhour Chillout',
   },
   // Bandcamp — audio bar; needs the numeric track id (scraped from the track page).
   {
