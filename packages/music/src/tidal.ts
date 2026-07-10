@@ -1,4 +1,5 @@
-import { decodeEntities, metaContent } from './html'
+import { decodeEntities, MAX_HTML_BYTES, metaContent } from './html'
+import { readTextCapped, type TextFetchLike } from './http'
 
 /** Pure: pull the numeric track id out of any Tidal track URL. All the shapes in the
  *  wild carry it as the path segment after "track": tidal.com/track/<id>,
@@ -47,4 +48,39 @@ export function parseTidalTitleArtist(
 /** Pure: pull the cover art URL from a Tidal page's og:image meta. */
 export function parseTidalArtwork(html: string): string | null {
   return metaContent(html, 'og:image')
+}
+
+export type TidalMeta = { title: string; artist: string; artworkUrl?: string }
+export type TidalFetcher = (trackId: string) => Promise<TidalMeta | null>
+
+/** Fetch a Tidal track page (by numeric id — see canonicalTidalUrl) and extract its
+ *  og: metadata. Returns null on any failure (soft fail). Tidal's oEmbed carries no
+ *  title/author/thumbnail, so this scrape is the metadata source; used by the resolver
+ *  as its artwork fallback. deriveTrack does its own inline fetch of the same page so
+ *  it can map failures to distinct retry reasons. */
+export async function fetchTidalTrack(
+  trackId: string,
+  opts: { fetchFn?: TextFetchLike; timeoutMs?: number } = {},
+): Promise<TidalMeta | null> {
+  // Belt-and-braces: the id interpolates into a URL, so never accept a non-numeric one
+  // even though callers extract it with extractTidalTrackId.
+  if (!/^[1-9]\d*$/.test(trackId)) return null
+  const fetchFn = opts.fetchFn ?? (globalThis.fetch as unknown as TextFetchLike)
+  try {
+    const res = await fetchFn(canonicalTidalUrl(trackId), {
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
+      // Canonical track pages serve 200 directly; any redirect is unexpected — throw
+      // rather than follow (same hardening as the other scrapers in this package).
+      redirect: 'error',
+    })
+    if (!res.ok) return null
+    const html = await readTextCapped(res, MAX_HTML_BYTES)
+    if (html == null) return null
+    const ta = parseTidalTitleArtist(html)
+    if (!ta) return null
+    const artworkUrl = parseTidalArtwork(html) ?? undefined
+    return artworkUrl ? { ...ta, artworkUrl } : { ...ta }
+  } catch {
+    return null
+  }
 }

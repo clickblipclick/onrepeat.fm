@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canonicalTidalUrl,
   extractTidalTrackId,
+  fetchTidalTrack,
   parseTidalArtwork,
   parseTidalTitleArtist,
 } from './tidal'
@@ -86,5 +87,119 @@ describe('parseTidalArtwork', () => {
   })
   it('returns null when absent', () => {
     expect(parseTidalArtwork('<html></html>')).toBeNull()
+  })
+})
+
+describe('fetchTidalTrack', () => {
+  it('fetches the canonical page and returns title/artist/artwork', async () => {
+    let seenUrl: string | undefined
+    const fetchFn = async (url: string) => {
+      seenUrl = url
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return html
+        },
+      }
+    }
+    expect(await fetchTidalTrack('77646168', { fetchFn })).toEqual({
+      title: 'Internal Calm',
+      artist: 'Afterhour Chillout',
+      artworkUrl: ART,
+    })
+    expect(seenUrl).toBe('https://tidal.com/track/77646168')
+  })
+  it('omits artworkUrl when og:image is absent', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      async text() {
+        return '<meta property="og:title" content="A - T">'
+      },
+    })
+    // toStrictEqual: the key must be truly absent, not present with value undefined.
+    expect(await fetchTidalTrack('1', { fetchFn })).toStrictEqual({
+      title: 'T',
+      artist: 'A',
+    })
+  })
+  it('soft-fails to null on non-OK, thrown fetch, or a page with no og:title', async () => {
+    expect(
+      await fetchTidalTrack('1', {
+        fetchFn: async () => ({
+          ok: false,
+          status: 404,
+          async text() {
+            return ''
+          },
+        }),
+      }),
+    ).toBeNull()
+    expect(
+      await fetchTidalTrack('1', {
+        fetchFn: async () => {
+          throw new Error('network')
+        },
+      }),
+    ).toBeNull()
+    expect(
+      await fetchTidalTrack('1', {
+        fetchFn: async () => ({
+          ok: true,
+          status: 200,
+          async text() {
+            return '<html></html>'
+          },
+        }),
+      }),
+    ).toBeNull()
+  })
+  it('refuses a non-numeric id without fetching', async () => {
+    let called = false
+    const fetchFn = async () => {
+      called = true
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return html
+        },
+      }
+    }
+    expect(await fetchTidalTrack('../evil', { fetchFn })).toBeNull()
+    expect(called).toBe(false)
+  })
+  it('requests with redirect:error (SSRF hardening convention)', async () => {
+    let seenRedirect: string | undefined
+    const fetchFn = async (_url: string, init?: { redirect?: string }) => {
+      seenRedirect = init?.redirect
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return html
+        },
+      }
+    }
+    await fetchTidalTrack('77646168', { fetchFn })
+    expect(seenRedirect).toBe('error')
+  })
+  it('returns null when the body exceeds the size cap (OOM guard)', async () => {
+    const chunk = new Uint8Array(256 * 1024)
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(chunk) // never "done" — must be cut off by the cap
+      },
+    })
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      body,
+      async text() {
+        throw new Error('should read body stream, not text()')
+      },
+    })
+    expect(await fetchTidalTrack('77646168', { fetchFn })).toBeNull()
   })
 })
