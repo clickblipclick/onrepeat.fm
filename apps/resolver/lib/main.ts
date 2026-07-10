@@ -5,6 +5,7 @@ import {
   createYoutubeClient,
   fetchBandcampEmbed,
   fetchOembed,
+  fetchTidalTrack,
 } from '@onrepeat/music'
 import { onShutdown, requireEnv } from '@onrepeat/service'
 import { createR2Store, persistArtwork } from '@onrepeat/storage'
@@ -80,6 +81,7 @@ async function main(): Promise<void> {
     itunes: createItunesClient({ minIntervalMs: 3000 }),
     bandcamp: (url) => fetchBandcampEmbed(url),
     oembed: (provider, url) => fetchOembed(provider, url),
+    tidal: (trackId) => fetchTidalTrack(trackId),
   }
   if (process.env.YOUTUBE_API_KEY) {
     deps.youtube = createYoutubeClient({
