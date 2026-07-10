@@ -474,4 +474,82 @@ describe('deriveTrack', () => {
       },
     })
   })
+
+  it('tidal url → ok: scrapes og: meta from the canonical page, keeping the pasted sourceUrl', async () => {
+    const art =
+      'https://resources.tidal.com/images/6b8a4883/0e65/4764/a8e2/98ea78e9ca54/640x640.jpg'
+    const fetchFn = async (url: string) => {
+      // Always fetches the canonical tidal.com/track/<id> page we construct, never
+      // the pasted (redirecting) listen./browse. variant.
+      expect(url).toBe('https://tidal.com/track/77646168')
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {}
+        },
+        async text() {
+          return `<meta property="og:title" content="Afterhour Chillout - Internal Calm"><meta property="og:image" content="${art}">`
+        },
+      }
+    }
+    const r = await deriveTrack('https://listen.tidal.com/track/77646168', {
+      fetchFn,
+    })
+    expect(r).toEqual({
+      ok: true,
+      candidate: {
+        title: 'Internal Calm',
+        artist: 'Afterhour Chillout',
+        artworkUrl: art,
+        sourceUrl: 'https://listen.tidal.com/track/77646168',
+        provider: 'tidal',
+      },
+    })
+  })
+
+  it('tidal url with no track id → unreadable', async () => {
+    const r = await deriveTrack('https://tidal.com/album/284165608')
+    expect(r).toEqual({ ok: false, reason: 'unreadable' })
+  })
+
+  it('tidal page fetch throws → transient', async () => {
+    const fetchFn = async () => {
+      throw new Error('network')
+    }
+    const r = await deriveTrack('https://tidal.com/track/77646168', {
+      fetchFn,
+    })
+    expect(r).toEqual({ ok: false, reason: 'transient' })
+  })
+
+  it('tidal page fetch 429 → transient, 404 → unreadable', async () => {
+    const status = (s: number) => async () => ({
+      ok: s < 400,
+      status: s,
+      async json() {
+        return {}
+      },
+      async text() {
+        return ''
+      },
+    })
+    expect(
+      await deriveTrack('https://tidal.com/track/1', {
+        fetchFn: status(429),
+      }),
+    ).toEqual({ ok: false, reason: 'transient' })
+    expect(
+      await deriveTrack('https://tidal.com/track/1', {
+        fetchFn: status(404),
+      }),
+    ).toEqual({ ok: false, reason: 'unreadable' })
+  })
+
+  it('tidal page with no og:title → unreadable', async () => {
+    const r = await deriveTrack('https://tidal.com/track/1', {
+      fetchFn: json({}, '<html></html>'),
+    })
+    expect(r).toEqual({ ok: false, reason: 'unreadable' })
+  })
 })
