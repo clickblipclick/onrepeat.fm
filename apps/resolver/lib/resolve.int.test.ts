@@ -299,4 +299,74 @@ describe('resolveJob (v2)', () => {
       .executeTakeFirst()
     expect(row?.cdn_artwork_url ?? null).toBeNull()
   })
+
+  it('tidal: falls back to the scraped page cover when nothing else has art', async () => {
+    await seedPending('ta:a|c')
+    let seenId: string | undefined
+    const deps: ResolverDeps = {
+      itunes: {
+        async search() {
+          return []
+        },
+        async lookup() {
+          return null
+        },
+      },
+      oembed: async () => null, // tidal's oEmbed has no thumbnail
+      tidal: async (trackId) => {
+        seenId = trackId
+        return {
+          title: 'Canonical',
+          artist: 'Artist',
+          artworkUrl: 'https://resources.tidal.com/images/x/640x640.jpg',
+        }
+      },
+    }
+    await resolveJob(db, deps, {
+      identity: 'ta:a|c',
+      sourceUrl: 'https://tidal.com/browse/track/77646168',
+      provider: 'tidal',
+    })
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'ta:a|c')
+      .executeTakeFirst()
+    expect(t?.resolution_status).toBe('resolved')
+    expect(t?.provider_refs).toEqual({
+      tidal: { url: 'https://tidal.com/browse/track/77646168' },
+    })
+    expect(t?.artwork_url).toBe(
+      'https://resources.tidal.com/images/x/640x640.jpg',
+    )
+    expect(seenId).toBe('77646168')
+  })
+
+  it('tidal: does not scrape when the iTunes anchor already provided art', async () => {
+    await seedPending('ta:a|c')
+    let scraped = false
+    const deps: ResolverDeps = {
+      ...okDeps,
+      tidal: async () => {
+        scraped = true
+        return {
+          title: 'x',
+          artist: 'y',
+          artworkUrl: 'https://resources.tidal.com/images/x/640x640.jpg',
+        }
+      },
+    }
+    await resolveJob(db, deps, {
+      identity: 'ta:a|c',
+      sourceUrl: 'https://tidal.com/track/77646168',
+      provider: 'tidal',
+    })
+    const t = await db
+      .selectFrom('tracks')
+      .selectAll()
+      .where('id', '=', 'ta:a|c')
+      .executeTakeFirst()
+    expect(t?.artwork_url).toBe('https://img/a.jpg') // apple cover wins
+    expect(scraped).toBe(false)
+  })
 })

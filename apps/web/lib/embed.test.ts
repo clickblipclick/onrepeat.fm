@@ -44,9 +44,9 @@ describe('buildEmbed', () => {
 
   it('falls back to the first embeddable ref when the source provider has none', () => {
     const e = buildEmbed(
-      'tidal',
+      'vinyl',
       { spotify: refs.spotify! },
-      'https://tidal.com/track/1',
+      'https://example.com/track/1',
     )
     expect(e.kind).toBe('iframe')
     expect(e.provider).toBe('spotify')
@@ -232,7 +232,7 @@ describe('buildEmbed with a preferred provider', () => {
   })
 
   it('ignores a junk / non-embeddable preferred value', () => {
-    const e = buildEmbed('spotify', multi, refs.spotify!.url, 'tidal')
+    const e = buildEmbed('spotify', multi, refs.spotify!.url, 'vinyl')
     expect(e.provider).toBe('spotify')
   })
 
@@ -271,7 +271,7 @@ describe('resolvePreferredKey', () => {
     expect(
       resolvePreferredKey('soundcloud', { spotify: refs.spotify! }),
     ).toBeNull()
-    expect(resolvePreferredKey('tidal', refs)).toBeNull()
+    expect(resolvePreferredKey('vinyl', refs)).toBeNull()
     expect(resolvePreferredKey(null, refs)).toBeNull()
     expect(resolvePreferredKey(undefined, refs)).toBeNull()
   })
@@ -287,5 +287,44 @@ describe('resolvePreferredKey', () => {
         bandcamp: { url: 'https://x.bandcamp.com/track/y' },
       }),
     ).toBeNull()
+  })
+})
+
+describe('tidal embeds', () => {
+  it('builds the embed.tidal.com iframe from every stored URL shape', () => {
+    for (const url of [
+      'https://tidal.com/track/77646168',
+      'https://tidal.com/browse/track/77646168',
+      'https://listen.tidal.com/track/77646168',
+      'https://listen.tidal.com/album/284165608/track/77646168',
+    ]) {
+      const refs = { tidal: { url } }
+      expect(buildEmbed('tidal', refs, url)).toMatchObject({
+        kind: 'iframe',
+        provider: 'tidal',
+        src: 'https://embed.tidal.com/tracks/77646168',
+        title: 'TIDAL player',
+        fallbackHref: url,
+      })
+    }
+  })
+  it('links out when the tidal url carries no track id', () => {
+    const url = 'https://tidal.com/album/284165608'
+    expect(buildEmbed('tidal', { tidal: { url } }, url)).toEqual({
+      kind: 'link',
+      provider: 'tidal',
+      href: url,
+    })
+  })
+  it('counts tidal as embeddable and honors it as the preferred service', () => {
+    const refs = {
+      applemusic: { url: 'https://music.apple.com/us/album/t/1?i=2' },
+      tidal: { url: 'https://tidal.com/track/77646168' },
+    }
+    expect(embeddableProviders(refs)).toContain('tidal')
+    expect(resolvePreferredKey('tidal', refs)).toBe('tidal')
+    expect(
+      buildEmbed('applemusic', refs, refs.applemusic.url, 'tidal'),
+    ).toMatchObject({ provider: 'tidal' })
   })
 })

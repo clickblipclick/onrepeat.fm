@@ -4,9 +4,11 @@ import { providerFromUrl, providerTier } from '@onrepeat/core'
 import { markTrackFailed, type DB, type TracksTable } from '@onrepeat/db'
 import { resolveLog, type ResolveJob } from '@onrepeat/jobs'
 import {
+  extractTidalTrackId,
   resolveTrack,
   type BandcampFetcher,
   type ResolveDeps,
+  type TidalFetcher,
 } from '@onrepeat/music'
 
 /** Source-cover fetcher (Spotify/YouTube/SoundCloud oEmbed); used as an artwork fallback. */
@@ -18,6 +20,9 @@ export type OembedFetcher = (
 export type ResolverDeps = ResolveDeps & {
   bandcamp?: BandcampFetcher
   oembed?: OembedFetcher
+  /** Tidal track-page scrape (og:image) — the artwork fallback of last resort for
+   *  tidal-source jams, whose oEmbed carries no thumbnail. Keyless, like bandcamp. */
+  tidal?: TidalFetcher
   /**
    * Persist a provider artwork URL to our own CDN, returning the CDN URL (or null on
    * failure / when unconfigured). Injected so the worker owns the R2 store; absent in
@@ -172,6 +177,18 @@ export async function resolveJob(
     if (o?.thumbnail) {
       artworkUrl = o.thumbnail
       artSource = 'oembed'
+    }
+  }
+
+  // Tidal's oEmbed has no thumbnail, so the chain above can end empty for a
+  // tidal-source jam that missed on iTunes and wasn't posted through our picker
+  // (no seeded raw art). Last resort: scrape the track page's og:image.
+  if (!artworkUrl && provider === 'tidal' && deps.tidal) {
+    const id = extractTidalTrackId(job.sourceUrl)
+    const meta = id ? await deps.tidal(id) : null
+    if (meta?.artworkUrl) {
+      artworkUrl = meta.artworkUrl
+      artSource = 'tidal'
     }
   }
   if (artworkUrl) update.artwork_url = artworkUrl

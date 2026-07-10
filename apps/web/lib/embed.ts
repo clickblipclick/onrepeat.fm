@@ -26,6 +26,7 @@ export const LABELS: Record<string, string> = {
   applemusic: 'Apple Music',
   soundcloud: 'SoundCloud',
   bandcamp: 'Bandcamp',
+  tidal: 'TIDAL',
 }
 
 type RefEntry = { url?: string; trackId?: string; embeddable?: boolean }
@@ -62,6 +63,18 @@ function iframeSrc(
       const trackIdx = segments.indexOf('track')
       const id = trackIdx !== -1 ? segments[trackIdx + 1] : undefined
       return id ? { src: `https://open.spotify.com/embed/track/${id}` } : null
+    }
+    case 'tidal': {
+      // Every Tidal URL shape carries the numeric track id after a "track" path
+      // segment (/track/<id>, /browse/track/<id>, /album/<aid>/track/<id>).
+      // Anonymous visitors get a preview + sign-up prompt; Tidal subscribers get
+      // the full track — same class of embed as Spotify.
+      const segments = u.pathname.split('/').filter(Boolean)
+      const trackIdx = segments.indexOf('track')
+      const id = trackIdx !== -1 ? segments[trackIdx + 1] : undefined
+      return id && /^[1-9]\d*$/.test(id)
+        ? { src: `https://embed.tidal.com/tracks/${id}` }
+        : null
     }
     case 'youtube':
     case 'youtubemusic': {

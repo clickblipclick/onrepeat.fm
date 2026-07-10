@@ -66,9 +66,10 @@ export default function PrivacyPage() {
         <p>
           The Service uses Bluesky&rsquo;s public API to display profiles,
           embeds media players from providers such as Apple Music/iTunes,
-          YouTube, Bandcamp, SoundCloud, and Spotify, and runs on a third-party
-          hosting provider. When a player loads, information such as your IP
-          address is shared with that provider under their own privacy policy.
+          YouTube, Bandcamp, SoundCloud, TIDAL, and Spotify, and runs on a
+          third-party hosting provider. When a player loads, information such as
+          your IP address is shared with that provider under their own privacy
+          policy.
         </p>
       </section>
 

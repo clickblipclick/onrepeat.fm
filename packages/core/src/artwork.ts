@@ -6,7 +6,7 @@
  * must therefore allowlist the host, or it becomes an SSRF. These are the CDNs our own
  * resolvers emit artwork from: iTunes/Apple (mzstatic), Spotify (scdn + spotifycdn —
  * oEmbed thumbnails moved to image-cdn-*.spotifycdn.com), Bandcamp (bcbits),
- * YouTube (ytimg), SoundCloud (sndcdn).
+ * YouTube (ytimg), SoundCloud (sndcdn), Tidal (resources.tidal.com).
  */
 const ARTWORK_CDN_HOSTS = [
   'mzstatic.com',
@@ -15,6 +15,8 @@ const ARTWORK_CDN_HOSTS = [
   'bcbits.com',
   'ytimg.com',
   'sndcdn.com',
+  // Deliberately the narrow art host — not all of tidal.com.
+  'resources.tidal.com',
 ]
 
 /**

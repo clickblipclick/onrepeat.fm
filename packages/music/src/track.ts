@@ -5,6 +5,12 @@ import { decodeEntities, MAX_HTML_BYTES, metaContent } from './html'
 import { failureReason, readTextCapped, type FetchLike } from './http'
 import { lookupTrackResult } from './itunes'
 import { fetchOembedResult } from './oembed'
+import {
+  canonicalTidalUrl,
+  extractTidalTrackId,
+  parseTidalArtwork,
+  parseTidalTitleArtist,
+} from './tidal'
 import { youtubeVideoId } from './youtube'
 
 /** A normalized track the picker can post: enough to build a jam record. */
@@ -110,7 +116,7 @@ function splitTitleArtist(
 
 /**
  * Derive a candidate from a pasted music URL using only free, keyless endpoints:
- * Apple → iTunes lookup; Spotify/YouTube/SoundCloud → oEmbed; Bandcamp → page scrape.
+ * Apple → iTunes lookup; Spotify/YouTube/SoundCloud → oEmbed; Bandcamp/Tidal → page scrape.
  * Returns a discriminated result: an unknown host, a retryable transient failure, an
  * unreadable link (no metadata), or the candidate. The picker reacts per reason.
  */
@@ -156,6 +162,41 @@ export async function deriveTrack(
         title: ta.title,
         artist: ta.artist,
         artworkUrl: parseBandcampArtwork(html) ?? undefined,
+        sourceUrl: url,
+        provider,
+      },
+    }
+  }
+
+  if (provider === 'tidal') {
+    // Tidal's oEmbed is iframe-only (no title/author/thumbnail), so scrape the track
+    // page's og: meta instead. Every Tidal URL shape carries the numeric id in the
+    // path; fetch the canonical /track/<id> page we construct ourselves — the pasted
+    // /browse/ and listen. variants 301 (which redirect:'error' rejects), and a
+    // constructed URL is inherently SSRF-safe (fixed host, numeric path). Same scrape
+    // hardening as the bandcamp branch above.
+    const id = extractTidalTrackId(url)
+    if (!id) return { ok: false, reason: 'unreadable' }
+    let res: Awaited<ReturnType<FetchLike>>
+    try {
+      res = await fetchFn(canonicalTidalUrl(id), {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'error',
+      })
+    } catch {
+      return { ok: false, reason: 'transient' }
+    }
+    if (!res.ok) return { ok: false, reason: failureReason(res.status) }
+    const html = await readTextCapped(res, MAX_HTML_BYTES)
+    if (html == null) return { ok: false, reason: 'unreadable' }
+    const ta = parseTidalTitleArtist(html)
+    if (!ta) return { ok: false, reason: 'unreadable' }
+    return {
+      ok: true,
+      candidate: {
+        title: ta.title,
+        artist: ta.artist,
+        artworkUrl: parseTidalArtwork(html) ?? undefined,
         sourceUrl: url,
         provider,
       },
