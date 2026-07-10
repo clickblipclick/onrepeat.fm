@@ -381,8 +381,8 @@ export function TrackPicker({
             aria-describedby="post-link-hint"
           />
           <p id="post-link-hint" className="mt-2 text-xs text-muted">
-            Works with links from Spotify, Apple Music, YouTube, SoundCloud, and
-            Bandcamp.
+            Works with links from Spotify, Apple Music, YouTube, SoundCloud,
+            TIDAL, and Bandcamp.
           </p>
           {busy && (
             <p
@@ -400,7 +400,7 @@ export function TrackPicker({
               aria-live="polite"
             >
               {deriveError === 'unknown-host' &&
-                'That’s not a music link we recognize. Search for the song above, or paste a link from Spotify, Apple Music, YouTube, SoundCloud, or Bandcamp.'}
+                'That’s not a music link we recognize. Search for the song above, or paste a link from Spotify, Apple Music, YouTube, SoundCloud, TIDAL, or Bandcamp.'}
               {deriveError === 'unreadable' &&
                 'Couldn’t read a song from that link. Try a single-track link from a supported service, or search above.'}
               {deriveError === 'transient' && (

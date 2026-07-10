@@ -15,6 +15,7 @@ const BAR_HEIGHTS: Record<string, string> = {
   applemusic: 'h-[175px]',
   bandcamp: 'h-[120px]',
   soundcloud: 'h-[166px]',
+  tidal: 'h-[120px]',
 }
 
 /** Tailwind size classes for an embed. In-card frames span the card (`w-full`); the

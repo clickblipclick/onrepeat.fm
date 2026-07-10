@@ -68,9 +68,9 @@ export default function TermsPage() {
         <p>
           The Service relies on third parties, including your PDS / Bluesky and
           embedded players from Apple Music/iTunes, YouTube, Bandcamp,
-          SoundCloud, and Spotify. We do not host or control that content or
-          playback, and your use of it is governed by those providers&rsquo; own
-          terms.
+          SoundCloud, TIDAL, and Spotify. We do not host or control that content
+          or playback, and your use of it is governed by those providers&rsquo;
+          own terms.
         </p>
       </section>
 

@@ -22,8 +22,12 @@ describe('parseProvider', () => {
     expect(parseProvider('YouTubeMusic')).toBe('youtube')
   })
 
+  it('accepts tidal as a preferred service', () => {
+    expect(parseProvider('tidal')).toBe('tidal')
+    expect(parseProvider('TIDAL')).toBe('tidal')
+  })
+
   it('rejects unknown, empty, and nullish values', () => {
-    expect(parseProvider('tidal')).toBeNull()
     expect(parseProvider('bandcamp')).toBeNull()
     expect(parseProvider('<script>')).toBeNull()
     expect(parseProvider('')).toBeNull()

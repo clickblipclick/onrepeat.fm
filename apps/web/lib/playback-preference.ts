@@ -23,6 +23,7 @@ export const VALID_PROVIDERS = [
   'youtube',
   'applemusic',
   'soundcloud',
+  'tidal',
 ] as const
 export type PlaybackProvider = (typeof VALID_PROVIDERS)[number]
 
