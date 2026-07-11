@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.25",
+    "@atproto/api": "^0.20.28",
     "@onrepeat/lexicons": "workspace:*"
   },
   "devDependencies": {

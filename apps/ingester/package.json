@@ -9,13 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/identity": "^0.5.3",
-    "@atproto/sync": "^0.3.7",
+    "@atproto/identity": "^0.5.6",
+    "@atproto/sync": "^0.3.10",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
-    "kysely": "^0.29.0"
+    "kysely": "^0.29.3"
   },
   "devDependencies": {
     "tsx": "^4.23.0",
