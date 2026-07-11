@@ -28,7 +28,7 @@
     "concurrently": "^10.0.3",
     "prettier": "^3.9.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^3.2.6"
   },
   "pnpm": {
