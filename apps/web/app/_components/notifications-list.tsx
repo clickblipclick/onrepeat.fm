@@ -8,11 +8,13 @@ import { useEffect, useRef, useState } from 'react'
 import { markNotificationsSeenAction } from '@/app/actions'
 import type { HydratedNotification } from '@/lib/appview'
 import { rkeyFromUri } from '@/lib/at-uri'
+import { mergeIntoPending, mergeNotifications } from '@/lib/notification-merge'
 
 import { authorName, Avatar } from './avatar'
 import { EmptyState } from './empty-state'
 import { LoadMoreButton } from './load-more-button'
 import { RelativeTime } from './relative-time'
+import { useUnreadStream } from './use-unread-stream'
 
 /**
  * The notifications page body. Items live in client state seeded from the
@@ -29,10 +31,16 @@ export function NotificationsList({
   initialCursor?: string
 }) {
   const [items, setItems] = useState(initial)
+  const [pending, setPending] = useState<HydratedNotification[]>([])
   const [cursor, setCursor] = useState(initialCursor)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const router = useRouter()
+
+  // Mirrors `items` for the async stream callback below, whose effect only
+  // re-runs on stream events — the closure's `items` would be stale.
+  const itemsRef = useRef(items)
+  itemsRef.current = items
 
   const marked = useRef(false)
   useEffect(() => {
@@ -40,6 +48,51 @@ export function NotificationsList({
     marked.current = true
     void markNotificationsSeenAction().then(() => router.refresh())
   }, [router])
+
+  // Live updates while the viewer is on this page: a positive count from the
+  // unread stream means something new landed, so pull the first page eagerly
+  // but hold it behind a "show N new" button — inserting under the viewer
+  // would shift the list mid-read, and the watermark must not advance for
+  // items never actually seen. The empty state has nothing to disturb, so it
+  // reveals (and marks seen) immediately. Marking seen broadcasts
+  // {"unread":0}, which the guard ignores, so neither path can loop.
+  const unread = useUnreadStream(0)
+  useEffect(() => {
+    if (unread === 0) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/notifications')
+        if (!res.ok) return
+        const data = (await res.json()) as {
+          notifications?: HydratedNotification[]
+        }
+        if (cancelled) return
+        const incoming = data.notifications ?? []
+        if (itemsRef.current.length === 0) {
+          setItems((prev) => mergeNotifications(prev, incoming))
+          setPending([])
+          await markNotificationsSeenAction()
+        } else {
+          setPending((prev) =>
+            mergeIntoPending(itemsRef.current, prev, incoming),
+          )
+        }
+      } catch {
+        // transient — the next stream event retries
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [unread])
+
+  function reveal() {
+    if (pending.length === 0) return
+    setItems((prev) => mergeNotifications(prev, pending))
+    setPending([])
+    void markNotificationsSeenAction()
+  }
 
   async function more() {
     setLoading(true)
@@ -72,6 +125,15 @@ export function NotificationsList({
 
   return (
     <div className="flex flex-col gap-2">
+      {pending.length > 0 && (
+        <button
+          type="button"
+          onClick={reveal}
+          className="w-full rounded border border-dashed border-accent/40 py-2 text-sm text-accent hover:border-accent"
+        >
+          show {pending.length} new notification{pending.length > 1 && 's'} ↑
+        </button>
+      )}
       {items.map((n) => (
         <NotificationRow key={n.recordUri} n={n} />
       ))}
