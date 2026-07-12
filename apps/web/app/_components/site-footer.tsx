@@ -31,6 +31,9 @@ export async function SiteFooter() {
         </span>
         <div className="flex items-center gap-3">
           <nav className="flex items-center gap-3">
+            <Link href="/about" className="underline hover:text-accent">
+              About
+            </Link>
             <Link href="/terms" className="underline hover:text-accent">
               Terms
             </Link>
