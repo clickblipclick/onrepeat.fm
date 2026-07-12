@@ -57,4 +57,16 @@ describe('playbackCookieString', () => {
       ?.split('=')[1]
     expect(parseProvider(decodeURIComponent(value ?? ''))).toBe('soundcloud')
   })
+
+  it('deletes the cookie when provider is null', () => {
+    const s = playbackCookieString(null, false)
+    expect(s).toContain(`${PLAYBACK_PREF_COOKIE}=`)
+    expect(s).toContain('Path=/')
+    expect(s).toContain('Max-Age=0')
+  })
+
+  it('a cleared value does not parse back to a provider', () => {
+    const value = playbackCookieString(null, false).split('; ')[0]?.split('=')[1]
+    expect(parseProvider(value ?? '')).toBeNull()
+  })
 })

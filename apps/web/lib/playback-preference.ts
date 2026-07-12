@@ -40,15 +40,17 @@ export function parseProvider(
   return VALID.has(normalized) ? (normalized as PlaybackProvider) : null
 }
 
-/** Build the `document.cookie` / Set-Cookie string for the preference. */
+/** Build the `document.cookie` / Set-Cookie string: sets a preferred provider,
+ *  or deletes the cookie (provider=null → back to automatic, i.e. jams default
+ *  to their source service). Mirrors `modeCookieString`. */
 export function playbackCookieString(
-  provider: PlaybackProvider,
+  provider: PlaybackProvider | null,
   secure: boolean,
 ): string {
   const attrs = [
-    `${PLAYBACK_PREF_COOKIE}=${encodeURIComponent(provider)}`,
+    `${PLAYBACK_PREF_COOKIE}=${provider ? encodeURIComponent(provider) : ''}`,
     'Path=/',
-    `Max-Age=${PLAYBACK_PREF_MAX_AGE}`,
+    `Max-Age=${provider ? PLAYBACK_PREF_MAX_AGE : 0}`,
     'SameSite=Lax',
   ]
   if (secure) attrs.push('Secure')
