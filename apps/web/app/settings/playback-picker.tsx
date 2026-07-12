@@ -54,7 +54,8 @@ export function PlaybackPicker({
           >
             <span className="text-sm font-bold text-ink">{label}</span>
             <span className="text-xs text-muted">
-              {isSelected ? 'current' : ' '}
+              {/* nbsp: a plain space collapses to a 0-height line, shrinking unselected cards */}
+              {isSelected ? 'current' : ' '}
             </span>
           </button>
         )
