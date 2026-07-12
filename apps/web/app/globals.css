@@ -274,10 +274,11 @@ html:has(dialog:modal) {
   background-color: var(--surface);
 }
 .pat-diagonal {
+  --c1: color-mix(in srgb, var(--accent) 8%, transparent);
   background-color: var(--surface);
   background-image: repeating-linear-gradient(
     45deg,
-    color-mix(in srgb, var(--accent) 8%, transparent) 0 1px,
+    var(--c1) 0 1px,
     transparent 1px 13px
   );
 }
@@ -368,6 +369,16 @@ html:has(dialog:modal) {
     );
   background-size: var(--s) var(--s);
   background-color: var(--surface);
+}
+
+/* Bold variant for the `.pat-*` textures: same geometry, but drawn as `--on-accent`
+   tints over the accent color instead of whispers over the surface — for decorative
+   tiles (about-page hero) where the texture is the point, not a background. */
+.pat-bold {
+  --c1: color-mix(in srgb, var(--on-accent) 45%, var(--accent));
+  --c2: color-mix(in srgb, var(--on-accent) 22%, var(--accent));
+  --c3: var(--accent);
+  background-color: var(--accent);
 }
 
 /* subtle line-grid for non-text surfaces (card author band, placeholder art) */
