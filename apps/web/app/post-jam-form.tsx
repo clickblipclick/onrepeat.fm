@@ -23,6 +23,7 @@ export function PostJamForm({
     FormData
   >(postJamAction, null)
   const [trackContent, setTrackContent] = useState(false)
+  const [trackBusy, setTrackBusy] = useState(false)
   const [caption, setCaption] = useState('')
 
   // Report dirtiness up to a host (e.g. the modal) so it can confirm before discarding.
@@ -55,7 +56,10 @@ export function PostJamForm({
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <TrackPicker onContentChange={setTrackContent} />
+      <TrackPicker
+        onContentChange={setTrackContent}
+        onBusyChange={setTrackBusy}
+      />
       <textarea
         name="caption"
         aria-label="Caption (optional)"
@@ -65,7 +69,14 @@ export function PostJamForm({
         rows={3}
         className={inputClassName('w-full resize-y')}
       />
-      <Button type="submit" loading={pending} className="py-2.5 text-base">
+      {/* Held (not just invalid) while a pasted link is still resolving — submitting
+          then would surface a misleading "Pick a track" validation message. */}
+      <Button
+        type="submit"
+        loading={pending}
+        disabled={trackBusy}
+        className="py-2.5 text-base"
+      >
         Put it on repeat
       </Button>
       <div aria-live="polite" aria-atomic="true">
