@@ -282,6 +282,50 @@ export async function getLatest(
   return jamPage(db, await q.execute(), limit, params.viewerDid)
 }
 
+/** One tile's worth of hero-mosaic data: a jam's artwork plus its author's stored
+ *  color theme (null when unset — callers resolve via @onrepeat/core resolveTheme). */
+export interface RecentArtwork {
+  artworkUrl: string
+  authorDid: string
+  colorTheme: string | null
+}
+
+/** Recent distinct jam artwork for decorative mosaics (about-page hero). Newest-first,
+ *  active authors only, deduped by URL, artless jams skipped. Over-fetches rows (2×)
+ *  because null-artwork and duplicate URLs are filtered after the query. */
+export async function getRecentArtwork(
+  db: DB,
+  limit: number,
+): Promise<RecentArtwork[]> {
+  const rows = await db
+    .selectFrom('jams')
+    .leftJoin('tracks', 'tracks.id', 'jams.track_id')
+    .leftJoin('actors', 'actors.did', 'jams.author_did')
+    .select([
+      'jams.author_did',
+      'jams.raw_artwork_url',
+      'tracks.artwork_url as track_artwork',
+      'tracks.cdn_artwork_url as track_cdn_artwork',
+      'actors.color_theme',
+    ])
+    .where(authorActive('jams.author_did'))
+    .orderBy('jams.created_at', 'desc')
+    .orderBy('jams.uri', 'desc')
+    .limit(limit * 2)
+    .execute()
+  const seen = new Set<string>()
+  const out: RecentArtwork[] = []
+  for (const r of rows) {
+    const artworkUrl =
+      r.track_cdn_artwork ?? r.track_artwork ?? r.raw_artwork_url
+    if (!artworkUrl || seen.has(artworkUrl)) continue
+    seen.add(artworkUrl)
+    out.push({ artworkUrl, authorDid: r.author_did, colorTheme: r.color_theme })
+    if (out.length >= limit) break
+  }
+  return out
+}
+
 /** A profile's jams, newest-first (jams[0] is the current jam if <7 days old). */
 export async function getActorJams(
   db: DB,
