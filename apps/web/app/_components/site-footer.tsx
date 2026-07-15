@@ -15,7 +15,7 @@ export async function SiteFooter() {
             href="https://heyben.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-accent"
+            className="underline underline-offset-2 hover:text-accent"
           >
             Hey, Ben!
           </a>{' '}
@@ -24,20 +24,29 @@ export async function SiteFooter() {
             href="https://github.com/clickblipclick/onrepeat.fm"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-accent"
+            className="underline underline-offset-2 hover:text-accent"
           >
             GitHub
           </a>
         </span>
         <div className="flex items-center gap-3">
           <nav className="flex items-center gap-3">
-            <Link href="/about" className="underline hover:text-accent">
+            <Link
+              href="/about"
+              className="underline underline-offset-2 hover:text-accent"
+            >
               About
             </Link>
-            <Link href="/terms" className="underline hover:text-accent">
+            <Link
+              href="/terms"
+              className="underline underline-offset-2 hover:text-accent"
+            >
               Terms
             </Link>
-            <Link href="/privacy" className="underline hover:text-accent">
+            <Link
+              href="/privacy"
+              className="underline underline-offset-2 hover:text-accent"
+            >
               Privacy
             </Link>
           </nav>
