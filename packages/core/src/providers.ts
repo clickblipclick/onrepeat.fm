@@ -21,6 +21,15 @@ export function providerTier(provider: string): ProviderTier {
   return SELF_CONTAINED.has(p) ? 'self-contained' : 'cross-resolvable'
 }
 
+/** Cross-resolution targets: providers the resolver links onto jams from OTHER
+ *  sources (@onrepeat/music resolve-track: the iTunes/Apple anchor + YouTube
+ *  search). Any provider not in this set only ever appears as a jam's own
+ *  source ref — keep in sync with resolve-track when adding a target. */
+export const CROSS_RESOLVED_PROVIDERS: ReadonlySet<string> = new Set([
+  'applemusic',
+  'youtube',
+])
+
 /** Best-effort detection of the source provider from a track URL. */
 export function providerFromUrl(url: string): string | null {
   let parsed: URL
