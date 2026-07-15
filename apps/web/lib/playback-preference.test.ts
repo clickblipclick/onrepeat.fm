@@ -66,7 +66,9 @@ describe('playbackCookieString', () => {
   })
 
   it('a cleared value does not parse back to a provider', () => {
-    const value = playbackCookieString(null, false).split('; ')[0]?.split('=')[1]
+    const value = playbackCookieString(null, false)
+      .split('; ')[0]
+      ?.split('=')[1]
     expect(parseProvider(value ?? '')).toBeNull()
   })
 })
