@@ -15,9 +15,10 @@ import {
 } from '@floating-ui/react'
 import { useEffect, useRef, useState } from 'react'
 
-import { buttonClassName } from '@/lib/button-variants'
 import { inputClassName } from '@/lib/input-variants'
 import type { TypeaheadActor } from '@/lib/typeahead'
+
+import { Button } from '../_components/ui/button'
 
 const inputCls = inputClassName('w-full')
 
@@ -32,6 +33,9 @@ export function LoginForm() {
   // Set together with the picked handle; an effect submits once the input value reflects it
   // (a synchronous requestSubmit() would read the pre-update controlled value).
   const [pendingSubmit, setPendingSubmit] = useState(false)
+  // True from submit until the browser navigates away to the PDS authorize page —
+  // drives the button spinner and locks the field against edits mid-flight.
+  const [submitting, setSubmitting] = useState(false)
   const seq = useRef(0)
 
   const [open, setOpen] = useState(false)
@@ -115,6 +119,16 @@ export function LoginForm() {
     formRef.current?.requestSubmit()
   }, [pendingSubmit])
 
+  // The OAuth redirect can leave this page in the bfcache; returning via the back
+  // button restores it with `submitting` still true, so reset on restore.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setSubmitting(false)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
+
   const pick = (actor: TypeaheadActor) => {
     setHandle(actor.handle)
     setResults([])
@@ -124,7 +138,18 @@ export function LoginForm() {
   }
 
   return (
-    <form ref={formRef} action="/oauth/login" method="post">
+    <form
+      ref={formRef}
+      action="/oauth/login"
+      method="post"
+      onSubmit={(e) => {
+        if (submitting) {
+          e.preventDefault()
+          return
+        }
+        setSubmitting(true)
+      }}
+    >
       <input
         ref={refs.setReference}
         name="handle"
@@ -134,6 +159,8 @@ export function LoginForm() {
         autoCorrect="off"
         autoComplete="username"
         required
+        // readOnly, not disabled: a disabled input is dropped from the POST body.
+        readOnly={submitting}
         className={inputCls}
         role="combobox"
         aria-autocomplete="list"
@@ -154,12 +181,9 @@ export function LoginForm() {
           },
         })}
       />
-      <button
-        type="submit"
-        className={buttonClassName({ className: 'mt-3 w-full' })}
-      >
-        Sign in
-      </button>
+      <Button type="submit" loading={submitting} className="mt-3 w-full">
+        {submitting ? 'Signing in…' : 'Sign in'}
+      </Button>
       {open && (
         <FloatingPortal>
           <div

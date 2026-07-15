@@ -13,6 +13,7 @@ import {
   useListNavigation,
   useRole,
 } from '@floating-ui/react'
+import { LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { providerFromUrl } from '@onrepeat/core'
@@ -39,10 +40,14 @@ const validatedInputCls = inputClassName('w-full user-invalid:border-red-600')
  *  in the input; ↑/↓ move the active option, Enter selects, Esc/outside dismisses). */
 export function TrackPicker({
   onContentChange,
+  onBusyChange,
 }: {
   /** Fires whenever the picker gains/loses input: a track is selected, or the
    *  search/URL field is non-empty. Lets the parent form drive a dirty guard. */
   onContentChange?: (hasContent: boolean) => void
+  /** Fires as a link lookup starts/settles, so the parent form can hold its
+   *  submit button while the track is still resolving. */
+  onBusyChange?: (busy: boolean) => void
 } = {}) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackCandidate[]>([])
@@ -123,6 +128,10 @@ export function TrackPicker({
   useEffect(() => {
     onContentChange?.(selected != null || query.trim().length > 0)
   }, [selected, query, onContentChange])
+
+  useEffect(() => {
+    onBusyChange?.(busy)
+  }, [busy, onBusyChange])
 
   // The bare search field isn't a named/required input, so "no track chosen" can't be a
   // field constraint. Mark it invalid with a custom message while no track is committed, so
@@ -386,10 +395,11 @@ export function TrackPicker({
           </p>
           {busy && (
             <p
-              className="mt-2 text-sm text-muted"
+              className="mt-2 flex items-center gap-2 text-sm text-muted"
               role="status"
               aria-live="polite"
             >
+              <LoaderCircle size={16} aria-hidden className="animate-spin" />
               Looking up link…
             </p>
           )}
