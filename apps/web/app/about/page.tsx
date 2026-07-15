@@ -74,7 +74,8 @@ export default function AboutPage() {
           </h3>
           <p>
             Apple Music, YouTube and YouTube Music, Bandcamp, SoundCloud, TIDAL,
-            and Spotify. Paste a track link and onrepeat.fm figures out the
+            and Spotify. Search for a song right in the post form, or paste a
+            track link from any of them &mdash; onrepeat.fm figures out the
             rest, embedding playback straight from the service.
           </p>
         </section>
