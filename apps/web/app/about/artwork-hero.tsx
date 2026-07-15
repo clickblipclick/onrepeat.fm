@@ -1,5 +1,5 @@
 import { getRecentArtwork, type RecentArtwork } from '@onrepeat/appview'
-import { defaultThemeForDid, resolveTheme } from '@onrepeat/core'
+import { defaultThemeForDid } from '@onrepeat/core'
 
 import { cardPattern } from '@/lib/card-pattern'
 import { db } from '@/lib/db'
@@ -70,10 +70,9 @@ export async function ArtworkHero() {
         />,
       )
     } else {
-      const donor = art.length > 0 ? art[slot % art.length] : undefined
-      const theme = donor
-        ? resolveTheme(donor.colorTheme, donor.authorDid)
-        : defaultThemeForDid(`tile-${slot}`)
+      // Theme by slot hash, not by artwork author — when recent jams come from
+      // few authors, author themes collapse the whole strip to one color.
+      const theme = defaultThemeForDid(`tile-${slot}`)
       // Deterministic pseudo-random look per slot (no RNG — the server render
       // must be stable): every so often a solid accent tile, otherwise a bold
       // patterned one.
