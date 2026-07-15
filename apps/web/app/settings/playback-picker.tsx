@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { CROSS_RESOLVED_PROVIDERS } from '@onrepeat/core'
+
 import { cn } from '@/lib/cn'
 import { LABELS } from '@/lib/embed'
 import {
@@ -29,14 +31,33 @@ export function PlaybackPicker({
     setSelected(provider)
   }
 
-  const options: { value: PlaybackProvider | null; label: string }[] = [
-    { value: null, label: 'Automatic' },
-    ...VALID_PROVIDERS.map((p) => ({ value: p, label: LABELS[p] ?? p })),
+  // Each card states its honest reach: only cross-resolved services can win on
+  // jams from other sources; the rest only ever match jams posted from them.
+  const options: {
+    value: PlaybackProvider | null
+    label: string
+    note: string
+  }[] = [
+    {
+      value: null,
+      label: 'Automatic',
+      note: 'The service each jam was posted from',
+    },
+    ...VALID_PROVIDERS.map((p) => {
+      const label = LABELS[p] ?? p
+      return {
+        value: p,
+        label,
+        note: CROSS_RESOLVED_PROVIDERS.has(p)
+          ? 'Most jams'
+          : `Jams posted from ${label}`,
+      }
+    }),
   ]
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      {options.map(({ value, label }) => {
+      {options.map(({ value, label, note }) => {
         const isSelected = value === selected
         return (
           <button
@@ -53,10 +74,7 @@ export function PlaybackPicker({
             )}
           >
             <span className="text-sm font-bold text-ink">{label}</span>
-            <span className="text-xs text-muted">
-              {/* nbsp: a plain space collapses to a 0-height line, shrinking unselected cards */}
-              {isSelected ? 'current' : ' '}
-            </span>
+            <span className="text-xs text-muted">{note}</span>
           </button>
         )
       })}

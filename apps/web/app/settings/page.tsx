@@ -38,9 +38,10 @@ export default async function SettingsPage() {
       <section className="mt-8">
         <h2 className="font-bold">Playback service</h2>
         <p className="mt-1 mb-3 text-sm text-muted">
-          Which music service jams play in by default, on this device. Picking
-          a service from a jam&apos;s &ldquo;via&hellip;&rdquo; menu changes
-          this too.
+          Which music service jams play in by default, on this device. Most jams
+          can play on Apple Music or YouTube; other services only apply to jams
+          posted from them. Picking a service from a jam&apos;s
+          &ldquo;via&hellip;&rdquo; menu changes this too.
         </p>
         <PlaybackPicker current={playback} />
       </section>
