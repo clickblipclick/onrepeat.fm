@@ -7,6 +7,7 @@ import {
   getFollowingDids,
   getFollowRecord,
   getLatest,
+  getRecentArtwork,
   isFollowing,
   loadJamsByUris,
 } from './read'
@@ -390,6 +391,109 @@ describe('follow reads', () => {
     expect((await getFollowRecord(db, 'did:plc:a', 'did:plc:b'))?.uri).toBe(
       'at://did:plc:a/x/1',
     )
+  })
+})
+
+describe('getRecentArtwork', () => {
+  beforeAll(async () => {
+    const { error } = await createMigrator(db).migrateToLatest()
+    if (error) throw error
+  })
+  beforeEach(async () => {
+    await db.deleteFrom('likes').execute()
+    await db.deleteFrom('jams').execute()
+    await db.deleteFrom('tracks').execute()
+    await db.deleteFrom('actors').execute()
+  })
+  afterAll(async () => {
+    await db.deleteFrom('likes').execute()
+    await db.deleteFrom('jams').execute()
+    await db.deleteFrom('tracks').execute()
+    await db.deleteFrom('actors').execute()
+  })
+
+  it('returns newest-first distinct artwork with the author theme, skipping artless jams and inactive authors', async () => {
+    await db
+      .insertInto('actors')
+      .values([
+        { did: 'did:plc:themed', status: 'active', color_theme: 'plum' },
+        { did: 'did:plc:gone', status: 'deactivated', color_theme: 'teal' },
+      ])
+      .execute()
+    await db
+      .insertInto('tracks')
+      .values({
+        id: 't1',
+        title: 'T',
+        artist: 'A',
+        artwork_url: 'https://art/track.jpg',
+        cdn_artwork_url: 'https://cdn/track.jpg',
+        provider_refs: JSON.stringify({}),
+        resolution_status: 'resolved',
+      })
+      .execute()
+    // newest: resolved track → cdn artwork wins; author has a stored theme
+    await insertJam({
+      uri: 'at://did:plc:themed/fm.onrepeat.feed.jam/1',
+      did: 'did:plc:themed',
+      createdAt: '2026-05-30T03:00:00.000Z',
+      trackId: 't1',
+    })
+    // raw artwork fallback; author has no actors row (theme null)
+    await insertJam({
+      uri: 'at://did:plc:raw/fm.onrepeat.feed.jam/1',
+      did: 'did:plc:raw',
+      createdAt: '2026-05-30T02:00:00.000Z',
+      artworkUrl: 'https://art/raw.jpg',
+    })
+    // duplicate URL of the raw one — must be deduped
+    await insertJam({
+      uri: 'at://did:plc:raw/fm.onrepeat.feed.jam/2',
+      did: 'did:plc:raw',
+      createdAt: '2026-05-30T01:30:00.000Z',
+      artworkUrl: 'https://art/raw.jpg',
+    })
+    // no artwork anywhere — skipped
+    await insertJam({
+      uri: 'at://did:plc:artless/fm.onrepeat.feed.jam/1',
+      did: 'did:plc:artless',
+      createdAt: '2026-05-30T01:00:00.000Z',
+    })
+    // deactivated author — skipped
+    await insertJam({
+      uri: 'at://did:plc:gone/fm.onrepeat.feed.jam/1',
+      did: 'did:plc:gone',
+      createdAt: '2026-05-30T00:30:00.000Z',
+      artworkUrl: 'https://art/gone.jpg',
+    })
+
+    const art = await getRecentArtwork(db, 10)
+    expect(art).toEqual([
+      {
+        artworkUrl: 'https://cdn/track.jpg',
+        authorDid: 'did:plc:themed',
+        colorTheme: 'plum',
+      },
+      {
+        artworkUrl: 'https://art/raw.jpg',
+        authorDid: 'did:plc:raw',
+        colorTheme: null,
+      },
+    ])
+  })
+
+  it('caps results at the limit', async () => {
+    for (let i = 0; i < 5; i++) {
+      await insertJam({
+        uri: `at://did:plc:a/fm.onrepeat.feed.jam/${i}`,
+        did: 'did:plc:a',
+        createdAt: `2026-05-30T00:0${i}:00.000Z`,
+        artworkUrl: `https://art/${i}.jpg`,
+      })
+    }
+    const art = await getRecentArtwork(db, 3)
+    expect(art).toHaveLength(3)
+    expect(art[0]!.artworkUrl).toBe('https://art/4.jpg') // newest first
   })
 })
 

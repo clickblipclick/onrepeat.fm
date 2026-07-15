@@ -64,11 +64,17 @@ export default async function LoginPage({
         </a>
       </p>
       <p className="mt-6 text-xs text-muted">
-        <Link href="/terms" className="hover:text-accent">
+        <Link
+          href="/terms"
+          className="underline underline-offset-2 hover:text-accent"
+        >
           Terms
         </Link>
         {' · '}
-        <Link href="/privacy" className="hover:text-accent">
+        <Link
+          href="/privacy"
+          className="underline underline-offset-2 hover:text-accent"
+        >
           Privacy
         </Link>
       </p>
