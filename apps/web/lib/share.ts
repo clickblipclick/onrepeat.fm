@@ -26,17 +26,18 @@ export function titleFontSize(title: string): number {
   return 38
 }
 
-/** Web Share API payload. Share targets are inconsistent about which fields they
- *  consume — Bluesky (and other iOS share extensions) read only `text` and drop
- *  the standalone `url`, so the link is embedded in `text` too. Targets that do
- *  honor `url` still get it for rich handling (previews, Reading List). */
-export function buildShareData(args: {
+/** Compose text for sharing a jam — the link rides in the text because Bluesky's
+ *  compose intent takes a single `text` param and linkifies URLs itself. */
+export function buildShareText(args: {
   title: string
   artist: string
   url: string
-}): { title: string; text: string; url: string } {
-  const label = `🔁 ${args.title} — ${args.artist}`
-  return { title: label, text: `${label}\n${args.url}`, url: args.url }
+}): string {
+  return `🔁 ${args.title} — ${args.artist}\n${args.url}`
+}
+
+export function blueskyComposeUrl(text: string): string {
+  return `https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`
 }
 
 /** OG/Twitter text fields (rendered by the platform, not baked into the image). */

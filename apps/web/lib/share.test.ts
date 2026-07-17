@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { ThemeName } from '@onrepeat/core'
 
 import {
+  blueskyComposeUrl,
   buildJamOgMeta,
-  buildShareData,
+  buildShareText,
   themeAccent,
   titleFontSize,
 } from './share'
@@ -36,20 +37,27 @@ describe('titleFontSize', () => {
   })
 })
 
-describe('buildShareData', () => {
-  it('builds Web Share API payload with title, text, and url', () => {
-    const d = buildShareData({
+describe('buildShareText', () => {
+  it('builds compose text with the link on its own line', () => {
+    const text = buildShareText({
       title: 'Such Great Heights',
       artist: 'The Postal Service',
       url: 'https://onrepeat.fm/profile/ben/jam/abc',
     })
-    expect(d.url).toBe('https://onrepeat.fm/profile/ben/jam/abc')
-    expect(d.title).toContain('🔁')
-    expect(d.title).toContain('Such Great Heights — The Postal Service')
-    expect(d.text).toContain('Such Great Heights — The Postal Service')
-    // Some share targets (Bluesky among them) only consume `text` and drop the
-    // separate `url` field, so the link must be embedded in the text itself.
-    expect(d.text).toContain('https://onrepeat.fm/profile/ben/jam/abc')
+    expect(text).toBe(
+      '🔁 Such Great Heights — The Postal Service\nhttps://onrepeat.fm/profile/ben/jam/abc',
+    )
+  })
+})
+
+describe('blueskyComposeUrl', () => {
+  it('URL-encodes the text into the compose intent', () => {
+    const url = blueskyComposeUrl('🔁 Song — Artist\nhttps://onrepeat.fm/x')
+    expect(url.startsWith('https://bsky.app/intent/compose?text=')).toBe(true)
+    const parsed = new URL(url)
+    expect(parsed.searchParams.get('text')).toBe(
+      '🔁 Song — Artist\nhttps://onrepeat.fm/x',
+    )
   })
 })
 
