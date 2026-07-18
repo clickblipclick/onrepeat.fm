@@ -13,16 +13,16 @@
   "dependencies": {
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
-    "@onrepeat/music": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
+    "@onrepeat/music": "workspace:*",
     "@onrepeat/service": "workspace:*",
     "@onrepeat/storage": "workspace:*",
-    "kysely": "^0.29.0",
-    "pg-boss": "^12.25.1"
+    "kysely": "^0.29.4",
+    "pg-boss": "^12.26.1"
   },
   "devDependencies": {
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   }
 }

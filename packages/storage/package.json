@@ -9,8 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@onrepeat/core": "workspace:*",
-    "@aws-sdk/client-s3": "^3.1079.0"
+    "@aws-sdk/client-s3": "^3.1090.0",
+    "@onrepeat/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
