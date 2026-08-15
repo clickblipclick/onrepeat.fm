@@ -9,11 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.25",
+    "@atproto/api": "^0.20.39",
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
-    "kysely": "^0.29.0",
-    "lru-cache": "^11.5.1"
+    "kysely": "^0.29.5",
+    "lru-cache": "^11.5.2"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
