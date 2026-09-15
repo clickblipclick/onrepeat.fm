@@ -1,5 +1,13 @@
 import { JoseKey } from '@atproto/jwk-jose'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from 'vitest'
 
 import { createOAuthClient } from './client'
 
@@ -104,7 +112,7 @@ describe('createOAuthClient', () => {
   })
 
   describe('requestLock forwarding', () => {
-    let warn: ReturnType<typeof vi.spyOn>
+    let warn: MockInstance<typeof console.warn>
     beforeEach(() => {
       warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     })
