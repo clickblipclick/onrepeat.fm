@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, type Mock } from 'vitest'
 
 import type { ActorProfile } from './bsky'
 import { getCachedProfiles, type ProfileCacheDeps } from './profile-cache'
@@ -16,16 +16,17 @@ function deps(
     cache?: Map<string, CachedActorProfile>
   } = {},
 ): ProfileCacheDeps & {
-  fetch: ReturnType<typeof vi.fn>
-  save: ReturnType<typeof vi.fn>
+  fetch: Mock<ProfileCacheDeps['fetch']>
+  save: Mock<ProfileCacheDeps['save']>
 } {
   const cache = over.cache ?? new Map()
   return {
     load: over.load ?? vi.fn(async () => cache),
     fetch:
-      (over.fetch as ReturnType<typeof vi.fn>) ??
+      (over.fetch as Mock<ProfileCacheDeps['fetch']>) ??
       vi.fn(async (dids: string[]) => new Map(dids.map((d) => [d, prof(d)]))),
-    save: (over.save as ReturnType<typeof vi.fn>) ?? vi.fn(async () => {}),
+    save:
+      (over.save as Mock<ProfileCacheDeps['save']>) ?? vi.fn(async () => {}),
     ttlMs: over.ttlMs ?? TTL,
     now: over.now ?? (() => NOW),
   }
