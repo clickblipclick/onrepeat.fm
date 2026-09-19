@@ -18,11 +18,11 @@
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
     "@onrepeat/storage": "workspace:*",
-    "kysely": "^0.29.5",
-    "pg-boss": "^12.27.0"
+    "kysely": "^0.29.6",
+    "pg-boss": "^12.32.0"
   },
   "devDependencies": {
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
