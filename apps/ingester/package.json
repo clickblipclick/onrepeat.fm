@@ -9,16 +9,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/identity": "^0.5.9",
-    "@atproto/sync": "^0.4.3",
+    "@atproto/identity": "^0.5.13",
+    "@atproto/sync": "^0.4.10",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
-    "kysely": "^0.29.5"
+    "kysely": "^0.29.6"
   },
   "devDependencies": {
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
