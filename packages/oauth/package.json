@@ -9,11 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto-labs/fetch-node": "^0.3.7",
+    "@atproto-labs/fetch-node": "^0.4.0",
     "@atproto/jwk-jose": "^0.2.4",
-    "@atproto/oauth-client-node": "^0.5.3",
+    "@atproto/oauth-client-node": "^0.5.7",
     "@onrepeat/db": "workspace:*",
-    "kysely": "^0.29.5"
+    "kysely": "^0.29.6"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

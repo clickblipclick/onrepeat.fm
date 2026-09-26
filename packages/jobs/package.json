@@ -12,7 +12,7 @@
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
-    "pg-boss": "^12.27.0"
+    "pg-boss": "^12.33.7"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
