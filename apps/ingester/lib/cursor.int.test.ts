@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createDb, createMigrator } from '@onrepeat/db'
 
-import { loadCursorState, saveCursor } from './cursor'
+import { loadCursorState, loadCursorStates, saveCursor } from './cursor'
 
 const loadCursor = async (service: string): Promise<number | undefined> =>
   (await loadCursorState(db, service))?.cursor
@@ -52,5 +52,18 @@ describe('cursor persistence', () => {
     expect(state?.cursor).toBe(99)
     expect(state!.updatedAt.getTime()).toBeGreaterThanOrEqual(before - 1000)
     expect(state!.updatedAt.getTime()).toBeLessThanOrEqual(Date.now() + 1000)
+  })
+
+  it('loadCursorStates returns the firehose and jetstream:* rows, freshest first, and nothing else', async () => {
+    await saveCursor(db, 'firehose', 100)
+    await saveCursor(db, 'jetstream:jetstream.us-west.bsky.network', 200)
+    await saveCursor(db, 'resolver', 300)
+    const rows = await loadCursorStates(db)
+    expect(rows.map((r) => r.service)).toEqual([
+      'jetstream:jetstream.us-west.bsky.network',
+      'firehose',
+    ])
+    expect(rows[0]!.cursor).toBe(200)
+    expect(rows[1]!.updatedAt).toBeInstanceOf(Date)
   })
 })

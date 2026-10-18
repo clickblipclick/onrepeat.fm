@@ -1,6 +1,6 @@
 # onrepeat.fm
 
-The song you've got on repeat. Post the single track you're into right now — it expires after a week — and follow people to see what they're currently playing. Built natively on the [AT Protocol](https://atproto.com): jam/like records live in each user's own PDS, and we run an AppView that ingests the firehose, resolves cross-platform play links, and serves the feeds.
+The song you've got on repeat. Post the single track you're into right now — it expires after a week — and follow people to see what they're currently playing. Built natively on the [AT Protocol](https://atproto.com): jam/like records live in each user's own PDS, and we run an AppView that ingests the network's event stream, resolves cross-platform play links, and serves the feeds.
 
 ## Stack
 
@@ -38,7 +38,7 @@ This writes local index rows only — nothing is pushed to anyone's PDS, and you
 | ------------------------------- | ------------------------------------------------------------- |
 | `pnpm setup`                    | One-time bootstrap (install, env files, migrate)              |
 | `pnpm dev`                      | Run **all** services concurrently (web · ingester · resolver) |
-| `pnpm dev:web`                  | Just the Next.js app (for UI work — no firehose/resolver)     |
+| `pnpm dev:web`                  | Just the Next.js app (for UI work — no ingester/resolver)     |
 | `pnpm dev:services`             | Just the ingester + resolver                                  |
 | `pnpm db:up` / `pnpm db:down`   | Start / stop the Docker Postgres                              |
 | `pnpm db:migrate`               | Apply migrations (defaults to `localhost:5432/onrepeat_test`) |
@@ -51,11 +51,11 @@ The three services each auto-load their own `apps/<app>/.env.local`; see the mat
 
 ## Services
 
-| App             | Role                                                                                                            |
-| --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `apps/web`      | Next.js UI + JSON read API + OAuth login / write actions                                                        |
-| `apps/ingester` | Consumes the atproto firehose → indexes `fm.onrepeat.jam` / `like` into Postgres                                |
-| `apps/resolver` | pg-boss worker → resolves tracks to cross-platform links via iTunes/Apple + YouTube; Bandcamp jams embed inline |
+| App             | Role                                                                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web`      | Next.js UI + JSON read API + OAuth login / write actions                                                                               |
+| `apps/ingester` | Consumes Jetstream v2 (server-filtered atproto event stream) → indexes `fm.onrepeat.*` jams, likes, profiles and follows into Postgres |
+| `apps/resolver` | pg-boss worker → resolves tracks to cross-platform links via iTunes/Apple + YouTube; Bandcamp jams embed inline                        |
 
 **Resolver API keys** — cross-resolution uses the iTunes/Apple Search API, which is **keyless and always on** — no credentials required. Bandcamp jams embed inline with no key either. YouTube cross-links are optional: get a free **YouTube Data API v3** key from [Google Cloud Console](https://console.cloud.google.com) and add it to `apps/resolver/.env.local`:
 

@@ -7,11 +7,16 @@ import {
 import type { JamRecord } from '@onrepeat/lexicons'
 import { onShutdown, requireEnv } from '@onrepeat/service'
 
-import { createIngester } from './firehose'
+import { createIngester, DEFAULT_JETSTREAM_URL } from './jetstream'
+import { parseStartCursorOverride } from './start-cursor'
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv('DATABASE_URL')
-  const relay = process.env.RELAY_URL ?? 'wss://bsky.network'
+  const service = process.env.JETSTREAM_URL ?? DEFAULT_JETSTREAM_URL
+  // Recovery escape hatch (a seq, or a unix-µs timestamp); rejected loudly if malformed.
+  const startCursor = parseStartCursorOverride(
+    process.env.INGESTER_START_CURSOR,
+  )
 
   const db = createDb(databaseUrl)
   const boss = createBoss(databaseUrl)
@@ -20,9 +25,10 @@ async function main(): Promise<void> {
 
   const ingester = await createIngester({
     db,
-    relay,
+    service,
     // Dev convenience: tail the live head instead of replaying from a stale cursor.
     liveTail: process.env.INGESTER_LIVE_TAIL === '1',
+    startCursor,
     hooks: {
       onJamIndexed: (evt) =>
         enqueueResolveForJam(boss, db, {
@@ -38,8 +44,9 @@ async function main(): Promise<void> {
     await db.destroy()
   })
 
-  // start() kicks off the firehose subscription and returns immediately; the process
-  // stays alive via the open WebSocket. Errors during the stream go to onError, not here.
+  // start() kicks off the Jetstream subscription and returns immediately; the process
+  // stays alive via the open WebSocket. Errors during the stream are logged by the
+  // subscription loop (which reconnects on its own), not surfaced here.
   await ingester.start()
 }
 

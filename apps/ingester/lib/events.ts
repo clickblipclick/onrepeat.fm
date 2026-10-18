@@ -1,4 +1,5 @@
-import type { Event } from '@atproto/sync'
+import { jsonToLex } from '@atproto/lexicon'
+import type { RawEvent, RawRecordJson } from '@bsky/jetstream'
 
 import type { ActorStatus, FailedEventInput } from '@onrepeat/db'
 import {
@@ -50,50 +51,71 @@ const KNOWN_INACTIVE: readonly ActorStatus[] = [
   'deleted',
 ]
 
-/** Normalize an @atproto/sync Event into an IngestEvent, or null if we ignore it. */
-export function toIngestEvent(evt: Event): IngestEvent | null {
-  if (evt.event === 'account') {
-    if (evt.active) {
-      return { action: 'account', did: evt.did, status: 'active', seq: evt.seq }
-    }
-    // The status vocabulary is open (relays already emit values like
-    // 'desynchronized'); treat anything unknown as a generic reversible
-    // deactivation rather than failing the event.
-    const status = (KNOWN_INACTIVE as readonly string[]).includes(
-      evt.status ?? '',
-    )
-      ? (evt.status as ActorStatus)
-      : 'deactivated'
-    return { action: 'account', did: evt.did, status, seq: evt.seq }
-  }
-  if (
-    evt.event !== 'create' &&
-    evt.event !== 'update' &&
-    evt.event !== 'delete'
-  ) {
-    return null // identity / sync — not indexed
-  }
-  if (!isIngestCollection(evt.collection)) return null
+/**
+ * Map an upstream account event onto our actor status. The status vocabulary is
+ * open (relays already emit values like 'desynchronized'); anything unknown is
+ * treated as a generic reversible deactivation rather than failing the event.
+ */
+function accountStatus(
+  active: boolean,
+  status: string | undefined,
+): ActorStatus {
+  if (active) return 'active'
+  return (KNOWN_INACTIVE as readonly string[]).includes(status ?? '')
+    ? (status as ActorStatus)
+    : 'deactivated'
+}
 
-  if (evt.event === 'delete') {
+/** A Jetstream v2 live event as the SDK yields it in `raw: true` mode. */
+export type JetstreamEvent = RawEvent<RawRecordJson>
+
+/**
+ * Wire JSON → lex data (`{$link}` → CID, `{$bytes}` → Uint8Array, blob refs →
+ * BlobRef), so `validateRecord` sees the same shapes the CAR-decoded firehose
+ * path produced. A value that cannot be converted (not a record at all) is passed
+ * through unchanged for the lexicon validator to reject.
+ */
+function lexRecord(record: unknown): unknown {
+  try {
+    return jsonToLex(record as Parameters<typeof jsonToLex>[0])
+  } catch {
+    return record
+  }
+}
+
+/** Normalize a Jetstream event into an IngestEvent, or null if we ignore it. */
+export function toIngestEvent(evt: JetstreamEvent): IngestEvent | null {
+  if (evt.kind === 'account') {
+    return {
+      action: 'account',
+      did: evt.did,
+      status: accountStatus(evt.account.active, evt.account.status),
+      seq: evt.seq,
+    }
+  }
+  if (evt.kind !== 'commit') return null // identity / sync — not indexed
+  const { commit } = evt
+  if (!isIngestCollection(commit.collection)) return null
+
+  const uri = `at://${evt.did}/${commit.collection}/${commit.rkey}`
+  if (commit.operation === 'delete') {
     return {
       action: 'delete',
-      uri: evt.uri.toString(),
+      uri,
       cid: null,
       did: evt.did,
-      collection: evt.collection,
+      collection: commit.collection,
       record: undefined,
       seq: evt.seq,
     }
   }
-
   return {
-    action: evt.event,
-    uri: evt.uri.toString(),
-    cid: evt.cid.toString(),
+    action: commit.operation,
+    uri,
+    cid: commit.cid,
     did: evt.did,
-    collection: evt.collection,
-    record: evt.record,
+    collection: commit.collection,
+    record: lexRecord(commit.record),
     seq: evt.seq,
   }
 }
