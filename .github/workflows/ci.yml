@@ -80,3 +80,75 @@ jobs:
         run: pnpm test:int
         env:
           DATABASE_URL_INTTEST: postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest
+
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: onrepeat
+          POSTGRES_PASSWORD: onrepeat
+          POSTGRES_DB: onrepeat_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U onrepeat"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        run: pnpm --filter @onrepeat/web build
+        env:
+          # See the `check` job: the build only needs DATABASE_URL to be present.
+          DATABASE_URL: postgres://build:build@127.0.0.1:5999/build
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Smoke tests
+        run: pnpm exec playwright test -c apps/web/smoke
+        env:
+          DATABASE_URL_INTTEST: postgres://onrepeat:onrepeat@localhost:5432/onrepeat_inttest
+
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-traces
+          path: apps/web/test-results
+          retention-days: 7
+          if-no-files-found: ignore

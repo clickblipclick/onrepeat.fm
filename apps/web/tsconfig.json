@@ -23,6 +23,6 @@
     "module": "esnext",
     "isolatedModules": true
   },
-  "include": ["app", "lib", "next-env.d.ts", ".next/types/**/*.ts"],
+  "include": ["app", "lib", "smoke", "next-env.d.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

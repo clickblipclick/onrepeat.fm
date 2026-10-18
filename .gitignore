@@ -10,3 +10,6 @@ dist/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+
+# Playwright smoke-test output (traces on failure)
+test-results/

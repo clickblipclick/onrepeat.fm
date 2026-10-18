@@ -45,6 +45,8 @@ export interface BskyClient {
 
 export interface BskyClientOptions {
   agent?: BskyAgentLike
+  /** AppView base URL for the default agent. Defaults to the public Bluesky AppView. */
+  service?: string
   profileTtlMs?: number
   /** Max cached profiles (small fixed-size objects) before LRU eviction. Default 50_000. */
   profileCacheMax?: number
@@ -61,7 +63,7 @@ const PUBLIC_API = 'https://public.api.bsky.app'
 
 export function createBskyClient(opts: BskyClientOptions = {}): BskyClient {
   const agent: BskyAgentLike =
-    opts.agent ?? new AtpAgent({ service: PUBLIC_API })
+    opts.agent ?? new AtpAgent({ service: opts.service || PUBLIC_API })
   const profileTtl = opts.profileTtlMs ?? 30 * 60_000
 
   // The maps these replace were unbounded — every DID/handle ever looked up stayed

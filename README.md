@@ -45,6 +45,7 @@ This writes local index rows only — nothing is pushed to anyone's PDS, and you
 | `pnpm seed` / `pnpm seed:clean` | Add / remove sample dev data (local index only)               |
 | `pnpm test`                     | Unit tests                                                    |
 | `pnpm test:int`                 | Integration tests (needs Postgres on :5432)                   |
+| `pnpm test:smoke`               | Logged-out browser smoke tests (builds web; needs Postgres)   |
 | `pnpm typecheck`                | Workspace-wide `tsc --noEmit`                                 |
 
 The three services each auto-load their own `apps/<app>/.env.local`; see the matching `.env.example` for the keys.
@@ -101,3 +102,5 @@ The `fm.onrepeat.*` lexicons are published on the network as `com.atproto.lexico
 Unit tests run with `pnpm test`.
 
 Integration tests (`pnpm test:int`) need Postgres on `:5432` (`pnpm db:up` or Postgres.app). They **truncate tables**, so they run against a **dedicated `onrepeat_inttest` database** — created automatically on first run and kept separate from the dev/app DB (`onrepeat_test`), which they never touch. Override the target with `DATABASE_URL_INTTEST`; a guard refuses to run if it ever resolves to `onrepeat_test`.
+
+Smoke tests (`pnpm test:smoke`) build `apps/web`, start it in production mode against that same `onrepeat_inttest` database (migrated and reseeded with one profile and a couple of jams), and drive the logged-out routes in headless Chromium with [Playwright](https://playwright.dev) — pages, API routes, the OG image, OAuth metadata — checking that the seeded content renders and nothing errors in the browser console or the server log. Handle lookups go to a local stand-in for the public Bluesky AppView (`BSKY_PUBLIC_API_URL`), so no network is needed. First run: `pnpm exec playwright install chromium` (on Linux, `--with-deps` to pull in the system libraries too). To reuse an existing build, run `pnpm exec playwright test -c apps/web/smoke` directly; the server listens on `127.0.0.1:3456` (`SMOKE_PORT` to change it). Signed-in flows are out of scope — they need a real PDS.
