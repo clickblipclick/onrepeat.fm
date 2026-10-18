@@ -218,8 +218,9 @@ export async function createIngester(
     ...opts.deps,
   }
 
-  const rows =
-    liveTail || opts.startCursor !== undefined ? [] : await deps.loadRows()
+  // Rows are loaded even under an override: they are the fallback basis if the
+  // override itself is rejected (see fallbackCursor).
+  const rows = liveTail ? [] : await deps.loadRows()
   const start = resolveStartCursor({
     liveTail,
     override: opts.startCursor,
@@ -229,9 +230,18 @@ export async function createIngester(
   })
   logStart(start, serviceKey)
 
-  // Wall-clock time of the freshest position we know. Feeds the timestamp-form
-  // cursor used when a seq is rejected as too old (see run()).
-  let lastAdvancedAt: number | undefined = start.from?.updatedAt.getTime()
+  // Positions the timestamp-form fallback can be built from, best first:
+  //  - the wire `time` of the last contiguously-completed event (exact, no clock
+  //    assumptions — survives a rejection that lands mid-backlog);
+  //  - failing that, the freshest stored row's wall-clock `updated_at` (only valid
+  //    if that row was written at the live head — the documented cutover caveat).
+  const pendingEventTimes = new Map<number, number>()
+  let lastCompletedEventTime: number | undefined
+  const freshestRow = rows.reduce<CursorRow | undefined>(
+    (best, r) => (!best || r.updatedAt > best.updatedAt ? r : best),
+    undefined,
+  )
+  const storedBasisTime = (start.from ?? freshestRow)?.updatedAt.getTime()
   let useTimestampForm = false
 
   const cursorWriter = makeThrottledCursorWriter(
@@ -245,28 +255,39 @@ export async function createIngester(
     startCursor: start.cursor,
     concurrency: opts.concurrency ?? DEFAULT_CONCURRENCY,
     setCursor: async (seq) => {
-      lastAdvancedAt = deps.now()
+      const t = pendingEventTimes.get(seq)
+      if (t !== undefined) lastCompletedEventTime = t
+      // Delivery order is ascending seq, so everything at or before `seq` is done.
+      for (const k of pendingEventTimes.keys()) {
+        if (k > seq) break
+        pendingEventTimes.delete(k)
+      }
       cursorWriter.record(seq)
     },
   })
 
+  const currentCursor = (): number | undefined =>
+    runner.getCursor() ?? start.cursor
+
   const fallbackCursor = (): number | undefined => {
-    if (lastAdvancedAt === undefined) {
-      console.warn(
-        '[ingester] no known position to fall back to; reconnecting at the live head',
+    const current = currentCursor()
+    // A timestamp is never "too old" in the 400 sense (the server clamps it and
+    // advises), so a rejected timestamp — e.g. an operator override — is retried as is.
+    if (current !== undefined && isTimestampCursor(current)) return current
+    const basis = lastCompletedEventTime ?? storedBasisTime
+    if (basis === undefined) {
+      console.error(
+        '[ingester] no known position to fall back to; reconnecting at the live head — events between the rejected cursor and now are LOST',
       )
       return undefined
     }
-    return timestampCursor(new Date(lastAdvancedAt))
+    return timestampCursor(new Date(basis))
   }
 
   // live() only ever loads from this store (persistence is ours, above). Serving
   // the runner's cursor here also makes our own restart loop resume correctly.
   const cursorStore: CursorStore = {
-    load: async () =>
-      useTimestampForm
-        ? fallbackCursor()
-        : (runner.getCursor() ?? start.cursor),
+    load: async () => (useTimestampForm ? fallbackCursor() : currentCursor()),
     save: async () => {},
   }
 
@@ -289,13 +310,17 @@ export async function createIngester(
 
   // A below-retention *seq* is refused at the websocket handshake (HTTP 400) and the
   // SDK gives up — no advisory is ever sent. A too-old *timestamp*, by contrast, is
-  // clamped with an OutdatedCursor advisory. So after any rejected connect we retry
-  // with the timestamp form of the last known position: a cursor-too-old rejection
-  // then resolves loudly instead of looping forever, and any other fatal error keeps
-  // failing under a capped backoff — never silent, never tight.
+  // clamped with an OutdatedCursor advisory. So when a connect is rejected before
+  // delivering anything, the next attempt uses the timestamp form of the last known
+  // position: a cursor-too-old rejection then resolves loudly instead of looping
+  // forever, and any other fatal error keeps failing under a capped backoff — never
+  // silent, never tight. A rejection that lands mid-stream retries the seq itself:
+  // the server was serving it moments ago, so it cannot be too old, and a backlog
+  // replay must never be abandoned for the wall clock.
   async function run(signal: AbortSignal): Promise<void> {
     let attempt = 0
     while (!signal.aborted) {
+      let delivered = false
       try {
         for await (const evt of deps.source({
           cursor: cursorStore,
@@ -303,10 +328,14 @@ export async function createIngester(
           onError,
           onInfo,
         })) {
+          delivered = true
           attempt = 0
-          useTimestampForm = false
           const ingestEvt = toIngestEvent(evt)
           if (!ingestEvt) continue
+          const eventTime = Date.parse(evt.time)
+          if (Number.isFinite(eventTime)) {
+            pendingEventTimes.set(ingestEvt.seq, eventTime)
+          }
           void runner
             .trackEvent(ingestEvt.did, ingestEvt.seq, () =>
               deps.handle(ingestEvt),
@@ -319,13 +348,13 @@ export async function createIngester(
       } catch (err) {
         if (signal.aborted) return
         attempt += 1
-        useTimestampForm = true
+        useTimestampForm = !delivered
         const delay = Math.min(
           RECONNECT_BASE_MS * 2 ** (attempt - 1),
           RECONNECT_MAX_MS,
         )
         console.error(
-          `[ingester] jetstream connection rejected (attempt ${attempt}); retrying in ${delay}ms with a timestamp cursor`,
+          `[ingester] jetstream connection rejected (attempt ${attempt}); retrying in ${delay}ms with ${useTimestampForm ? 'a timestamp cursor' : 'the same seq'}`,
           err,
         )
         await deps.sleep(delay, signal)

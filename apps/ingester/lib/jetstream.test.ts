@@ -29,6 +29,8 @@ function jsCommit(p: {
   seq: number
   operation: 'create' | 'update' | 'delete'
   collection: string
+  /** Wire event time (RFC 3339); defaults to a non-parsable placeholder. */
+  time?: string
 }): JetstreamEvent {
   const did = p.did ?? 'did:plc:author'
   const commit =
@@ -46,7 +48,7 @@ function jsCommit(p: {
     kind: 'commit',
     did,
     seq: p.seq,
-    time: 't',
+    time: p.time ?? 't',
     commit,
   } as unknown as JetstreamEvent
 }
@@ -63,10 +65,14 @@ const noSleep = async (): Promise<void> => {}
 
 /**
  * A stand-in for Jetstream.live(): each call yields the next batch (or throws,
- * when the batch is a thrower), then stays open until the signal aborts — the
- * way a live websocket stream behaves.
+ * when the batch is a thrower; or yields its events and THEN throws, for a
+ * mid-stream rejection), then stays open until the signal aborts — the way a
+ * live websocket stream behaves.
  */
-type Batch = JetstreamEvent[] | (() => never)
+type Batch =
+  | JetstreamEvent[]
+  | (() => never)
+  | { events: JetstreamEvent[]; thenThrow: Error }
 function fakeSource(
   batches: Batch[],
   hooks: { beforeYield?: (o: LiveSourceOpts) => void } = {},
@@ -83,6 +89,10 @@ function fakeSource(
         return
       }
       hooks.beforeYield?.(opts)
+      if (!Array.isArray(batch)) {
+        for (const evt of batch.events) yield evt
+        throw batch.thenThrow
+      }
       for (const evt of batch) yield evt
       await new Promise<void>((resolve) => {
         if (opts.signal?.aborted) return resolve()
@@ -294,6 +304,163 @@ describe('createIngester (jetstream)', () => {
       expect.stringContaining('OutdatedCursor'),
       'clamped',
     )
+    err.mockRestore()
+  })
+
+  it('a rejection after delivered events retries with the seq, not a timestamp', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const persistCursor = vi.fn(async () => {})
+    const handle = vi.fn(async () => {})
+    const src = fakeSource([
+      {
+        events: [
+          jsCommit({ seq: 50, operation: 'create', collection: JAM_NSID }),
+        ],
+        thenThrow: new Error('mid-stream 429'),
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        handle,
+        persistCursor,
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(persistCursor).toHaveBeenCalledWith(50))
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBe(50)
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a rejection with nothing delivered falls back to the completed event time, not the wall clock', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const persistCursor = vi.fn(async () => {})
+    const eventTime = '2026-10-17T11:00:00.000Z'
+    const src = fakeSource([
+      {
+        events: [
+          jsCommit({
+            seq: 50,
+            operation: 'create',
+            collection: JAM_NSID,
+            time: eventTime,
+          }),
+        ],
+        thenThrow: new Error('mid-stream 429'),
+      },
+      () => {
+        throw new Error('Unexpected server response: 400')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        handle: async () => {},
+        persistCursor,
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(persistCursor).toHaveBeenCalledWith(50))
+    await vi.waitFor(() => expect(src.calls).toHaveLength(3))
+    expect(await src.calls[2]!.cursor!.load()).toBe(
+      (Date.parse(eventTime) - 60_000) * 1000,
+    )
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a rejected timestamp override is retried unchanged', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const override = 1792000000000000
+    const src = fakeSource([
+      () => {
+        throw new Error('Unexpected server response: 429')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      startCursor: override,
+      deps: {
+        source: src.source,
+        loadRows: async () => [],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBe(override)
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a rejected seq override falls back to the freshest stored row time', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const src = fakeSource([
+      () => {
+        throw new Error('Unexpected server response: 400')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      startCursor: 1,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row('firehose', 9, T - 5000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBe((T - 5000 - 60_000) * 1000)
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a fallback to the live head is logged at error level as a gap', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const src = fakeSource([
+      () => {
+        throw new Error('Unexpected server response: 400')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      liveTail: true,
+      deps: {
+        source: src.source,
+        persistCursor: async () => {},
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBeUndefined()
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('LOST'))
+    await ing.stop()
     err.mockRestore()
   })
 })
