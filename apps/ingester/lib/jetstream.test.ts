@@ -66,13 +66,15 @@ const noSleep = async (): Promise<void> => {}
 /**
  * A stand-in for Jetstream.live(): each call yields the next batch (or throws,
  * when the batch is a thrower; or yields its events and THEN throws, for a
- * mid-stream rejection), then stays open until the signal aborts — the way a
+ * mid-stream rejection; or yields its events and THEN ends, for a stream that
+ * closes on its own), then stays open until the signal aborts — the way a
  * live websocket stream behaves.
  */
 type Batch =
   | JetstreamEvent[]
   | (() => never)
   | { events: JetstreamEvent[]; thenThrow: Error }
+  | { events: JetstreamEvent[]; thenEnd: true }
 function fakeSource(
   batches: Batch[],
   hooks: { beforeYield?: (o: LiveSourceOpts) => void } = {},
@@ -91,7 +93,8 @@ function fakeSource(
       hooks.beforeYield?.(opts)
       if (!Array.isArray(batch)) {
         for (const evt of batch.events) yield evt
-        throw batch.thenThrow
+        if ('thenThrow' in batch) throw batch.thenThrow
+        return
       }
       for (const evt of batch) yield evt
       await new Promise<void>((resolve) => {
@@ -462,6 +465,66 @@ describe('createIngester (jetstream)', () => {
     expect(err).toHaveBeenCalledWith(expect.stringContaining('LOST'))
     await ing.stop()
     err.mockRestore()
+  })
+
+  it('reconnects with the same seq when the stream ends without an abort', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const sleep = vi.fn(async () => {})
+    const persistCursor = vi.fn(async () => {})
+    const src = fakeSource([
+      {
+        events: [
+          jsCommit({ seq: 50, operation: 'create', collection: JAM_NSID }),
+        ],
+        thenEnd: true,
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        handle: async () => {},
+        persistCursor,
+        now: () => T,
+        sleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(persistCursor).toHaveBeenCalledWith(50))
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(err).toHaveBeenCalledWith(
+      expect.stringContaining('stream ended unexpectedly'),
+    )
+    expect(sleep).toHaveBeenCalledWith(3000, expect.any(AbortSignal))
+    expect(await src.calls[1]!.cursor!.load()).toBe(50)
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('does not queue events delivered after stop() begins', async () => {
+    const handle = vi.fn(async () => {})
+    const gate = deferred() // holds the stream between seq 1 and seq 2
+    const source: LiveSource = () =>
+      (async function* () {
+        yield jsCommit({ seq: 1, operation: 'create', collection: JAM_NSID })
+        await gate.promise
+        yield jsCommit({ seq: 2, operation: 'create', collection: JAM_NSID })
+      })()
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      liveTail: true,
+      deps: { source, handle, persistCursor: async () => {}, sleep: noSleep },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1))
+    const stopping = ing.stop()
+    gate.resolve() // seq 2 arrives after the abort
+    await stopping
+    expect(handle).toHaveBeenCalledTimes(1)
   })
 })
 
