@@ -13,6 +13,7 @@
     "dev:services": "concurrently -k -n ingest,resolve -c green,magenta \"pnpm --filter @onrepeat/ingester dev\" \"pnpm --filter @onrepeat/resolver dev\"",
     "test": "vitest run",
     "test:int": "pnpm --filter @onrepeat/db exec tsx src/inttest-create.ts && vitest run --config vitest.int.config.ts",
+    "test:smoke": "DATABASE_URL=postgres://build:build@127.0.0.1:5999/build pnpm --filter @onrepeat/web build && playwright test -c apps/web/smoke",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r exec tsc --noEmit",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.20.1",
     "concurrently": "^10.0.4",
     "prettier": "^3.9.6",

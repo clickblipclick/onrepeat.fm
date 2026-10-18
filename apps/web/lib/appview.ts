@@ -16,7 +16,12 @@ import { db } from './db'
 const globalForBsky = globalThis as unknown as {
   __onrepeatBsky?: ReturnType<typeof createBskyClient>
 }
-export const bsky = globalForBsky.__onrepeatBsky ?? createBskyClient()
+// BSKY_PUBLIC_API_URL overrides the public AppView (unset in deploys; the smoke suite
+// points it at a local fake so the suite needs neither the network nor real accounts).
+// `||`, not `??`: an empty value in .env.local must mean "default", not an invalid URL.
+export const bsky =
+  globalForBsky.__onrepeatBsky ??
+  createBskyClient({ service: process.env.BSKY_PUBLIC_API_URL || undefined })
 if (process.env.NODE_ENV !== 'production') globalForBsky.__onrepeatBsky = bsky
 
 /**

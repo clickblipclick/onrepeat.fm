@@ -3,9 +3,12 @@ import { NextResponse } from 'next/server'
 
 import { mapTypeahead } from '@/lib/typeahead'
 
-// Same public, unauthenticated AppView the appview package uses (packages/appview/src/bsky.ts).
+// Same public, unauthenticated AppView the appview package uses (packages/appview/src/bsky.ts),
+// with the same BSKY_PUBLIC_API_URL override (see apps/web/lib/appview.ts).
 const PUBLIC_API = 'https://public.api.bsky.app'
-const agent = new AtpAgent({ service: PUBLIC_API })
+const agent = new AtpAgent({
+  service: process.env.BSKY_PUBLIC_API_URL || PUBLIC_API,
+})
 
 // Unauthenticated by design: this powers the pre-login handle autocomplete, so there is
 // no session, and it returns only public Bluesky profile data (unlike the session-gated

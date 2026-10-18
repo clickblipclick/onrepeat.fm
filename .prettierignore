@@ -12,3 +12,6 @@ pnpm-lock.yaml
 
 # Local code index (gitignored via its own .gitignore)
 .codegraph/
+
+# Playwright smoke-test output
+test-results/
