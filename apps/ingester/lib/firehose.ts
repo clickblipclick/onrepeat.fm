@@ -20,7 +20,11 @@ import {
   saveCursor,
 } from './cursor'
 import { runWithDeadLetter } from './dead-letter'
-import { ingestEventLabel, toFailedEventInput, toIngestEvent } from './events'
+import {
+  ingestEventLabel,
+  toFailedEventInput,
+  toIngestEventFromFirehose,
+} from './events'
 import { defaultHooks, type IngesterHooks } from './hooks'
 import { handleIngestEvent } from './indexer'
 import { withRetry } from './retry'
@@ -122,7 +126,7 @@ export async function createIngester(
     excludeAccount: false,
     excludeSync: true,
     handleEvent: async (evt: Event) => {
-      const ingestEvt = toIngestEvent(evt)
+      const ingestEvt = toIngestEventFromFirehose(evt)
       if (!ingestEvt) return
       const label = ingestEventLabel(ingestEvt)
       // @atproto/sync advances the cursor as soon as this returns — even on a thrown error —
