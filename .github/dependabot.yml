@@ -11,8 +11,26 @@ updates:
       - dependency-name: '@types/node'
         versions: ['>=23']
     groups:
+      # atproto packages are all 0.x, where a "minor" bump may be breaking by semver.
+      # Keep them in their own PR so the changelog gets read, and the routine group
+      # below stays safe to merge on green. Listed first: a dependency joins the
+      # first group it matches.
+      atproto:
+        patterns:
+          - '@atproto/*'
+          - '@atproto-labs/*'
+          - '@bsky/*'
+        update-types:
+          - minor
+          - patch
       # Batch routine non-major bumps into a single PR to cut noise
       minor-and-patch:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@atproto/*'
+          - '@atproto-labs/*'
+          - '@bsky/*'
         update-types:
           - minor
           - patch

@@ -36,6 +36,15 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: Build web
+        run: pnpm --filter @onrepeat/web build
+        env:
+          # Every route is dynamic, so the build never opens a database connection.
+          # DATABASE_URL only has to be present: apps/web/lib/db.ts and jobs.ts throw
+          # at import time when it is unset, which fails page-data collection.
+          DATABASE_URL: postgres://build:build@127.0.0.1:5999/build
+          NEXT_TELEMETRY_DISABLED: '1'
+
   integration:
     runs-on: ubuntu-latest
     services:
