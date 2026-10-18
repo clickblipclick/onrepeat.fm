@@ -355,6 +355,7 @@ export async function createIngester(
     let attempt = 0
     while (!signal.aborted) {
       let delivered = false
+      let rejection: { err: unknown } | undefined
       try {
         for await (const evt of deps.source({
           cursor: cursorStore,
@@ -362,6 +363,9 @@ export async function createIngester(
           onError,
           onInfo,
         })) {
+          // Queue nothing once stop() has begun: it drains only what was already
+          // queued, and anything delivered from here on is redelivered on restart.
+          if (signal.aborted) break
           delivered = true
           attempt = 0
           const ingestEvt = toIngestEvent(evt)
@@ -378,22 +382,33 @@ export async function createIngester(
               onFatal(err instanceof Error ? err : new Error(String(err))),
             )
         }
-        return
       } catch (err) {
-        if (signal.aborted) return
-        attempt += 1
-        const status = handshakeRejectionStatus(err)
-        useTimestampForm = !delivered && status === 400
-        const delay = Math.min(
-          RECONNECT_BASE_MS * 2 ** (attempt - 1),
-          RECONNECT_MAX_MS,
-        )
-        console.error(
-          `[ingester] jetstream connection rejected (attempt ${attempt}${status === undefined ? '' : `, HTTP ${status}`}); retrying in ${delay}ms with ${useTimestampForm ? 'a timestamp cursor' : 'the same seq'}`,
-          err,
-        )
-        await deps.sleep(delay, signal)
+        rejection = { err }
       }
+      if (signal.aborted) return
+      attempt += 1
+      const status = rejection
+        ? handshakeRejectionStatus(rejection.err)
+        : undefined
+      useTimestampForm = !delivered && status === 400
+      const delay = Math.min(
+        RECONNECT_BASE_MS * 2 ** (attempt - 1),
+        RECONNECT_MAX_MS,
+      )
+      const retry = `(attempt ${attempt}${status === undefined ? '' : `, HTTP ${status}`}); retrying in ${delay}ms with ${useTimestampForm ? 'a timestamp cursor' : 'the same seq'}`
+      if (rejection) {
+        console.error(
+          `[ingester] jetstream connection rejected ${retry}`,
+          rejection.err,
+        )
+      } else {
+        // live() reconnects internally until aborted, so a stream that ends on
+        // its own is unexpected — but it must not end the ingester.
+        console.error(
+          `[ingester] jetstream stream ended unexpectedly; reconnecting ${retry}`,
+        )
+      }
+      await deps.sleep(delay, signal)
     }
   }
 
