@@ -15,6 +15,14 @@
  */
 
 export const TIMESTAMP_CURSOR_MIN = 1e15
+/**
+ * No Jetstream seq comes anywhere near this (about 3e10 in 2026, growing by roughly
+ * 1e10 a year), while a unix-*millisecond* timestamp has sat above it since 2001. An
+ * override in [1e12, 1e15) is therefore a pasted Date.now(), not a seq; sent as one it
+ * would be refused by the server and then "recovered" from the stored row, silently
+ * discarding what the operator asked for.
+ */
+export const SEQ_CURSOR_MAX = 1e12
 /** Rewind applied to a wall-clock position before handing it to the server. */
 export const CUTOVER_MARGIN_MS = 60_000
 
@@ -73,6 +81,11 @@ export function parseStartCursorOverride(
   if (!/^\d+$/.test(value) || !Number.isSafeInteger(n)) {
     throw new Error(
       `INGESTER_START_CURSOR must be a non-negative integer (a Jetstream seq, or a unix-microsecond timestamp >= 1e15); got "${raw}"`,
+    )
+  }
+  if (n >= SEQ_CURSOR_MAX && n < TIMESTAMP_CURSOR_MIN) {
+    throw new Error(
+      `INGESTER_START_CURSOR must be a Jetstream seq or a unix-microsecond timestamp (>= 1e15); got "${raw}", which looks like a millisecond timestamp — multiply it by 1000`,
     )
   }
   return n

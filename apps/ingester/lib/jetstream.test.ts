@@ -7,6 +7,7 @@ import {
   abortableSleep,
   createIngester,
   DEFAULT_JETSTREAM_URL,
+  handshakeRejectionStatus,
   type LiveSource,
   type LiveSourceOpts,
 } from './jetstream'
@@ -379,6 +380,7 @@ describe('createIngester (jetstream)', () => {
     expect(await src.calls[2]!.cursor!.load()).toBe(
       (Date.parse(eventTime) - 60_000) * 1000,
     )
+    expect(err).not.toHaveBeenCalledWith(expect.stringContaining('LOST'))
     await ing.stop()
     err.mockRestore()
   })
@@ -462,6 +464,115 @@ describe('createIngester (jetstream)', () => {
     expect(err).toHaveBeenCalledWith(expect.stringContaining('LOST'))
     await ing.stop()
     err.mockRestore()
+  })
+
+  it('a non-400 rejection before delivery (429) retries the same seq, not a timestamp', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const src = fakeSource([
+      () => {
+        throw new Error('Unexpected server response: 429')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBe(42)
+    expect(err).toHaveBeenCalledWith(
+      expect.stringContaining('the same seq'),
+      expect.any(Error),
+    )
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a 400 wrapped in a transport error (as ws-client reports it) still falls back to the timestamp form', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const src = fakeSource([
+      () => {
+        throw new Error('WebSocket transport error', {
+          cause: new Error('Unexpected server response: 400'),
+        })
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    expect(await src.calls[1]!.cursor!.load()).toBe((T - 1000 - 60_000) * 1000)
+    await ing.stop()
+    err.mockRestore()
+  })
+
+  it('a 400 fallback seeded from the stored row (no completed event) is logged at error level as a gap', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const src = fakeSource([
+      () => {
+        throw new Error('Unexpected server response: 400')
+      },
+      [],
+    ])
+    const ing = await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 1000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    await ing.start()
+    await vi.waitFor(() => expect(src.calls).toHaveLength(2))
+    await src.calls[1]!.cursor!.load()
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('LOST'))
+    await ing.stop()
+    err.mockRestore()
+  })
+})
+
+describe('handshakeRejectionStatus', () => {
+  it('reads the status of a refused upgrade, bare or wrapped in a cause', () => {
+    expect(
+      handshakeRejectionStatus(new Error('Unexpected server response: 400')),
+    ).toBe(400)
+    // ws-client wraps the raw ws error one level deep in a SocketError.
+    expect(
+      handshakeRejectionStatus(
+        new Error('WebSocket transport error', {
+          cause: new Error('Unexpected server response: 429'),
+        }),
+      ),
+    ).toBe(429)
+  })
+
+  it('is undefined for anything that is not a refused upgrade', () => {
+    expect(handshakeRejectionStatus(new Error('boom'))).toBeUndefined()
+    expect(
+      handshakeRejectionStatus('Unexpected server response: 400'),
+    ).toBeUndefined()
+    expect(handshakeRejectionStatus(undefined)).toBeUndefined()
   })
 })
 
