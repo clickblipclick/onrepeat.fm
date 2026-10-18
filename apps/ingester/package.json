@@ -9,18 +9,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/lex": "^0.3.6",
-    "@atproto/lexicon": "^0.7.11",
-    "@atproto/sync": "^0.4.3",
+    "@atproto/lex": "^0.3.14",
+    "@atproto/lexicon": "^0.7.16",
+    "@atproto/sync": "^0.4.13",
     "@bsky/jetstream": "^1.0.0",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
-    "kysely": "^0.29.5"
+    "kysely": "^0.29.6"
   },
   "devDependencies": {
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
