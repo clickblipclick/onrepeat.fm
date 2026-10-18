@@ -12,8 +12,8 @@
     "@atproto/api": "^0.20.39",
     "@onrepeat/core": "workspace:*",
     "@onrepeat/db": "workspace:*",
-    "kysely": "^0.29.5",
-    "lru-cache": "^11.5.2"
+    "kysely": "^0.29.6",
+    "lru-cache": "^11.5.3"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
