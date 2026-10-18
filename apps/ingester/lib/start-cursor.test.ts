@@ -67,6 +67,22 @@ describe('parseStartCursorOverride', () => {
       )
     }
   })
+
+  it('rejects a millisecond timestamp with a unit hint', () => {
+    // 13 digits is a pasted Date.now(): far above any plausible seq and far
+    // below the 1e15 microsecond threshold, so it would be sent as a seq.
+    expect(() => parseStartCursorOverride('1792195200123')).toThrow(
+      /millisecond/,
+    )
+    expect(() => parseStartCursorOverride('1000000000000')).toThrow(
+      /millisecond/,
+    )
+  })
+
+  it('accepts seqs below the implausible band and timestamps at or above 1e15', () => {
+    expect(parseStartCursorOverride('999999999999')).toBe(999_999_999_999)
+    expect(parseStartCursorOverride('1000000000000000')).toBe(1e15)
+  })
 })
 
 describe('resolveStartCursor', () => {

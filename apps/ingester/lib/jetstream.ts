@@ -33,6 +33,7 @@ import { defaultHooks, type IngesterHooks } from './hooks'
 import { handleIngestEvent } from './indexer'
 import { withRetry } from './retry'
 import {
+  CUTOVER_MARGIN_MS,
   isTimestampCursor,
   jetstreamServiceKey,
   resolveStartCursor,
@@ -111,6 +112,24 @@ export function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
     }
     signal.addEventListener('abort', done, { once: true })
   })
+}
+
+// ws reports a refused upgrade as `Unexpected server response: <status>` and discards
+// the body; ws-client wraps that one level deep in a SocketError. The SDK keys its own
+// reconnect policy on this text (its helper is not exported), so match it here rather
+// than add a dependency for an instanceof check. Should the wording ever change, every
+// rejection reads as "unknown status" and keeps the seq — loud, never a silent move.
+const HANDSHAKE_REJECTION_RE = /Unexpected server response: (\d{3})/
+
+/** HTTP status of a websocket handshake the server refused, if `err` is one. */
+export function handshakeRejectionStatus(err: unknown): number | undefined {
+  let e: unknown = err
+  for (let depth = 0; depth < 3 && e instanceof Error; depth++) {
+    const m = HANDSHAKE_REJECTION_RE.exec(e.message)
+    if (m) return Number(m[1])
+    e = e.cause
+  }
+  return undefined
 }
 
 function describeCursor(cursor: number | undefined): string {
@@ -274,14 +293,25 @@ export async function createIngester(
     // A timestamp is never "too old" in the 400 sense (the server clamps it and
     // advises), so a rejected timestamp — e.g. an operator override — is retried as is.
     if (current !== undefined && isTimestampCursor(current)) return current
-    const basis = lastCompletedEventTime ?? storedBasisTime
-    if (basis === undefined) {
+    if (lastCompletedEventTime !== undefined) {
+      return timestampCursor(new Date(lastCompletedEventTime))
+    }
+    if (storedBasisTime === undefined) {
       console.error(
         '[ingester] no known position to fall back to; reconnecting at the live head — events between the rejected cursor and now are LOST',
       )
       return undefined
     }
-    return timestampCursor(new Date(basis))
+    // A seq the server refused as too old lies before its retention window, so
+    // everything from there to the window's start is LOST whatever we do. The stored
+    // row's updated_at is wall-clock — exact only if the row was written at the live
+    // head; written mid-replay, it also skips the events between the window and that
+    // time. Say so here: the server only speaks up (OutdatedCursor) if the timestamp
+    // is too old as well.
+    console.error(
+      `[ingester] seq ${current} is below Jetstream's retention window (HTTP 400): events before the window are LOST. Resuming from the stored row's wall-clock position ${new Date(storedBasisTime).toISOString()} − ${CUTOVER_MARGIN_MS / 1000}s; if that row was written mid-replay rather than at the live head, events between the window and that time are skipped too`,
+    )
+    return timestampCursor(new Date(storedBasisTime))
   }
 
   // live() only ever loads from this store (persistence is ours, above). Serving
@@ -310,13 +340,17 @@ export async function createIngester(
 
   // A below-retention *seq* is refused at the websocket handshake (HTTP 400) and the
   // SDK gives up — no advisory is ever sent. A too-old *timestamp*, by contrast, is
-  // clamped with an OutdatedCursor advisory. So when a connect is rejected before
-  // delivering anything, the next attempt uses the timestamp form of the last known
-  // position: a cursor-too-old rejection then resolves loudly instead of looping
-  // forever, and any other fatal error keeps failing under a capped backoff — never
-  // silent, never tight. A rejection that lands mid-stream retries the seq itself:
-  // the server was serving it moments ago, so it cannot be too old, and a backlog
-  // replay must never be abandoned for the wall clock.
+  // clamped with an OutdatedCursor advisory. So when a connect is refused with a 400
+  // before delivering anything, the next attempt uses the timestamp form of the last
+  // known position, and a cursor-too-old rejection resolves loudly instead of looping
+  // forever. Every other failure keeps the seq. The SDK already redials transient
+  // network trouble and 5xx on its own, so what reaches this loop is a 4xx it treats
+  // as permanent (429 rate-limit, 401/403) or a protocol-fatal close: a transient one
+  // must not move the position — the stored row's wall-clock time is only exact if it
+  // was written at the live head — and a permanent one keeps failing under a capped
+  // backoff: never silent, never tight. A rejection that lands mid-stream likewise
+  // retries the seq itself: the server was serving it moments ago, so it cannot be
+  // too old, and a backlog replay must never be abandoned for the wall clock.
   async function run(signal: AbortSignal): Promise<void> {
     let attempt = 0
     while (!signal.aborted) {
@@ -353,12 +387,15 @@ export async function createIngester(
       }
       if (signal.aborted) return
       attempt += 1
-      useTimestampForm = !delivered
+      const status = rejection
+        ? handshakeRejectionStatus(rejection.err)
+        : undefined
+      useTimestampForm = !delivered && status === 400
       const delay = Math.min(
         RECONNECT_BASE_MS * 2 ** (attempt - 1),
         RECONNECT_MAX_MS,
       )
-      const retry = `(attempt ${attempt}); retrying in ${delay}ms with ${useTimestampForm ? 'a timestamp cursor' : 'the same seq'}`
+      const retry = `(attempt ${attempt}${status === undefined ? '' : `, HTTP ${status}`}); retrying in ${delay}ms with ${useTimestampForm ? 'a timestamp cursor' : 'the same seq'}`
       if (rejection) {
         console.error(
           `[ingester] jetstream connection rejected ${retry}`,
