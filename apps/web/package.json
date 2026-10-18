@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/api": "^0.20.39",
-    "@atproto/oauth-client-node": "^0.5.3",
+    "@atproto/api": "^0.27.0",
+    "@atproto/oauth-client-node": "^0.5.9",
     "@floating-ui/react": "^0.27.20",
     "@onrepeat/appview": "workspace:*",
     "@onrepeat/core": "workspace:*",
