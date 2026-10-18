@@ -23,7 +23,7 @@ export interface RecordIngestEvent {
   collection: IngestCollection
   /** decoded record value; undefined on delete */
   record: unknown
-  /** firehose sequence cursor */
+  /** Jetstream sequence cursor */
   seq: number
 }
 

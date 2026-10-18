@@ -144,6 +144,48 @@ describe('createIngester (jetstream)', () => {
     await ing.stop()
   })
 
+  it('warns when the stored cursor last advanced more than 6h ago', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const src = fakeSource([[]])
+    await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row(HOST_KEY, 42, T - 7 * 3_600_000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('last advanced 7.0h ago — replaying backlog'),
+    )
+    warn.mockRestore()
+  })
+
+  it('logs the cutover when only a firehose row is stored', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const src = fakeSource([[]])
+    await createIngester({
+      db: {} as never,
+      service: DEFAULT_JETSTREAM_URL,
+      deps: {
+        source: src.source,
+        loadRows: async () => [row('firehose', 9, T - 5000)],
+        persistCursor: async () => {},
+        now: () => T,
+        sleep: noSleep,
+      },
+    })
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `cutover: no fresh cursor for ${HOST_KEY}; seeding from firehose last advanced at 2026-10-17T11:59:55.000Z`,
+      ),
+    )
+    log.mockRestore()
+  })
+
   it('routes events through the handler in per-DID order and persists the last contiguous seq', async () => {
     const order: string[] = []
     const gate = deferred() // A:1 blocks until released
