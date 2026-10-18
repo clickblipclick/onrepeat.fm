@@ -12,9 +12,10 @@ export interface RunWithDeadLetterOpts {
 /**
  * Run an ingest handler with a dead-letter safety net.
  *
- * @atproto/sync advances the firehose cursor as soon as the handler returns — even when it
- * threw — so a record that exhausts its retries would otherwise be *silently lost* (and never
- * re-delivered on restart). On failure we capture it durably for replay. If even that write
+ * The runner marks an event complete as soon as its handler returns — and the handler is
+ * the only thing standing between a thrown error and the cursor marching on — so a record
+ * that exhausts its retries would otherwise be *silently lost* (and never re-delivered on
+ * restart). On failure we capture it durably for replay. If even that write
  * fails (the DB itself is down), we escalate via `onFatal` rather than let the cursor march
  * past an unrecorded event: crashing lets the process resume from the last persisted cursor,
  * re-delivering recent events (indexing is idempotent).

@@ -1,5 +1,4 @@
 import { jsonToLex } from '@atproto/lexicon'
-import type { Event } from '@atproto/sync'
 import type { RawEvent, RawRecordJson } from '@bsky/jetstream'
 
 import type { ActorStatus, FailedEventInput } from '@onrepeat/db'
@@ -117,48 +116,6 @@ export function toIngestEvent(evt: JetstreamEvent): IngestEvent | null {
     did: evt.did,
     collection: commit.collection,
     record: lexRecord(commit.record),
-    seq: evt.seq,
-  }
-}
-
-/** Normalize an @atproto/sync Event into an IngestEvent, or null if we ignore it. */
-export function toIngestEventFromFirehose(evt: Event): IngestEvent | null {
-  if (evt.event === 'account') {
-    return {
-      action: 'account',
-      did: evt.did,
-      status: accountStatus(evt.active, evt.status),
-      seq: evt.seq,
-    }
-  }
-  if (
-    evt.event !== 'create' &&
-    evt.event !== 'update' &&
-    evt.event !== 'delete'
-  ) {
-    return null // identity / sync — not indexed
-  }
-  if (!isIngestCollection(evt.collection)) return null
-
-  if (evt.event === 'delete') {
-    return {
-      action: 'delete',
-      uri: evt.uri.toString(),
-      cid: null,
-      did: evt.did,
-      collection: evt.collection,
-      record: undefined,
-      seq: evt.seq,
-    }
-  }
-
-  return {
-    action: evt.event,
-    uri: evt.uri.toString(),
-    cid: evt.cid.toString(),
-    did: evt.did,
-    collection: evt.collection,
-    record: evt.record,
     seq: evt.seq,
   }
 }

@@ -45,9 +45,6 @@ importers:
 
   apps/ingester:
     dependencies:
-      '@atproto/identity':
-        specifier: ^0.5.9
-        version: 0.5.9
       '@atproto/lex':
         specifier: ^0.3.6
         version: 0.3.6
