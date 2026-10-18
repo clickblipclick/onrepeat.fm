@@ -1,5 +1,7 @@
 import type { DB } from '@onrepeat/db'
 
+import type { CursorRow } from './start-cursor'
+
 export interface CursorState {
   cursor: number
   /** When the cursor last advanced — i.e. how stale a resumed subscription is. */
@@ -21,6 +23,29 @@ export async function loadCursorState(
     cursor: Number(row.cursor),
     updatedAt: new Date(row.updated_at as unknown as string | Date),
   }
+}
+
+/**
+ * Every row the Jetstream start-cursor decision cares about: the legacy
+ * `firehose` row and every `jetstream:<host>` row, freshest first.
+ */
+export async function loadCursorStates(db: DB): Promise<CursorRow[]> {
+  const rows = await db
+    .selectFrom('subscription_state')
+    .select(['service', 'cursor', 'updated_at'])
+    .where((eb) =>
+      eb.or([
+        eb('service', '=', 'firehose'),
+        eb('service', 'like', 'jetstream:%'),
+      ]),
+    )
+    .orderBy('updated_at', 'desc')
+    .execute()
+  return rows.map((row) => ({
+    service: row.service,
+    cursor: Number(row.cursor),
+    updatedAt: new Date(row.updated_at as unknown as string | Date),
+  }))
 }
 
 export async function saveCursor(
