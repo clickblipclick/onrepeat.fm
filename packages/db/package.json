@@ -12,7 +12,7 @@
   "dependencies": {
     "@onrepeat/core": "workspace:*",
     "@onrepeat/lexicons": "workspace:*",
-    "kysely": "^0.29.6",
+    "kysely": "^0.29.9",
     "pg": "^8.23.1"
   },
   "devDependencies": {

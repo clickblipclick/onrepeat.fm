@@ -18,8 +18,8 @@
     "@onrepeat/lexicons": "workspace:*",
     "@onrepeat/service": "workspace:*",
     "@onrepeat/storage": "workspace:*",
-    "kysely": "^0.29.6",
-    "pg-boss": "^12.38.0"
+    "kysely": "^0.29.9",
+    "pg-boss": "^12.38.2"
   },
   "devDependencies": {
     "tsx": "^4.23.15",
