@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atproto/lex": "^0.3.14",
-    "@atproto/lexicon": "^0.7.16",
-    "@atproto/sync": "^0.4.13",
+    "@atproto/lex": "^0.6.1",
+    "@atproto/lexicon": "^0.7.21",
+    "@atproto/sync": "^0.4.29",
     "@bsky/jetstream": "^1.0.0",
     "@onrepeat/db": "workspace:*",
     "@onrepeat/jobs": "workspace:*",
